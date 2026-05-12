@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Colores Anti-Fatiga */
+    --color-background-dark: #020617; /* slate-950 */
+    --color-surface-dark: #0f172a;    /* slate-900 */
+    --color-border-dark: #1e293b;     /* slate-800 */
+    --color-text-primary-dark: #e2e8f0; /* slate-200 */
+    --color-text-secondary-dark: #94a3b8; /* slate-400 */
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@layer components {
+    .bg-surface {
+        @apply bg-white dark:bg-surface-dark;
+    }
+    .text-primary {
+        @apply text-gray-900 dark:text-text-primary-dark;
+    }
+    .text-secondary {
+        @apply text-gray-600 dark:text-text-secondary-dark;
+    }
+    .border-main {
+        @apply border-gray-200 dark:border-border-dark;
+    }
+    .divide-main {
+        @apply divide-gray-200 dark:divide-border-dark;
+    }
+    .input-main {
+        @apply bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark border-gray-300 dark:border-border-dark focus:ring-blue-500 focus:border-blue-500;
+    }
+    .label-main {
+        @apply block text-sm font-medium text-gray-700 dark:text-text-secondary-dark;
+    }
+}
+
