@@ -207,12 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.checked) {
                 if (inputTotal) {
                     inputTotal.readOnly = false;
-                    inputTotal.classList.remove('bg-gray-50');
+                    inputTotal.classList.remove('bg-slate-50', 'dark:bg-slate-800/50');
                 }
             } else if (!toggleDescManual?.checked) {
                 if (inputTotal) {
                     inputTotal.readOnly = true;
-                    inputTotal.classList.add('bg-gray-50');
+                    inputTotal.classList.add('bg-slate-50', 'dark:bg-slate-800/50');
                 }
             }
             recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');

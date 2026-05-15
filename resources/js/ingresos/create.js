@@ -13,6 +13,7 @@ import {
     calcularPrecio,
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
+import { Validation } from '../utils/validation.js';
 
 // ── Estado local ──
 let items = []; // [{servicio_id, nombre, precio}]
@@ -79,4 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizar tabla y precio inicial
     renderTablaServicios(items, 'tbody-servicios', eliminarItem);
     actualizarPrecioDisplay();
+
+    // Validación del formulario
+    const form = document.getElementById('form-ingreso');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            if (!Validation.validate(form)) {
+                e.preventDefault();
+            }
+        });
+    }
 });

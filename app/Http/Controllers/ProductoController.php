@@ -23,6 +23,42 @@ class ProductoController extends Controller
     }
 
     /**
+     * Búsqueda dinámica de productos por nombre (AJAX).
+     * Devuelve un JSON con los productos que coinciden con el término buscado.
+     */
+    public function buscar(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim($request->input('q', ''));
+
+        $query = Producto::with('categoria');
+
+        if ($q !== '') {
+            $query->where('nombre', 'like', "%{$q}%");
+        }
+
+        $productos = $query->orderBy('nombre')->limit(20)->get();
+
+        return response()->json([
+            'success'   => true,
+            'total'     => $productos->count(),
+            'productos' => $productos->map(fn ($p) => [
+                'id'            => $p->id,
+                'nombre'        => $p->nombre,
+                'categoria'     => $p->categoria?->nombre ?? '—',
+                'precio_compra' => number_format($p->precio_compra, 2),
+                'precio_venta'  => number_format($p->precio_venta, 2),
+                'stock'         => $p->stock,
+                'activo'        => (bool) $p->activo,
+                'foto'          => $p->foto ? asset('storage/' . $p->foto) : null,
+                'edit_url'      => route('productos.edit', $p),
+                'toggle_url'    => route('productos.toggleStatus', $p),
+                'stock_url'     => route('productos.updateStock', $p),
+                'destroy_url'   => route('productos.destroy', $p),
+            ]),
+        ]);
+    }
+
+    /**
      * Show the form for creating a new producto.
      */
     public function create(): View

@@ -256,9 +256,9 @@
                 <table class="min-w-full divide-y divide-main">
                     <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servicio</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eliminar</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Servicio</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Precio</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Eliminar</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-servicios" class="bg-surface divide-y divide-main">

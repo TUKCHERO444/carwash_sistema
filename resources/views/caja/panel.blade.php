@@ -5,11 +5,11 @@
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-text-primary-dark">Panel de Caja</h1>
         <div class="flex items-center gap-3">
-            @if(auth()->user()?->hasRole('Administrador'))
+            @can('historial-caja')
                 <a href="{{ route('caja.historial') }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-primary-dark bg-white dark:bg-slate-800 border border-gray-300 dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                     Historial
                 </a>
-            @endif
+            @endcan
             
             @if(!$caja)
                 <button type="button" onclick="document.getElementById('modal-abrir-caja').classList.remove('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
@@ -196,7 +196,7 @@
         <div class="relative inline-block align-bottom bg-white dark:bg-surface-dark rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border dark:border-border-dark">
             <form action="{{ route('caja.abrir') }}" method="POST">
                 @csrf
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="bg-white dark:bg-surface-dark px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
                             <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

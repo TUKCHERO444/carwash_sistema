@@ -74,28 +74,28 @@
 
             {{-- ── Placa ── --}}
             <div class="mb-5">
-                <label for="placa" class="block text-sm font-medium text-gray-700 mb-1">Placa <span class="text-red-500">*</span></label>
+                <label for="placa" class="label-main mb-1">Placa <span class="text-red-500">*</span></label>
                 <input type="text" id="placa" name="placa" required maxlength="7" value="{{ old('placa', $ingreso->cliente->placa ?? '') }}" placeholder="Ej: ABC-123" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('placa') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             {{-- ── Nombre ── --}}
             <div class="mb-5">
-                <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <label for="nombre" class="label-main mb-1">Nombre <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
                 <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $ingreso->cliente->nombre ?? '') }}" placeholder="Nombre del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('nombre') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             {{-- ── DNI ── --}}
             <div class="mb-5">
-                <label for="dni" class="label-main mb-1">DNI <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <label for="dni" class="label-main mb-1">DNI <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
                 <input type="text" id="dni" name="dni" value="{{ old('dni', $ingreso->cliente->dni ?? '') }}" placeholder="DNI del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('dni') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('dni') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             {{-- ── Teléfono ── --}}
             <div class="mb-5">
-                <label for="telefono" class="label-main mb-1">Teléfono <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <label for="telefono" class="label-main mb-1">Teléfono <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
                 <input type="text" id="telefono" name="telefono" value="{{ old('telefono', $ingreso->cliente->telefono ?? '') }}" placeholder="Teléfono del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('telefono') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('telefono') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -113,34 +113,34 @@
 
             {{-- ── Foto ── --}}
             <div class="mb-5">
-                <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto del vehículo <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <label for="foto" class="label-main mb-1">Foto del vehículo <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
                 @if($ingreso->foto)
                     <div class="mb-3">
-                        <p class="text-xs text-gray-500 mb-1">Foto actual:</p>
-                        <img id="foto-current" src="{{ Storage::url($ingreso->foto) }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-gray-200">
+                        <p class="text-xs text-text-secondary-dark mb-1">Foto actual:</p>
+                        <img id="foto-current" src="{{ Storage::url($ingreso->foto) }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
                     </div>
                 @endif
-                <input type="file" id="foto" name="foto" accept="image/*" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors {{ $errors->has('foto') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">
+                <input type="file" id="foto" name="foto" accept="image/*" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('foto') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('foto') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                <img id="foto-preview" src="" alt="Vista previa" class="hidden mt-3 rounded-lg max-h-48 object-cover border border-gray-200">
+                <img id="foto-preview" src="" alt="Vista previa" class="hidden mt-3 rounded-lg max-h-48 object-cover border border-main">
             </div>
 
             {{-- ── Trabajadores ── --}}
             @php $trabajadoresAsignados = old('trabajadores_ids', $ingreso->trabajadores->pluck('id')->toArray()); @endphp
             <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Trabajadores <span class="text-red-500">*</span> <span class="text-xs font-normal text-gray-400">(al menos 1)</span></label>
+                <label class="label-main mb-2">Trabajadores <span class="text-red-500">*</span> <span class="text-xs font-normal text-text-secondary-dark">(al menos 1)</span></label>
                 @error('trabajadores_ids')
                     <p class="mb-2 text-xs text-red-600">{{ $message }}</p>
                 @enderror
                 <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     @foreach($trabajadores as $trabajador)
                         <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
-                                      {{ in_array($trabajador->id, $trabajadoresAsignados) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-300 dark:border-border-dark' }}
+                                      {{ in_array($trabajador->id, $trabajadoresAsignados) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-main' }}
                                       trabajador-option">
                             <input type="checkbox" name="trabajadores_ids[]" value="{{ $trabajador->id }}"
-                                   class="trabajador-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                   class="trabajador-checkbox w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800"
                                    {{ in_array($trabajador->id, $trabajadoresAsignados) ? 'checked' : '' }}>
-                            <span class="text-sm text-gray-800 dark:text-text-primary-dark">{{ $trabajador->nombre }}</span>
+                            <span class="text-sm text-secondary">{{ $trabajador->nombre }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -161,9 +161,9 @@
                 <table class="min-w-full divide-y divide-main">
                     <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eliminar</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Servicio</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Precio</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Eliminar</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-servicios" class="bg-surface divide-y divide-main"></tbody>
@@ -176,48 +176,48 @@
                 <div>
                     <label for="precio" class="label-main mb-1">Precio</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500 dark:text-text-secondary-dark">S/</span>
-                        <input type="number" id="precio" name="precio" step="0.01" readonly value="{{ old('precio', number_format($ingreso->precio, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm input-main bg-gray-50 dark:bg-slate-800/50">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-secondary">S/</span>
+                        <input type="number" id="precio" name="precio" step="0.01" readonly value="{{ old('precio', number_format($ingreso->precio, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm input-main bg-slate-50 dark:bg-slate-800/50">
                     </div>
                 </div>
 
                 {{-- Descuentos --}}
                 <div>
                     <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="toggle-descuento" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="text-sm text-gray-700">Aplicar descuento por porcentaje</span>
+                        <input type="checkbox" id="toggle-descuento" class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800">
+                        <span class="text-sm text-secondary">Aplicar descuento por porcentaje</span>
                     </label>
                 </div>
                 <div id="campo-porcentaje" class="hidden">
-                    <label for="porcentaje" class="block text-sm font-medium text-gray-700 mb-1">Porcentaje (%)</label>
-                    <input type="number" id="porcentaje" min="0" max="100" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <label for="porcentaje" class="label-main mb-1">Porcentaje (%)</label>
+                    <input type="number" id="porcentaje" min="0" max="100" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <p id="error-porcentaje" class="hidden mt-1 text-xs text-red-600">No puede superar 100.</p>
                 </div>
                 <div>
                     <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="toggle-descuento-manual" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="text-sm text-gray-700">Aplicar descuento manual</span>
+                        <input type="checkbox" id="toggle-descuento-manual" class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800">
+                        <span class="text-sm text-secondary">Aplicar descuento manual</span>
                     </label>
                 </div>
 
                 {{-- Total --}}
                 <div>
-                    <label for="total" class="block text-sm font-medium text-gray-700 mb-1">Total <span class="text-red-500">*</span></label>
+                    <label for="total" class="label-main mb-1">Total <span class="text-red-500">*</span></label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">S/</span>
-                        <input type="number" id="total" name="total" step="0.01" readonly value="{{ old('total', number_format($ingreso->total, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm bg-gray-50 focus:outline-none {{ $errors->has('total') ? 'border-red-400 bg-red-50' : 'border-gray-300' }}">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-secondary">S/</span>
+                        <input type="number" id="total" name="total" step="0.01" readonly value="{{ old('total', number_format($ingreso->total, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800/50 focus:outline-none input-main {{ $errors->has('total') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                     </div>
                     @error('total') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Método de pago --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Método de pago <span class="text-red-500">*</span></label>
+                    <label class="label-main mb-2">Método de pago <span class="text-red-500">*</span></label>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach(['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'] as $val => $label)
-                            <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors metodo-pago-option {{ old('metodo_pago', $ingreso->metodo_pago ?? 'efectivo') === $val ? 'border-blue-500 bg-blue-50' : 'border-gray-300' }}">
+                            <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors metodo-pago-option {{ old('metodo_pago', $ingreso->metodo_pago ?? 'efectivo') === $val ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-main' }}">
                                 <input type="radio" name="metodo_pago" value="{{ $val }}" class="hidden metodo-pago-radio" {{ old('metodo_pago', $ingreso->metodo_pago ?? 'efectivo') === $val ? 'checked' : '' }}>
-                                <span class="text-sm font-medium {{ old('metodo_pago', $ingreso->metodo_pago ?? 'efectivo') === $val ? 'text-blue-700' : 'text-gray-700' }}">{{ $label }}</span>
+                                <span class="text-sm font-medium {{ old('metodo_pago', $ingreso->metodo_pago ?? 'efectivo') === $val ? 'text-blue-700 dark:text-blue-400' : 'text-secondary' }}">{{ $label }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -226,27 +226,27 @@
 
                 {{-- Mixto --}}
                 <div id="bloque-mixto" class="hidden space-y-3">
-                    <p class="text-xs text-gray-500">Ingresa los montos. La suma debe igualar el total.</p>
-                    <div id="alerta-mixto" class="hidden px-3 py-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-xs">
+                    <p class="text-xs text-secondary">Ingresa los montos. La suma debe igualar el total.</p>
+                    <div id="alerta-mixto" class="hidden px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400 text-xs">
                         Suma (<span id="suma-mixto-display">0.00</span>) no coincide con total (<span id="total-mixto-display">0.00</span>).
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Efectivo (S/)</label>
-                        <input type="number" id="monto_efectivo" name="monto_efectivo" step="0.01" min="0" value="{{ old('monto_efectivo', $ingreso->monto_efectivo) }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <label class="block text-xs font-medium text-secondary mb-1">Efectivo (S/)</label>
+                        <input type="number" id="monto_efectivo" name="monto_efectivo" step="0.01" min="0" value="{{ old('monto_efectivo', $ingreso->monto_efectivo) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Yape (S/)</label>
-                        <input type="number" id="monto_yape" name="monto_yape" step="0.01" min="0" value="{{ old('monto_yape', $ingreso->monto_yape) }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <label class="block text-xs font-medium text-secondary mb-1">Yape (S/)</label>
+                        <input type="number" id="monto_yape" name="monto_yape" step="0.01" min="0" value="{{ old('monto_yape', $ingreso->monto_yape) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Izipay (S/)</label>
-                        <input type="number" id="monto_izipay" name="monto_izipay" step="0.01" min="0" value="{{ old('monto_izipay', $ingreso->monto_izipay) }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <label class="block text-xs font-medium text-secondary mb-1">Izipay (S/)</label>
+                        <input type="number" id="monto_izipay" name="monto_izipay" step="0.01" min="0" value="{{ old('monto_izipay', $ingreso->monto_izipay) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
             </div>
 
             {{-- ── Acciones ── --}}
-            <div class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-gray-200">
+            <div class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-main">
                 <button type="submit" class="inline-flex items-center gap-2 px-5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     Confirmar Ingreso
@@ -293,7 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const lbl = cb.closest('.trabajador-option');
             lbl.classList.toggle('border-blue-500', cb.checked);
             lbl.classList.toggle('bg-blue-50', cb.checked);
-            lbl.classList.toggle('border-gray-300', !cb.checked);
+            lbl.classList.toggle('dark:bg-blue-900/30', cb.checked);
+            lbl.classList.toggle('border-main', !cb.checked);
         });
     });
 });

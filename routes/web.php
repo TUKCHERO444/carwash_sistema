@@ -32,34 +32,52 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware('auth')->name('dashboard');
 
-// User management (Administrador only)
-Route::middleware(['auth', 'role:Administrador'])->group(function () {
-    Route::resource('users', UserController::class)->except(['show']);
-    Route::resource('roles', RoleController::class)->except(['show']);
-    Route::patch('trabajadores/{trabajador}/toggle-status', [TrabajadorController::class, 'toggleStatus'])->name('trabajadores.toggleStatus');
-    Route::resource('trabajadores', TrabajadorController::class)->except(['show'])->parameters(['trabajadores' => 'trabajador']);
-    Route::patch('productos/{producto}/stock', [ProductoController::class, 'updateStock'])->name('productos.updateStock');
-    Route::patch('productos/{producto}/toggle-status', [ProductoController::class, 'toggleStatus'])->name('productos.toggleStatus');
-    Route::resource('productos', ProductoController::class)->except(['show']);
-    Route::resource('categorias', CategoriaController::class)->except(['show']);
-    Route::resource('vehiculos', VehiculoController::class)
-         ->except(['show'])
-         ->parameters(['vehiculos' => 'vehiculo']);
-    Route::resource('servicios', ServicioController::class)
-         ->except(['show'])
-         ->parameters(['servicios' => 'servicio']);
-    Route::resource('clientes', ClienteController::class)
-         ->except(['show'])
-         ->parameters(['clientes' => 'cliente']);
+// User management & Settings (Administrador permissions)
+Route::middleware(['auth'])->group(function () {
+    Route::middleware('permission:acceso-usuarios')->group(function () {
+        Route::resource('users', UserController::class)->except(['show']);
+        Route::patch('users/{user}/toggle', [UserToggleController::class, 'toggle'])->name('users.toggle');
+    });
+
+    Route::middleware('permission:acceso-roles')->group(function () {
+        Route::resource('roles', RoleController::class)->except(['show']);
+    });
+
+    Route::middleware('permission:acceso-trabajadores')->group(function () {
+        Route::patch('trabajadores/{trabajador}/toggle-status', [TrabajadorController::class, 'toggleStatus'])->name('trabajadores.toggleStatus');
+        Route::resource('trabajadores', TrabajadorController::class)->except(['show'])->parameters(['trabajadores' => 'trabajador']);
+    });
+
+    Route::middleware('permission:acceso-inventario')->group(function () {
+        Route::get('productos/buscar', [ProductoController::class, 'buscar'])->name('productos.buscar');
+        Route::patch('productos/{producto}/stock', [ProductoController::class, 'updateStock'])->name('productos.updateStock');
+        Route::patch('productos/{producto}/toggle-status', [ProductoController::class, 'toggleStatus'])->name('productos.toggleStatus');
+        Route::resource('productos', ProductoController::class)->except(['show']);
+        Route::resource('categorias', CategoriaController::class)->except(['show']);
+    });
+
+    Route::middleware('permission:acceso-servicios')->group(function () {
+        Route::resource('servicios', ServicioController::class)
+             ->except(['show'])
+             ->parameters(['servicios' => 'servicio']);
+    });
+
+    Route::middleware('permission:acceso-vehiculos')->group(function () {
+        Route::resource('vehiculos', VehiculoController::class)
+             ->except(['show'])
+             ->parameters(['vehiculos' => 'vehiculo']);
+    });
+
+    Route::middleware('permission:acceso-clientes')->group(function () {
+        Route::resource('clientes', ClienteController::class)
+             ->except(['show'])
+             ->parameters(['clientes' => 'cliente']);
+    });
 });
 
-// User toggle (requires auth + permission:editar usuarios)
-Route::middleware(['auth', 'permission:editar usuarios'])
-    ->patch('/users/{user}/toggle', [UserToggleController::class, 'toggle'])
-    ->name('users.toggle');
 
-// Ventas (any authenticated user — no role restriction)
-Route::middleware('auth')->group(function () {
+// Ventas (Protected by 'acceso-ventas')
+Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
     // Ajax route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
     Route::get('/clientes/buscar-por-placa', [ClienteController::class, 'buscarPorPlaca'])
          ->name('clientes.buscar-por-placa');
@@ -118,15 +136,15 @@ Route::middleware('auth')->group(function () {
          ->name('cambio-aceite.ticket');
 });
 
-// Caja (any authenticated user for panel/apertura/cierre/egresos; Administrador for historial/detalle)
-Route::middleware('auth')->prefix('caja')->name('caja.')->group(function () {
+// Caja (Protected by 'acceso-caja' for operations, 'historial-caja' for history)
+Route::middleware(['auth', 'permission:acceso-caja'])->prefix('caja')->name('caja.')->group(function () {
     Route::get('/',         [CajaController::class, 'index'])->name('index');
     Route::post('/abrir',   [CajaController::class, 'abrir'])->name('abrir');
     Route::post('/cerrar',  [CajaController::class, 'cerrar'])->name('cerrar');
     Route::post('/egresos', [CajaController::class, 'registrarEgreso'])->name('egresos.store');
 
-    // Solo Administrador
-    Route::middleware('role:Administrador')->group(function () {
+    // Solo con historial-caja
+    Route::middleware('permission:historial-caja')->group(function () {
         Route::get('/historial', [CajaController::class, 'historial'])->name('historial');
         Route::get('/{caja}',    [CajaController::class, 'detalle'])->name('detalle');
     });

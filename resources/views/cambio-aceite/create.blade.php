@@ -195,13 +195,16 @@
                                 type="checkbox"
                                 name="trabajadores_ids[]"
                                 value="{{ $trabajador->id }}"
-                                class="trabajador-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                data-validate-group="trabajadores"
+                                data-validate-min="1"
+                                class="trabajador-checkbox w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800"
                                 {{ in_array($trabajador->id, old('trabajadores_ids', [])) ? 'checked' : '' }}
                             >
-                            <span class="text-sm text-gray-800">{{ $trabajador->nombre }}</span>
+                            <span class="text-sm text-secondary">{{ $trabajador->nombre }}</span>
                         </label>
                     @endforeach
                 </div>
+                <div id="error-container-trabajadores"></div>
                 <p id="error-trabajadores" class="hidden mt-1 text-xs text-red-600">Debe seleccionar al menos un trabajador.</p>
             </div>
 
@@ -226,8 +229,12 @@
 
             {{-- ── Tabla de detalle ── --}}
             <div class="mb-6 overflow-x-auto">
-                <table id="tabla-detalle" class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table id="tabla-detalle" 
+                       data-validate-table 
+                       data-validate-min-rows="1" 
+                       data-validate-error-id="error-detalle"
+                       class="min-w-full divide-y divide-main">
+                    <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Producto
@@ -246,10 +253,11 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody id="tbody-detalle" class="bg-white divide-y divide-gray-200">
+                    <tbody id="tbody-detalle" class="bg-surface divide-y divide-main">
                         {{-- Rows rendered by JS --}}
                     </tbody>
                 </table>
+                <p id="error-detalle" class="hidden mt-2 text-xs text-red-600 dark:text-red-400"></p>
             </div>
 
             {{-- ── Precio informativo (readonly, no se envía al servidor) ── --}}
@@ -295,24 +303,4 @@
 </div>
 
 @vite('resources/js/cambio-aceite/create.js')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('form-cambio-aceite');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-        const checked = form.querySelectorAll('.trabajador-checkbox:checked');
-        const errMsg  = document.getElementById('error-trabajadores');
-        if (checked.length === 0) { e.preventDefault(); if (errMsg) errMsg.classList.remove('hidden'); }
-        else { if (errMsg) errMsg.classList.add('hidden'); }
-    });
-    form.querySelectorAll('.trabajador-checkbox').forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            const lbl = cb.closest('.trabajador-option');
-            lbl.classList.toggle('border-blue-500', cb.checked);
-            lbl.classList.toggle('bg-blue-50', cb.checked);
-            lbl.classList.toggle('border-gray-300', !cb.checked);
-        });
-    });
-});
-</script>
 @endsection

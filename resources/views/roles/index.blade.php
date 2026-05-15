@@ -56,7 +56,15 @@
                                 {{ $role->name }}
                             </td>
                              <td class="px-6 py-8 text-sm text-secondary">
-                                {{ $role->permissions->pluck('name')->join(', ') ?: '—' }}
+                                <div class="flex flex-wrap gap-1.5 max-w-md">
+                                    @forelse($role->permissions as $permission)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
+                                            {{ str_replace('-', ' ', $permission->name) }}
+                                        </span>
+                                    @empty
+                                        <span class="text-gray-400 italic text-xs">Sin permisos asignados</span>
+                                    @endforelse
+                                </div>
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 <a href="{{ route('roles.edit', $role) }}"

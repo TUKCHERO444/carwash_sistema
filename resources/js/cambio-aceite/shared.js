@@ -33,21 +33,21 @@ export function calcularTotal(items, porcentaje) {
  */
 export function renderTablaHTML(items, onActualizarCantidad, onEliminar) {
     if (!items.length) {
-        return '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No hay productos agregados.</td></tr>';
+        return '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-secondary">No hay productos agregados.</td></tr>';
     }
     return items.map((item, idx) => `
-        <tr>
-            <td class="px-4 py-2 text-sm text-gray-900">${item.nombre}</td>
+        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-4 py-2 text-sm text-primary">${item.nombre}</td>
             <td class="px-4 py-2">
                 <input type="number" min="1" value="${item.cantidad}"
-                    class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                     data-cantidad-idx="${idx}">
             </td>
-            <td class="px-4 py-2 text-sm text-gray-700">S/ ${item.precio.toFixed(2)}</td>
-            <td class="px-4 py-2 text-sm text-gray-700">S/ ${item.total.toFixed(2)}</td>
+            <td class="px-4 py-2 text-sm text-secondary">S/ ${item.precio.toFixed(2)}</td>
+            <td class="px-4 py-2 text-sm text-secondary">S/ ${item.total.toFixed(2)}</td>
             <td class="px-4 py-2">
                 <button type="button" data-eliminar-idx="${idx}"
-                    class="text-red-600 hover:text-red-800 text-xs font-medium">Eliminar</button>
+                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium">Eliminar</button>
             </td>
         </tr>
     `).join('');
@@ -99,7 +99,7 @@ async function _buscarProductos(q, resultadosDiv, onAgregar) {
 function _mostrarResultados(productos, resultadosDiv, onAgregar) {
     if (!productos.length) { _ocultarResultados(resultadosDiv); return; }
     resultadosDiv.innerHTML = productos.map((p, idx) =>
-        `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-producto-idx="${idx}">
+        `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" data-producto-idx="${idx}">
             ${p.nombre} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${p.stock})
         </div>`
     ).join('');
@@ -281,26 +281,26 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
             const radio = opt.querySelector('.metodo-pago-radio');
             const span  = opt.querySelector('span');
             if (radio && radio.checked) {
-                opt.classList.add('border-blue-500', 'bg-blue-50');
-                opt.classList.remove('border-gray-300');
-                if (span) { span.classList.add('text-blue-700'); span.classList.remove('text-gray-700'); }
+                opt.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                opt.classList.remove('border-main');
+                if (span) { span.classList.add('text-blue-700', 'dark:text-blue-400'); span.classList.remove('text-secondary'); }
             } else {
-                opt.classList.remove('border-blue-500', 'bg-blue-50');
-                opt.classList.add('border-gray-300');
-                if (span) { span.classList.remove('text-blue-700'); span.classList.add('text-gray-700'); }
+                opt.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                opt.classList.add('border-main');
+                if (span) { span.classList.remove('text-blue-700', 'dark:text-blue-400'); span.classList.add('text-secondary'); }
             }
         });
 
         const campoPorcentaje = document.getElementById('campo-porcentaje');
         const toggleDescuento = document.getElementById('toggle-descuento');
 
-        if (esMixto) {
+            if (esMixto) {
             if (bloqueMixto) bloqueMixto.classList.remove('hidden');
             if (campoPorcentaje) campoPorcentaje.classList.add('hidden');
             if (toggleDescuento) toggleDescuento.checked = false;
             if (inputTotal) {
                 inputTotal.readOnly = true;
-                inputTotal.classList.add('bg-gray-50');
+                inputTotal.classList.add('bg-slate-50', 'dark:bg-slate-800/50');
                 if (inputAncla) inputTotal.value = parseFloat(inputAncla.value ?? 0).toFixed(2);
             }
         } else {
@@ -309,7 +309,7 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
             const descPorcentajeActivo = toggleDescuento && toggleDescuento.checked;
             if (!descManualActivo && !descPorcentajeActivo && inputTotal) {
                 inputTotal.readOnly = true;
-                inputTotal.classList.add('bg-gray-50');
+                inputTotal.classList.add('bg-slate-50', 'dark:bg-slate-800/50');
             }
         }
     }
@@ -327,13 +327,13 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
             if (this.checked) {
                 if (inputTotal) {
                     inputTotal.readOnly = false;
-                    inputTotal.classList.remove('bg-gray-50');
+                    inputTotal.classList.remove('bg-slate-50', 'dark:bg-slate-800/50');
                     inputTotal.focus();
                 }
             } else {
                 if (inputTotal) {
                     inputTotal.readOnly = true;
-                    inputTotal.classList.add('bg-gray-50');
+                    inputTotal.classList.add('bg-slate-50', 'dark:bg-slate-800/50');
                     if (inputAncla) inputTotal.value = parseFloat(inputAncla.value ?? 0).toFixed(2);
                 }
             }

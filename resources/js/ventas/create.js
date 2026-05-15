@@ -16,6 +16,8 @@ export function calcularTotal(items, porcentaje) {
     return +(subtotal * (1 - pct / 100)).toFixed(2);
 }
 
+import { Validation } from '../utils/validation.js';
+
 /**
  * Renders the HTML for the detail table body.
  * @param {Array<{nombre: string, cantidad: number, precio_unitario: number, subtotal: number}>} items
@@ -23,21 +25,21 @@ export function calcularTotal(items, porcentaje) {
  */
 export function renderTablaHTML(items) {
     if (!items.length) {
-        return '<tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No hay productos agregados.</td></tr>';
+        return '<tr><td colspan="5" class="px-6 py-8 text-center text-sm text-secondary">No hay productos agregados.</td></tr>';
     }
     return items.map((item, idx) => `
-        <tr>
-            <td class="px-4 py-6 text-sm text-gray-900">${item.nombre}</td>
+        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-4 py-6 text-sm text-primary">${item.nombre}</td>
             <td class="px-4 py-6">
                 <input type="number" min="1" value="${item.cantidad}"
-                    class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                     onchange="actualizarCantidad(${idx}, this.value)">
             </td>
-            <td class="px-4 py-6 text-sm text-gray-700">S/ ${item.precio_unitario.toFixed(2)}</td>
-            <td class="px-4 py-6 text-sm text-gray-700">S/ ${item.subtotal.toFixed(2)}</td>
+            <td class="px-4 py-6 text-sm text-secondary">S/ ${item.precio_unitario.toFixed(2)}</td>
+            <td class="px-4 py-6 text-sm text-secondary">S/ ${item.subtotal.toFixed(2)}</td>
             <td class="px-4 py-6">
                 <button type="button" onclick="eliminarItem(${idx})"
-                    class="text-red-600 hover:text-red-800 text-xs font-medium">Eliminar</button>
+                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium">Eliminar</button>
             </td>
         </tr>
     `).join('');
@@ -105,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function mostrarResultados(productos) {
         if (!productos.length) { ocultarResultados(); return; }
         resultadosDiv.innerHTML = productos.map(p =>
-            `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm" onclick='agregarProducto(${JSON.stringify(p)})'>
+            `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" onclick='agregarProducto(${JSON.stringify(p)})'>
                 ${p.nombre} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${p.stock})
             </div>`
         ).join('');
@@ -227,15 +229,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const radio = opt.querySelector('.metodo-pago-radio');
             const span  = opt.querySelector('span');
             if (radio.checked) {
-                opt.classList.add('border-blue-500', 'bg-blue-50');
-                opt.classList.remove('border-gray-300');
-                span.classList.add('text-blue-700');
-                span.classList.remove('text-gray-700');
+                opt.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                opt.classList.remove('border-main');
+                span.classList.add('text-blue-700', 'dark:text-blue-400');
+                span.classList.remove('text-secondary');
             } else {
-                opt.classList.remove('border-blue-500', 'bg-blue-50');
-                opt.classList.add('border-gray-300');
-                span.classList.remove('text-blue-700');
-                span.classList.add('text-gray-700');
+                opt.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                opt.classList.add('border-main');
+                span.classList.remove('text-blue-700', 'dark:text-blue-400');
+                span.classList.add('text-secondary');
             }
         });
 
@@ -293,4 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTabla();
     recalcularTotales();
     actualizarUIMetodoPago();
+
+    // Validación del formulario
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            if (!Validation.validate(form)) {
+                e.preventDefault();
+            }
+        });
+    }
 });

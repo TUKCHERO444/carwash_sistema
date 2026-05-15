@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (UnauthorizedException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'No tienes permisos para realizar esta acción.'
+                ], 403);
+            }
             return redirect()->route('dashboard')
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
         });

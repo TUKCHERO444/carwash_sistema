@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
+use Spatie\Permission\Models\Permission;
+
 class AuthSeeder extends Seeder
 {
     /**
@@ -15,9 +17,23 @@ class AuthSeeder extends Seeder
      */
     public function run(): void
     {
+        // Execute permissions seeder first
+        $this->call(PermissionSeeder::class);
+
         // Create roles if they don't exist (idempotent)
-        Role::firstOrCreate(['name' => 'Administrador', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'Asistente', 'guard_name' => 'web']);
+        $adminRole = Role::firstOrCreate(['name' => 'Administrador', 'guard_name' => 'web']);
+        $vendedorRole = Role::firstOrCreate(['name' => 'Vendedor', 'guard_name' => 'web']);
+
+        // Assign ALL permissions to Administrador
+        $adminRole->syncPermissions(Permission::all());
+
+        // Assign specific permissions to Vendedor
+        $vendedorRole->syncPermissions([
+            'acceso-ventas',
+            'acceso-caja',
+            'acceso-clientes',
+            'acceso-vehiculos'
+        ]);
 
         // Create admin user if it doesn't exist (idempotent)
         $admin = User::firstOrCreate(
@@ -25,6 +41,7 @@ class AuthSeeder extends Seeder
             [
                 'name'     => 'Administrador',
                 'password' => bcrypt('password'),
+                'activo'   => true,
             ]
         );
 

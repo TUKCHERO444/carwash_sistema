@@ -94,6 +94,7 @@
                                 <button type="button"
                                         data-toggle-url="{{ route('users.toggle', $user) }}"
                                         data-user-id="{{ $user->id }}"
+                                        data-user-nombre="{{ $user->name }}"
                                         aria-label="{{ $user->activo ? 'Inactivar' : 'Activar' }} usuario {{ $user->name }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                                                {{ $user->activo

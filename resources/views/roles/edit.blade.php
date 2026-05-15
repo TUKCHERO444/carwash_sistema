@@ -55,28 +55,41 @@
 
             {{-- Permisos --}}
             <div class="mb-6">
-                <fieldset>
-                    <legend class="label-main mb-2">
-                        Permisos
-                    </legend>
-                    @error('permissions')
-                        <p class="mb-2 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                    <div class="space-y-2">
-                        @foreach($permissions as $permission)
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="permissions[]"
-                                    value="{{ $permission->name }}"
-                                    {{ in_array($permission->name, old('permissions', $role->permissions->pluck('name')->toArray())) ? 'checked' : '' }}
-                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                >
-                                <span class="text-sm text-secondary">{{ $permission->name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
+                <label class="label-main mb-3 block">
+                    Permisos de Acceso
+                </label>
+                @error('permissions')
+                    <p class="mb-3 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach($permissions as $group => $groupPermissions)
+                        <div class="p-4 rounded-lg border border-main bg-gray-50/50 dark:bg-slate-800/50">
+                            <h3 class="text-sm font-semibold text-gray-700 dark:text-text-primary-dark mb-3 pb-2 border-b border-main flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                {{ $group }}
+                            </h3>
+                            <div class="space-y-2">
+                                @foreach($groupPermissions as $permission)
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            name="permissions[]"
+                                            value="{{ $permission->name }}"
+                                            {{ in_array($permission->name, old('permissions', $role->permissions->pluck('name')->toArray())) ? 'checked' : '' }}
+                                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 transition-colors"
+                                        >
+                                        <span class="text-sm text-secondary group-hover:text-primary transition-colors">
+                                            {{ str_replace('-', ' ', ucfirst($permission->name)) }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
 
             {{-- Submit --}}

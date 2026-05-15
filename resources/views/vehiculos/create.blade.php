@@ -43,6 +43,7 @@
                     name="nombre"
                     value="{{ old('nombre') }}"
                     autocomplete="off"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="Nombre del vehículo"
@@ -78,6 +79,7 @@
                     value="{{ old('precio') }}"
                     step="0.01"
                     min="0.01"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('precio') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0.00"
@@ -109,4 +111,6 @@
     </div>
 
 </div>
+
+@vite('resources/js/vehiculos/create.js')
 @endsection

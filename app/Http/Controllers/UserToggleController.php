@@ -16,9 +16,17 @@ class UserToggleController extends Controller
      */
     public function toggle(User $user): JsonResponse
     {
+        // 1. Evitar que el usuario se inactive a sí mismo
         if ($user->id === auth()->id()) {
             return response()->json([
-                'message' => 'No puedes modificar tu propio estado de activación.',
+                'message' => 'No puedes modificar tu propio estado de activación por seguridad.',
+            ], 403);
+        }
+
+        // 2. Solo administradores pueden inactivar a otros administradores
+        if ($user->hasRole('Administrador') && !auth()->user()->hasRole('Administrador')) {
+            return response()->json([
+                'message' => 'No tienes permisos suficientes para cambiar el estado de un Administrador.',
             ], 403);
         }
 
@@ -30,7 +38,7 @@ class UserToggleController extends Controller
             : 'Usuario inactivado correctamente.';
 
         return response()->json([
-            'activo'  => (int) $user->activo,
+            'activo'  => (bool) $user->activo,
             'message' => $message,
         ], 200);
     }

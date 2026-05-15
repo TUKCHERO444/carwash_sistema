@@ -25,7 +25,15 @@ class RoleController extends Controller
      */
     public function create(): View
     {
-        $permissions = Permission::all();
+        $permissions = Permission::all()->groupBy(function($perm) {
+            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) return 'Seguridad';
+            if (str_contains($perm->name, 'trabajadores')) return 'Personal';
+            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) return 'Inventario y Servicios';
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes')) return 'Clientes y Vehículos';
+            if (str_contains($perm->name, 'ventas')) return 'Ventas y Operaciones';
+            if (str_contains($perm->name, 'caja')) return 'Caja y Reportes';
+            return 'Otros';
+        });
 
         return view('roles.create', compact('permissions'));
     }
@@ -57,7 +65,15 @@ class RoleController extends Controller
      */
     public function edit(Role $role): View
     {
-        $permissions = Permission::all();
+        $permissions = Permission::all()->groupBy(function($perm) {
+            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) return 'Seguridad';
+            if (str_contains($perm->name, 'trabajadores')) return 'Personal';
+            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) return 'Inventario y Servicios';
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes')) return 'Clientes y Vehículos';
+            if (str_contains($perm->name, 'ventas')) return 'Ventas y Operaciones';
+            if (str_contains($perm->name, 'caja')) return 'Caja y Reportes';
+            return 'Otros';
+        });
 
         return view('roles.edit', compact('role', 'permissions'));
     }

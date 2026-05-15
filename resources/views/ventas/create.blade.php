@@ -60,22 +60,26 @@
 
             {{-- ── Detail table ── --}}
             <div class="mb-6 overflow-x-auto">
-                <table id="tabla-detalle" class="min-w-full divide-y divide-main">
+                <table id="tabla-detalle" 
+                       data-validate-table 
+                       data-validate-min-rows="1" 
+                       data-validate-error-id="error-detalle"
+                       class="min-w-full divide-y divide-main">
                     <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
-                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                                 Producto
                             </th>
-                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                                 Cantidad
                             </th>
-                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                                 Precio Unit.
                             </th>
-                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                                 Subtotal
                             </th>
-                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                                 Eliminar
                             </th>
                         </tr>
@@ -84,6 +88,7 @@
                         {{-- Rows rendered by JS --}}
                     </tbody>
                 </table>
+                <p id="error-detalle" class="hidden mt-2 text-xs text-red-600 dark:text-red-400"></p>
             </div>
 
             {{-- ── Totals section ── --}}

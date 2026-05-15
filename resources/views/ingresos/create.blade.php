@@ -204,6 +204,8 @@
                                 type="checkbox"
                                 name="trabajadores_ids[]"
                                 value="{{ $trabajador->id }}"
+                                data-validate-group="trabajadores"
+                                data-validate-min="1"
                                 class="trabajador-checkbox w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800"
                                 {{ in_array($trabajador->id, old('trabajadores_ids', [])) ? 'checked' : '' }}
                             >
@@ -211,6 +213,7 @@
                         </label>
                     @endforeach
                 </div>
+                <div id="error-container-trabajadores"></div>
                 <p id="error-trabajadores" class="hidden mt-1 text-xs text-red-600">Debe seleccionar al menos un trabajador.</p>
             </div>
 
@@ -235,7 +238,11 @@
 
             {{-- ── Tabla de servicios ── --}}
             <div class="mb-6 overflow-x-auto">
-                <table class="min-w-full divide-y divide-main">
+                <table id="tabla-servicios" 
+                       data-validate-table 
+                       data-validate-min-rows="1" 
+                       data-validate-error-id="error-servicios"
+                       class="min-w-full divide-y divide-main">
                     <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servicio</th>
@@ -247,6 +254,7 @@
                         {{-- Rows rendered by JS --}}
                     </tbody>
                 </table>
+                <p id="error-servicios" class="hidden mt-2 text-xs text-red-600 dark:text-red-400"></p>
             </div>
 
             {{-- ── Precio estimado (solo indicador visual) ── --}}
@@ -289,33 +297,4 @@
 </div>
 
 @vite('resources/js/ingresos/create.js')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('form-ingreso');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-        const checked = form.querySelectorAll('.trabajador-checkbox:checked');
-        const errMsg  = document.getElementById('error-trabajadores');
-        if (checked.length === 0) {
-            e.preventDefault();
-            if (errMsg) errMsg.classList.remove('hidden');
-        } else {
-            if (errMsg) errMsg.classList.add('hidden');
-        }
-    });
-    // Toggle highlight on label when checkbox changes
-    form.querySelectorAll('.trabajador-checkbox').forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            const label = cb.closest('.trabajador-option');
-            if (cb.checked) {
-                label.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-                label.classList.remove('border-main');
-            } else {
-                label.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-                label.classList.add('border-main');
-            }
-        });
-    });
-});
-</script>
 @endsection

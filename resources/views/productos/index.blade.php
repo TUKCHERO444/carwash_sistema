@@ -15,26 +15,66 @@
         </div>
     @endif
 
-    {{-- Header --}}
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark">Productos</h1>
-        <a href="{{ route('productos.create') }}"
-           aria-label="Crear producto"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Crear producto
-        </a>
+    {{-- Header: título + buscador + botón nuevo --}}
+    <div class="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark shrink-0">Productos</h1>
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
+            {{-- Buscador dinámico --}}
+            <div class="relative w-full sm:w-64 md:w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 dark:text-text-secondary-dark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                    </svg>
+                </span>
+                <input
+                    type="search"
+                    id="buscador-productos"
+                    placeholder="Buscar por nombre…"
+                    autocomplete="off"
+                    aria-label="Buscar productos por nombre"
+                    class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-border-dark
+                           bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark
+                           placeholder-gray-400 dark:placeholder-text-secondary-dark
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                           transition-colors"
+                >
+            </div>
+
+            {{-- Botón nuevo producto --}}
+            <a href="{{ route('productos.create') }}"
+               aria-label="Crear producto"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Crear producto
+            </a>
+        </div>
     </div>
 
-    {{-- Table or empty state --}}
+    {{-- Indicador de resultados de búsqueda --}}
+    <p id="productos-search-info" class="hidden text-sm text-secondary mb-3"></p>
+
+    {{-- Estado vacío sin búsqueda --}}
     @if($productos->isEmpty())
-        <div class="text-center py-12 text-gray-500 dark:text-text-secondary-dark text-sm">
+        <div id="productos-empty-state" class="text-center py-12 text-gray-500 dark:text-text-secondary-dark text-sm">
             No hay productos registrados.
         </div>
     @else
-        <div class="bg-surface rounded-lg border border-main overflow-x-auto transition-colors duration-300">
+        {{-- Estado vacío de búsqueda (oculto por defecto) --}}
+        <div id="productos-no-results"
+             class="hidden text-center py-12 text-gray-500 dark:text-text-secondary-dark text-sm">
+            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            No se encontraron productos con ese nombre.
+        </div>
+
+        <div id="productos-table-wrapper"
+             class="bg-surface rounded-lg border border-main overflow-x-auto transition-colors duration-300">
             <table class="min-w-full divide-y divide-main">
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
@@ -64,7 +104,7 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-surface divide-y divide-main">
+                <tbody id="productos-tbody" class="bg-surface divide-y divide-main">
                     @foreach($productos as $producto)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                             {{-- Foto / miniatura --}}
@@ -180,12 +220,13 @@
         </div>
 
         {{-- Pagination --}}
-        <div class="mt-4">
+        <div id="productos-pagination" class="mt-4">
             {{ $productos->links() }}
         </div>
     @endif
 
 </div>
+
 
 @vite('resources/js/productos/index.js')
 

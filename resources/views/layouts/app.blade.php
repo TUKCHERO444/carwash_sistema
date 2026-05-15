@@ -93,6 +93,7 @@
             </a>
 
             {{-- Caja --}}
+            @can('acceso-caja')
             <a href="{{ route('caja.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                       {{ $cajaActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
@@ -102,15 +103,17 @@
                 </svg>
                 Caja
             </a>
+            @endcan
 
-            {{-- Gestión de Ventas — available to all authenticated users --}}
+            {{-- Gestión de Ventas --}}
+            @can('acceso-ventas')
             <div data-dropdown="gestion-ventas">
                 <button data-dropdown-toggle="gestion-ventas"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                                {{ $gestionVentasActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                               d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                     <span class="flex-1 text-left">Gestión de Ventas</span>
                     <svg data-chevron
@@ -138,8 +141,9 @@
                     </a>
                 </div>
             </div>
+            @endcan
 
-            @if(auth()->user()?->hasRole('Administrador'))
+            @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores'])
             <div data-dropdown="user-management">
                 <button data-dropdown-toggle="user-management"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -157,24 +161,32 @@
                 </button>
                 <div data-dropdown-menu="user-management"
                      class="{{ $userManagementActive ? '' : 'hidden' }} ml-4 mt-1 space-y-1">
+                    @can('acceso-usuarios')
                     <a href="{{ route('users.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('users.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Usuarios
                     </a>
+                    @endcan
+                    @can('acceso-roles')
                     <a href="{{ route('roles.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('roles.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Roles
                     </a>
+                    @endcan
+                    @can('acceso-trabajadores')
                      <a href="{{ route('trabajadores.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('trabajadores.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Trabajadores
                     </a>
+                    @endcan
                 </div>
             </div>
+            @endcanany
 
+            @can('acceso-inventario')
             <div data-dropdown="product-management">
                 <button data-dropdown-toggle="product-management"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -204,7 +216,9 @@
                     </a>
                 </div>
             </div>
+            @endcan
 
+            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes'])
             <div data-dropdown="gestion-administrativa">
                 <button data-dropdown-toggle="gestion-administrativa"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -222,24 +236,30 @@
                 </button>
                 <div data-dropdown-menu="gestion-administrativa"
                      class="{{ $gestionAdministrativaActive ? '' : 'hidden' }} ml-4 mt-1 space-y-1">
+                    @can('acceso-vehiculos')
                     <a href="{{ route('vehiculos.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('vehiculos.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Vehículos
                     </a>
+                    @endcan
+                    @can('acceso-servicios')
                     <a href="{{ route('servicios.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('servicios.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Servicios
                     </a>
+                    @endcan
+                    @can('acceso-clientes')
                     <a href="{{ route('clientes.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('clientes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Clientes
                     </a>
+                    @endcan
                 </div>
             </div>
-            @endif
+            @endcanany
         </nav>
 
         {{-- Logout button at the bottom of the sidebar --}}
@@ -275,8 +295,9 @@
             </svg>
             Dashboard
         </a>
-
+ 
         {{-- Caja --}}
+        @can('acceso-caja')
         <a href="{{ route('caja.index') }}"
            class="flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
                   {{ $cajaActive ? 'text-blue-400' : 'text-gray-400 hover:text-white' }}">
@@ -286,8 +307,10 @@
             </svg>
             Caja
         </a>
+        @endcan
 
-        {{-- Gestión de Ventas — available to all authenticated users --}}
+        {{-- Gestión de Ventas --}}
+        @can('acceso-ventas')
         <div data-dropdown="gestion-ventas-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-ventas-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -324,8 +347,9 @@
                 </a>
             </div>
         </div>
+        @endcan
 
-        @if(auth()->user()?->hasRole('Administrador'))
+        @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores'])
         <div data-dropdown="user-management-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="user-management-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -345,24 +369,32 @@
                  {{ $userManagementActive ? 'data-persistent' : '' }}
                  class="absolute bottom-[77px] left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl min-w-max
                         {{ $userManagementActive ? '' : 'hidden' }}">
+                @can('acceso-usuarios')
                 <a href="{{ route('users.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('users.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Usuarios
                 </a>
+                @endcan
+                @can('acceso-roles')
                 <a href="{{ route('roles.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('roles.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Roles
                 </a>
+                @endcan
+                @can('acceso-trabajadores')
                 <a href="{{ route('trabajadores.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('trabajadores.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Trabajadores
                 </a>
+                @endcan
             </div>
         </div>
+        @endcanany
 
+        @can('acceso-inventario')
         <div data-dropdown="product-management-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="product-management-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -394,7 +426,9 @@
                 </a>
             </div>
         </div>
+        @endcan
 
+        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes'])
         <div data-dropdown="gestion-administrativa-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-administrativa-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -414,24 +448,30 @@
                  {{ $gestionAdministrativaActive ? 'data-persistent' : '' }}
                  class="absolute bottom-[77px] left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl min-w-max
                         {{ $gestionAdministrativaActive ? '' : 'hidden' }}">
+                @can('acceso-vehiculos')
                 <a href="{{ route('vehiculos.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('vehiculos.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Vehículos
                 </a>
+                @endcan
+                @can('acceso-servicios')
                 <a href="{{ route('servicios.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('servicios.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Servicios
                 </a>
+                @endcan
+                @can('acceso-clientes')
                 <a href="{{ route('clientes.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('clientes.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Clientes
                 </a>
+                @endcan
             </div>
         </div>
-        @endif
+        @endcanany
     </nav>
 
 </body>

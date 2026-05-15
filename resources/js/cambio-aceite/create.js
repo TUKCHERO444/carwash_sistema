@@ -13,6 +13,7 @@ import {
     initFotoPreview,
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
+import { Validation } from '../utils/validation.js';
 
 // ── Estado local ──
 let items = []; // [{producto_id, nombre, cantidad, precio, total}]
@@ -101,4 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizar estado inicial
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+
+    // Validación del formulario
+    const form = document.getElementById('form-cambio-aceite');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            if (!Validation.validate(form)) {
+                e.preventDefault();
+            }
+        });
+    }
 });
