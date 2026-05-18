@@ -243,11 +243,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (esMixto) {
             bloqueMixto.classList.remove('hidden');
-            campoPorcentaje.classList.add('hidden');
-            toggleDesc.checked = false;
+            // Solo ocultar el campo de porcentaje si el toggle está desactivado
+            if (!toggleDesc.checked) campoPorcentaje.classList.add('hidden');
             inputTotal.readOnly = true;
             inputTotal.classList.add('bg-gray-50');
-            if (inputAncla) inputTotal.value = parseFloat(inputAncla.value || 0).toFixed(2);
+            // Solo restaurar al ancla si no hay ningún descuento activo;
+            // si hay descuento aplicado, preservar el total ya calculado
+            const hayDescuento = toggleDesc.checked || toggleDescManual.checked;
+            if (!hayDescuento && inputAncla) {
+                inputTotal.value = parseFloat(inputAncla.value || 0).toFixed(2);
+            }
             validarMixto();
         } else {
             bloqueMixto.classList.add('hidden');

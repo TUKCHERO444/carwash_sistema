@@ -245,12 +245,16 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
 
         if (esMixto) {
             if (bloqueMixto) bloqueMixto.classList.remove('hidden');
-            if (campoPorcentaje) campoPorcentaje.classList.add('hidden');
-            if (toggleDescuento) toggleDescuento.checked = false;
+            // Solo ocultar campo de porcentaje si el toggle de descuento % no está activo
+            if (campoPorcentaje && !toggleDescuento?.checked) campoPorcentaje.classList.add('hidden');
             if (inputTotal) {
                 inputTotal.readOnly = true;
                 inputTotal.classList.add('bg-slate-50', 'dark:bg-slate-800/50');
-                if (inputAncla) inputTotal.value = parseFloat(inputAncla.value ?? 0).toFixed(2);
+                // Solo restaurar al ancla (precio bruto) si no hay ningún descuento activo
+                const hayDescuento = toggleDescuento?.checked || toggleDescManual?.checked;
+                if (!hayDescuento && inputAncla) {
+                    inputTotal.value = parseFloat(inputAncla.value ?? 0).toFixed(2);
+                }
             }
         } else {
             if (bloqueMixto) bloqueMixto.classList.add('hidden');
