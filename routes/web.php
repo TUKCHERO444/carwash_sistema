@@ -15,6 +15,18 @@ use App\Http\Controllers\CambioAceiteController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CategoriaController;
 use Illuminate\Support\Facades\Route;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+
+
+
+Route::get('/test-cloudinary', function () {
+    $result = Cloudinary::uploadApi()->upload(
+        public_path('test.jpg')
+    );
+
+    return $result['secure_url'];
+});
+
 
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {

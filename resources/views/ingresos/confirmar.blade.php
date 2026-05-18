@@ -117,7 +117,7 @@
                 @if($ingreso->foto)
                     <div class="mb-3">
                         <p class="text-xs text-text-secondary-dark mb-1">Foto actual:</p>
-                        <img id="foto-current" src="{{ Storage::url($ingreso->foto) }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
+                        <img id="foto-current" src="{{ $ingreso->foto_url }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
                     </div>
                 @endif
                 <input type="file" id="foto" name="foto" accept="image/*" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('foto') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">

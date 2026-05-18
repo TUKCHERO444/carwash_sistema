@@ -177,12 +177,12 @@
                 @if($ingreso->foto)
                     <div class="mb-3">
                         <p class="text-xs text-text-secondary-dark mb-1">Foto actual:</p>
-                        <img
-                            id="foto-current"
-                            src="{{ Storage::url($ingreso->foto) }}"
-                            alt="Foto actual del vehículo"
-                            class="rounded-lg max-h-48 object-cover border border-main"
-                        >
+                            <img
+                                id="foto-current"
+                                src="{{ $ingreso->foto_url }}"
+                                alt="Foto actual del vehículo"
+                                class="rounded-lg max-h-48 object-cover border border-main"
+                            >
                         <p class="mt-1 text-xs text-text-secondary-dark">Sube una nueva imagen para reemplazarla.</p>
                     </div>
                 @endif

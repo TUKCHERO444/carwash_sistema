@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class IngresoController extends Controller
 {
@@ -108,11 +109,19 @@ class IngresoController extends Controller
 
                 $foto = $ingreso->foto;
                 if ($request->hasFile('foto')) {
-                    $nuevaFoto = Storage::disk('public')->put('ingresos', $request->file('foto'));
+                    // Eliminar imagen anterior
                     if ($ingreso->foto) {
-                        Storage::disk('public')->delete($ingreso->foto);
+                        if (str_starts_with($ingreso->foto, 'http')) {
+                            $parts = explode('/', $ingreso->foto);
+                            $filename = end($parts);
+                            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                        } elseif (Storage::disk('public')->exists($ingreso->foto)) {
+                            Storage::disk('public')->delete($ingreso->foto);
+                        }
                     }
-                    $foto = $nuevaFoto;
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 $ingreso->update([
@@ -198,7 +207,8 @@ class IngresoController extends Controller
 
                 $foto = null;
                 if ($request->hasFile('foto')) {
-                    $foto = Storage::disk('public')->put('ingresos', $request->file('foto'));
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 // Calculate precio server-side: vehiculo price + sum of selected servicios prices
@@ -299,12 +309,19 @@ class IngresoController extends Controller
 
                 $foto = $ingreso->foto;
                 if ($request->hasFile('foto')) {
-                    // Store new photo first, then delete old one
-                    $nuevaFoto = Storage::disk('public')->put('ingresos', $request->file('foto'));
+                    // Eliminar imagen anterior
                     if ($ingreso->foto) {
-                        Storage::disk('public')->delete($ingreso->foto);
+                        if (str_starts_with($ingreso->foto, 'http')) {
+                            $parts = explode('/', $ingreso->foto);
+                            $filename = end($parts);
+                            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                        } elseif (Storage::disk('public')->exists($ingreso->foto)) {
+                            Storage::disk('public')->delete($ingreso->foto);
+                        }
                     }
-                    $foto = $nuevaFoto;
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 $ingreso->update([
@@ -341,7 +358,14 @@ class IngresoController extends Controller
     {
         try {
             if ($ingreso->foto) {
-                Storage::disk('public')->delete($ingreso->foto);
+                if (str_starts_with($ingreso->foto, 'http')) {
+                    $parts = explode('/', $ingreso->foto);
+                    $filename = end($parts);
+                    $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                    try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                } elseif (Storage::disk('public')->exists($ingreso->foto)) {
+                    Storage::disk('public')->delete($ingreso->foto);
+                }
             }
             $ingreso->delete();
 

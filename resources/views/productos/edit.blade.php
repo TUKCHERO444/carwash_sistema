@@ -169,7 +169,7 @@
                     @if($producto->foto)
                         <div class="flex flex-col items-start gap-1">
                             <img
-                                src="{{ asset('storage/' . $producto->foto) }}"
+                                src="{{ $producto->foto_url }}"
                                 alt="Imagen actual del producto"
                                 class="w-32 h-32 object-cover rounded-lg border border-main"
                             >

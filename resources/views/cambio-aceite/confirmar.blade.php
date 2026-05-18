@@ -139,7 +139,7 @@
                 @if($cambioAceite->foto)
                     <div class="mb-3">
                         <p class="text-xs text-text-secondary-dark mb-1">Foto actual:</p>
-                        <img id="foto-current" src="{{ Storage::url($cambioAceite->foto) }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
+                        <img id="foto-current" src="{{ $cambioAceite->foto_url }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
                     </div>
                 @endif
                 <input

@@ -167,7 +167,7 @@
                 @if($cambioAceite->foto)
                     <div class="mb-2">
                         <img id="foto-current"
-                             src="{{ asset('storage/' . $cambioAceite->foto) }}"
+                             src="{{ $cambioAceite->foto_url }}"
                              alt="Foto actual"
                              class="rounded-lg max-h-48 object-cover border border-main">
                         <p class="mt-1 text-xs text-text-secondary-dark">Foto actual. Sube una nueva para reemplazarla.</p>

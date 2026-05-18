@@ -110,7 +110,8 @@ export function initToggleStatus() {
 function buildRow(p) {
     const fotoHtml = p.foto
         ? `<img src="${p.foto}" alt="Foto de ${escHtml(p.nombre)}"
-               class="w-10 h-10 object-cover rounded border border-gray-200 dark:border-border-dark">`
+               class="w-10 h-10 object-cover rounded border border-gray-200 dark:border-border-dark cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">`
+
         : `<div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"

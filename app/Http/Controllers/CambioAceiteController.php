@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class CambioAceiteController extends Controller
 {
@@ -83,7 +84,8 @@ class CambioAceiteController extends Controller
 
                 $foto = null;
                 if ($request->hasFile('foto')) {
-                    $foto = Storage::disk('public')->put('cambio-aceites', $request->file('foto'));
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 // Calcular precio en servidor (no confiar en el cliente)
@@ -209,11 +211,19 @@ class CambioAceiteController extends Controller
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
-                    $nuevaFoto = Storage::disk('public')->put('cambio-aceites', $request->file('foto'));
+                    // Eliminar imagen anterior
                     if ($cambioAceite->foto) {
-                        Storage::disk('public')->delete($cambioAceite->foto);
+                        if (str_starts_with($cambioAceite->foto, 'http')) {
+                            $parts = explode('/', $cambioAceite->foto);
+                            $filename = end($parts);
+                            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                        } elseif (Storage::disk('public')->exists($cambioAceite->foto)) {
+                            Storage::disk('public')->delete($cambioAceite->foto);
+                        }
                     }
-                    $foto = $nuevaFoto;
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 $cambioAceite->update([
@@ -275,6 +285,17 @@ class CambioAceiteController extends Controller
     public function destroy(CambioAceite $cambioAceite): RedirectResponse
     {
         try {
+            if ($cambioAceite->foto) {
+                if (str_starts_with($cambioAceite->foto, 'http')) {
+                    $parts = explode('/', $cambioAceite->foto);
+                    $filename = end($parts);
+                    $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                    try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                } elseif (Storage::disk('public')->exists($cambioAceite->foto)) {
+                    Storage::disk('public')->delete($cambioAceite->foto);
+                }
+            }
+
             DB::transaction(function () use ($cambioAceite) {
                 // Cargar productos con pivot para restaurar stock
                 $cambioAceite->load('productos');
@@ -284,9 +305,6 @@ class CambioAceiteController extends Controller
                             ->increment('stock', $producto->pivot->cantidad);
                 }
 
-                if ($cambioAceite->foto) {
-                    Storage::disk('public')->delete($cambioAceite->foto);
-                }
                 $cambioAceite->delete();
             });
 
@@ -411,11 +429,19 @@ class CambioAceiteController extends Controller
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
-                    $nuevaFoto = Storage::disk('public')->put('cambio-aceites', $request->file('foto'));
+                    // Eliminar imagen anterior
                     if ($cambioAceite->foto) {
-                        Storage::disk('public')->delete($cambioAceite->foto);
+                        if (str_starts_with($cambioAceite->foto, 'http')) {
+                            $parts = explode('/', $cambioAceite->foto);
+                            $filename = end($parts);
+                            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                        } elseif (Storage::disk('public')->exists($cambioAceite->foto)) {
+                            Storage::disk('public')->delete($cambioAceite->foto);
+                        }
                     }
-                    $foto = $nuevaFoto;
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 // Restaurar stock de productos anteriores
@@ -503,11 +529,19 @@ class CambioAceiteController extends Controller
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
-                    $nuevaFoto = Storage::disk('public')->put('cambio-aceites', $request->file('foto'));
+                    // Eliminar imagen anterior
                     if ($cambioAceite->foto) {
-                        Storage::disk('public')->delete($cambioAceite->foto);
+                        if (str_starts_with($cambioAceite->foto, 'http')) {
+                            $parts = explode('/', $cambioAceite->foto);
+                            $filename = end($parts);
+                            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                        } elseif (Storage::disk('public')->exists($cambioAceite->foto)) {
+                            Storage::disk('public')->delete($cambioAceite->foto);
+                        }
                     }
-                    $foto = $nuevaFoto;
+                    $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+                    $foto = $result['secure_url'];
                 }
 
                 // Restaurar stock de productos anteriores

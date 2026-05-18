@@ -474,5 +474,38 @@
         @endcanany
     </nav>
 
+    {{-- Global Image Viewer Modal --}}
+    <div id="image-viewer-modal" 
+         role="dialog" 
+         aria-modal="true" 
+         class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        {{-- Fixed size container --}}
+        <div class="relative bg-surface dark:bg-slate-900 rounded-2xl border border-main shadow-2xl overflow-hidden w-[95vw] h-[95vw] max-w-[500px] max-h-[500px] md:w-[500px] md:h-[500px] flex flex-col scale-95 transition-transform duration-300">
+
+
+            {{-- Header --}}
+            <div class="flex items-center justify-between p-4 border-b border-main bg-gray-50/50 dark:bg-slate-800/50">
+                <h3 class="text-sm font-semibold text-primary">Vista previa de imagen</h3>
+                <button id="close-image-viewer" 
+                        class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-secondary transition-colors"
+                        aria-label="Cerrar vista previa">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {{-- Image Container --}}
+            <div class="flex-1 flex items-center justify-center p-2 bg-gray-100 dark:bg-slate-950/50">
+                <img id="viewer-image" 
+                     src="" 
+                     alt="Vista previa" 
+                     class="max-w-full max-h-full object-contain rounded-lg">
+            </div>
+        </div>
+        {{-- Click outside to close area --}}
+        <div class="absolute inset-0 -z-10" id="image-viewer-overlay"></div>
+    </div>
+
 </body>
 </html>
+

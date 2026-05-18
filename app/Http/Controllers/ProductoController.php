@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProductoController extends Controller
 {
@@ -49,7 +50,7 @@ class ProductoController extends Controller
                 'precio_venta'  => number_format($p->precio_venta, 2),
                 'stock'         => $p->stock,
                 'activo'        => (bool) $p->activo,
-                'foto'          => $p->foto ? asset('storage/' . $p->foto) : null,
+                'foto'          => $p->foto_url,
                 'edit_url'      => route('productos.edit', $p),
                 'toggle_url'    => route('productos.toggleStatus', $p),
                 'stock_url'     => route('productos.updateStock', $p),
@@ -83,12 +84,13 @@ class ProductoController extends Controller
             'categoria_id'  => ['nullable', 'integer', 'exists:categorias,id'],
         ]);
 
-        $fotoPath = null;
+        $fotoUrl = null;
         if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('images/productos', 'public');
+            $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+            $fotoUrl = $result['secure_url'];
         }
-
-        DB::transaction(function () use ($validated, $fotoPath, $request) {
+    
+        DB::transaction(function () use ($validated, $fotoUrl, $request) {
             Producto::create([
                 'nombre'        => $validated['nombre'],
                 'precio_compra' => $validated['precio_compra'],
@@ -96,7 +98,7 @@ class ProductoController extends Controller
                 'stock'         => $validated['stock'],
                 'inventario'    => $validated['inventario'],
                 'activo'        => $request->boolean('activo', true),
-                'foto'          => $fotoPath,
+                'foto'          => $fotoUrl,
                 'categoria_id'  => $validated['categoria_id'] ?? null,
             ]);
 
@@ -144,11 +146,25 @@ class ProductoController extends Controller
         ];
 
         if ($request->hasFile('foto')) {
-            // Eliminar imagen anterior si existe
-            if ($producto->foto && Storage::disk('public')->exists($producto->foto)) {
-                Storage::disk('public')->delete($producto->foto);
+            // Eliminar imagen anterior
+            if ($producto->foto) {
+                if (str_starts_with($producto->foto, 'http')) {
+                    // Extraer public_id de la URL de Cloudinary
+                    $parts = explode('/', $producto->foto);
+                    $filename = end($parts);
+                    $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                    try {
+                        Cloudinary::uploadApi()->destroy($publicId);
+                    } catch (\Exception $e) {
+                        // Opcional: loguear error si no se pudo borrar de Cloudinary
+                    }
+                } elseif (Storage::disk('public')->exists($producto->foto)) {
+                    Storage::disk('public')->delete($producto->foto);
+                }
             }
-            $data['foto'] = $request->file('foto')->store('images/productos', 'public');
+            
+            $result = Cloudinary::uploadApi()->upload($request->file('foto')->getRealPath());
+            $data['foto'] = $result['secure_url'];
         }
         // Si no hay imagen nueva, no se incluye 'foto' en $data → se conserva la ruta anterior
 
@@ -229,9 +245,20 @@ class ProductoController extends Controller
      */
     public function destroy(Producto $producto): RedirectResponse
     {
-        // Delete image outside the transaction — filesystem ops cannot be rolled back
-        if ($producto->foto && Storage::disk('public')->exists($producto->foto)) {
-            Storage::disk('public')->delete($producto->foto);
+        // Delete image outside the transaction
+        if ($producto->foto) {
+            if (str_starts_with($producto->foto, 'http')) {
+                $parts = explode('/', $producto->foto);
+                $filename = end($parts);
+                $publicId = pathinfo($filename, PATHINFO_FILENAME);
+                try {
+                    Cloudinary::uploadApi()->destroy($publicId);
+                } catch (\Exception $e) {
+                    // Silently fail if not found or error
+                }
+            } elseif (Storage::disk('public')->exists($producto->foto)) {
+                Storage::disk('public')->delete($producto->foto);
+            }
         }
 
         DB::transaction(function () use ($producto) {

@@ -7,8 +7,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Caja;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Ingreso extends Model
 {
+    use HasFactory;
+
+    /**
+     * Accesor para obtener la URL de la foto.
+     */
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (!$this->foto) {
+            return null;
+        }
+
+        if (str_starts_with($this->foto, 'http')) {
+            return $this->foto;
+        }
+
+        return asset('storage/' . $this->foto);
+    }
+
     protected $fillable = [
         'cliente_id',
         'vehiculo_id',

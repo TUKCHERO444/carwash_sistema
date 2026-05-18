@@ -64,9 +64,10 @@
                             {{-- Foto --}}
                             <td class="px-4 py-6 whitespace-nowrap">
                                 @if($cambioAceite->foto)
-                                    <img src="{{ asset('storage/' . $cambioAceite->foto) }}"
+                                    <img src="{{ $cambioAceite->foto_url }}"
                                          alt="Foto del cambio"
-                                         class="w-10 h-10 object-cover rounded border border-gray-200">
+                                         class="w-10 h-10 object-cover rounded border border-gray-200 cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">
+
                                 @else
                                     <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-gray-400 dark:text-text-secondary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">

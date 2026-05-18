@@ -1,5 +1,7 @@
 import './bootstrap';
 import './stock-modal';
+import './image-viewer';
+
 
 // Toggle para dropdowns y dropups de navegación
 document.addEventListener('DOMContentLoaded', () => {

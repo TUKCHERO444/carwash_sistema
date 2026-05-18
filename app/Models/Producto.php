@@ -5,9 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Producto extends Model
 {
+    use HasFactory;
+
+    /**
+     * Accesor para obtener la URL de la foto.
+     * Maneja tanto URLs absolutas (Cloudinary) como rutas locales.
+     */
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (!$this->foto) {
+            return null;
+        }
+
+        if (str_starts_with($this->foto, 'http')) {
+            return $this->foto;
+        }
+
+        return asset('storage/' . $this->foto);
+    }
+
     protected $fillable = [
         'nombre',
         'precio_compra',

@@ -67,7 +67,7 @@
             <div class="mt-4 pt-4 border-t border-main">
                 <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider mb-2">Foto del vehículo</p>
                 <img
-                    src="{{ Storage::url($ingreso->foto) }}"
+                    src="{{ $ingreso->foto_url }}"
                     alt="Foto del vehículo"
                     class="rounded-lg max-h-64 object-cover border border-main"
                 >

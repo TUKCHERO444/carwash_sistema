@@ -110,9 +110,10 @@
                             {{-- Foto / miniatura --}}
                             <td class="px-4 py-6 whitespace-nowrap">
                                 @if($producto->foto)
-                                    <img src="{{ asset('storage/' . $producto->foto) }}"
+                                    <img src="{{ $producto->foto_url }}"
                                          alt="Foto de {{ $producto->nombre }}"
-                                         class="w-10 h-10 object-cover rounded border border-gray-200 dark:border-border-dark">
+                                         class="w-10 h-10 object-cover rounded border border-gray-200 dark:border-border-dark cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">
+
                                 @else
                                     <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
                                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
