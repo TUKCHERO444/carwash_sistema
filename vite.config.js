@@ -22,6 +22,12 @@ export default defineConfig({
                 'resources/js/productos/index.js',
                 'resources/js/productos/create.js',
                 'resources/js/productos/edit.js',
+                // Vehiculos
+                'resources/js/vehiculos/create.js',
+                // Users
+                'resources/js/users/toggle.js',
+                // Trabajadores
+                'resources/js/trabajadores/index.js',
             ],
             refresh: true,
         }),
