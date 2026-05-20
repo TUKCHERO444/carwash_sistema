@@ -19,6 +19,13 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 
 
+Route::get('/ping', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String()
+    ]);
+});
+
 Route::get('/test-cloudinary', function () {
     $result = Cloudinary::uploadApi()->upload(
         public_path('test.jpg')
