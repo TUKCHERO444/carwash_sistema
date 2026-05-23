@@ -23,7 +23,9 @@ class StoreTest extends TestCase
     {
         parent::setUp();
 
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
+        $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->producto = Producto::create([
             'nombre'        => 'Aceite 10W40',
@@ -40,7 +42,7 @@ class StoreTest extends TestCase
         return array_merge([
             'placa'        => 'ABC123',
             'nombre'       => 'Juan Pérez',
-            'trabajador_id' => $this->trabajador->id,
+            'trabajadores_ids' => [$this->trabajador->id],
             'fecha'        => now()->toDateString(),
             'productos'    => [
                 [
@@ -142,14 +144,14 @@ class StoreTest extends TestCase
     }
 
     /**
-     * Req 1.3 — store() requires trabajador_id.
+     * Req 1.3 — store() requires trabajadores_ids.
      */
     public function test_store_requires_trabajador_id(): void
     {
         $response = $this->actingAs($this->user)
-            ->post('/cambio-aceite', $this->validPayload(['trabajador_id' => '']));
+            ->post('/cambio-aceite', $this->validPayload(['trabajadores_ids' => []]));
 
-        $response->assertSessionHasErrors('trabajador_id');
+        $response->assertSessionHasErrors('trabajadores_ids');
     }
 
     /**

@@ -27,7 +27,9 @@ class ActualizarTicketTest extends TestCase
     {
         parent::setUp();
 
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
+        $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
         $this->producto = Producto::create([
@@ -64,7 +66,7 @@ class ActualizarTicketTest extends TestCase
         return array_merge([
             'placa'         => 'ABC123',
             'nombre'        => 'Juan',
-            'trabajador_id' => $this->trabajador->id,
+            'trabajadores_ids' => [$this->trabajador->id],
             'fecha'         => now()->toDateString(),
             'productos'     => [
                 [
@@ -123,14 +125,14 @@ class ActualizarTicketTest extends TestCase
     }
 
     /**
-     * Req 5.3 — actualizarTicket() without trabajador_id returns validation error.
+     * Req 5.3 — actualizarTicket() without trabajadores_ids returns validation error.
      */
     public function test_actualizarTicket_requires_trabajador_id(): void
     {
         $response = $this->actingAs($this->user)
-            ->put("/cambio-aceite/{$this->pendiente->id}/actualizar-ticket", $this->updatePayload(['trabajador_id' => '']));
+            ->put("/cambio-aceite/{$this->pendiente->id}/actualizar-ticket", $this->updatePayload(['trabajadores_ids' => []]));
 
-        $response->assertSessionHasErrors('trabajador_id');
+        $response->assertSessionHasErrors('trabajadores_ids');
     }
 
     /**

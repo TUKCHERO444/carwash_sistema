@@ -28,7 +28,9 @@ class ConfirmarTest extends TestCase
     {
         parent::setUp();
 
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
+        $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
         $this->producto = Producto::create([
@@ -113,7 +115,7 @@ class ConfirmarTest extends TestCase
         return array_merge([
             'placa'        => 'ABC123',
             'nombre'       => 'Juan',
-            'trabajador_id' => $this->trabajador->id,
+            'trabajadores_ids' => [$this->trabajador->id],
             'fecha'        => now()->toDateString(),
             'precio'       => 70.00,
             'total'        => 70.00,

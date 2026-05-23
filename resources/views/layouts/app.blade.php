@@ -15,41 +15,47 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-            var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-            var themeToggleBtn = document.getElementById('theme-toggle');
+            var isDark = document.documentElement.classList.contains('dark');
 
-            // Change the icons based on current theme
-            if (document.documentElement.classList.contains('dark')) {
-                themeToggleLightIcon.classList.remove('hidden');
-            } else {
-                themeToggleDarkIcon.classList.remove('hidden');
+            // Sync initial icon state for ALL toggle buttons
+            document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
+                var darkIcon  = btn.querySelector('[data-theme-icon="dark"]');
+                var lightIcon = btn.querySelector('[data-theme-icon="light"]');
+                if (isDark) {
+                    if (lightIcon) lightIcon.classList.remove('hidden');
+                    if (darkIcon)  darkIcon.classList.add('hidden');
+                } else {
+                    if (darkIcon)  darkIcon.classList.remove('hidden');
+                    if (lightIcon) lightIcon.classList.add('hidden');
+                }
+            });
+
+            function applyTheme(dark) {
+                if (dark) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+                // Update icons on ALL toggle buttons
+                document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
+                    var darkIcon  = btn.querySelector('[data-theme-icon="dark"]');
+                    var lightIcon = btn.querySelector('[data-theme-icon="light"]');
+                    if (dark) {
+                        if (lightIcon) lightIcon.classList.remove('hidden');
+                        if (darkIcon)  darkIcon.classList.add('hidden');
+                    } else {
+                        if (darkIcon)  darkIcon.classList.remove('hidden');
+                        if (lightIcon) lightIcon.classList.add('hidden');
+                    }
+                });
             }
 
-            themeToggleBtn.addEventListener('click', function() {
-                // toggle icons inside button
-                themeToggleDarkIcon.classList.toggle('hidden');
-                themeToggleLightIcon.classList.toggle('hidden');
-
-                // if set via local storage previously
-                if (localStorage.getItem('theme')) {
-                    if (localStorage.getItem('theme') === 'light') {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('theme', 'dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('theme', 'light');
-                    }
-                // if NOT set via local storage previously
-                } else {
-                    if (document.documentElement.classList.contains('dark')) {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('theme', 'light');
-                    } else {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('theme', 'dark');
-                    }
-                }
+            document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    applyTheme(!document.documentElement.classList.contains('dark'));
+                });
             });
         });
     </script>
@@ -72,11 +78,11 @@
     <aside class="hidden lg:flex flex-col w-64 bg-gray-900 border-r border-gray-800 shrink-0">
         <div class="flex items-center justify-between h-16 px-6 border-b border-gray-800">
             <span class="text-lg font-semibold text-white">{{ config('app.name', 'Laravel') }}</span>
-            <button id="theme-toggle" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg" aria-label="Cambiar tema">
-                <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <button data-theme-toggle id="theme-toggle" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg" aria-label="Cambiar tema">
+                <svg data-theme-icon="dark" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
                 </svg>
-                <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <svg data-theme-icon="light" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
                 </svg>
             </button>
@@ -472,6 +478,19 @@
             </div>
         </div>
         @endcanany
+
+        {{-- Botón cambio de tema (móvil) --}}
+        <button data-theme-toggle
+                class="flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-gray-400 hover:text-white transition-colors"
+                aria-label="Cambiar tema">
+            <svg data-theme-icon="dark" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+            </svg>
+            <svg data-theme-icon="light" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
+            </svg>
+            Tema
+        </button>
     </nav>
 
     {{-- Global Image Viewer Modal --}}

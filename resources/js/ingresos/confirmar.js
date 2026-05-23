@@ -76,6 +76,7 @@ function onAgregarServicio(servicio) {
 
     renderTablaServicios(items, 'tbody-servicios', eliminarItem);
     recalcularTotales(items, 'vehiculo_id', 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    _aplicarIgvSiActivo();
     sincronizarHiddens(items, 'form-ingreso');
 
     const inputBuscar = document.getElementById('buscar-servicio');
@@ -87,6 +88,7 @@ function eliminarItem(idx) {
     items.splice(idx, 1);
     renderTablaServicios(items, 'tbody-servicios', eliminarItem);
     recalcularTotales(items, 'vehiculo_id', 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    _aplicarIgvSiActivo();
     sincronizarHiddens(items, 'form-ingreso');
 }
 
@@ -172,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (vehiculoSelect) {
         vehiculoSelect.addEventListener('change', () => {
             recalcularTotales(items, 'vehiculo_id', 'precio', 'total', 'toggle-descuento', 'porcentaje');
+            _aplicarIgvSiActivo();
             sincronizarHiddens(items, 'form-ingreso');
         });
     }
@@ -193,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             recalcularTotales(items, 'vehiculo_id', 'precio', 'total', 'toggle-descuento', 'porcentaje');
+            _aplicarIgvSiActivo();
             sincronizarHiddens(items, 'form-ingreso');
         });
     }
@@ -209,9 +213,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (errorEl) errorEl.classList.add('hidden');
             }
             recalcularTotales(items, 'vehiculo_id', 'precio', 'total', 'toggle-descuento', 'porcentaje');
+            _aplicarIgvSiActivo();
             sincronizarHiddens(items, 'form-ingreso');
         });
     }
 
     // No recalcular totales en carga — preservar precio/total guardados del servidor
+
+    // ── Facturación (IGV 18%) ──
+    window.toggleFacturacion = function(btn) {
+        const totalInput = document.getElementById('total');
+        if (!totalInput) return;
+
+        const activa = btn.dataset.facturacion === 'on';
+
+        if (!activa) {
+            const baseTotal = parseFloat(totalInput.value) || 0;
+            totalInput.dataset.baseTotal = baseTotal.toFixed(2);
+            totalInput.value = (baseTotal * 1.18).toFixed(2);
+            btn.dataset.facturacion = 'on';
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Remover Facturación';
+        } else {
+            const baseTotal = parseFloat(totalInput.dataset.baseTotal) || 0;
+            totalInput.value = baseTotal.toFixed(2);
+            btn.dataset.facturacion = 'off';
+            btn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Añadir Facturación';
+        }
+
+        totalInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    window._aplicarIgvSiActivo = function() {
+        const btn = document.querySelector('[data-facturacion="on"]');
+        if (!btn) return;
+        const totalInput = document.getElementById('total');
+        if (!totalInput) return;
+        const baseTotal = parseFloat(totalInput.value) || 0;
+        totalInput.dataset.baseTotal = baseTotal.toFixed(2);
+        totalInput.value = (baseTotal * 1.18).toFixed(2);
+    };
 });

@@ -69,7 +69,7 @@ class UserToggleExampleTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'No puedes modificar tu propio estado de activación.',
+            'message' => 'No puedes modificar tu propio estado de activación por seguridad.',
         ]);
     }
 
@@ -128,7 +128,7 @@ class UserToggleExampleTest extends TestCase
         $response = $this->patch("/users/{$user->id}/toggle");
 
         $response->assertStatus(302);
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/');
     }
 
     // -------------------------------------------------------------------------

@@ -20,7 +20,7 @@
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark">Cambios de Aceite Confirmados</h1>
         <a href="{{ route('cambio-aceite.index') }}"
            aria-label="Volver a pendientes"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -30,34 +30,34 @@
 
     {{-- Table or empty state --}}
     @if($cambioAceites->isEmpty())
-        <div class="text-center py-12 text-gray-500 text-sm">No hay cambios de aceite confirmados.</div>
+        <div class="text-center py-12 text-gray-500 dark:text-text-secondary-dark text-sm">No hay cambios de aceite confirmados.</div>
     @else
-        <div class="bg-surface rounded-lg border border-main overflow-x-auto">
+        <div class="bg-surface rounded-lg border border-main overflow-x-auto transition-colors duration-300">
             <table class="min-w-full divide-y divide-main">
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
-                        <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Foto
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Fecha
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Cliente
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Trabajador
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Precio
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Total
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Pago
                         </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -70,10 +70,10 @@
                                 @if($cambioAceite->foto)
                                     <img src="{{ $cambioAceite->foto_url }}"
                                          alt="Foto del cambio de aceite"
-                                         class="w-10 h-10 object-cover rounded border border-gray-200 cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">
+                                         class="w-10 h-10 object-cover rounded border border-main cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">
 
                                 @else
-                                    <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                                    <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center transition-colors">
                                          <svg class="w-5 h-5 text-gray-400 dark:text-text-secondary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -81,27 +81,32 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary dark:text-text-primary-dark">
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
                                 {{ $cambioAceite->fecha->format('d/m/Y') }}
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary dark:text-text-secondary-dark">
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 {{ $cambioAceite->cliente->placa }}
                                 @if($cambioAceite->cliente->nombre)
                                     — {{ $cambioAceite->cliente->nombre }}
                                 @endif
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary dark:text-text-secondary-dark">
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 {{ $cambioAceite->trabajador->nombre }}
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary dark:text-text-secondary-dark">
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 S/ {{ number_format($cambioAceite->precio, 2) }}
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary dark:text-text-secondary-dark">
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 S/ {{ number_format($cambioAceite->total, 2) }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap">
                                 @php
-                                    $colores = ['efectivo' => 'bg-green-100 text-green-700', 'yape' => 'bg-purple-100 text-purple-700', 'izipay' => 'bg-blue-100 text-blue-700', 'mixto' => 'bg-orange-100 text-orange-700'];
+                                    $colores = [
+                                        'efectivo' => 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+                                        'yape'     => 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+                                        'izipay'   => 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+                                        'mixto'    => 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                                    ];
                                     $labels  = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'];
                                     $metodo  = $cambioAceite->metodo_pago ?? 'efectivo';
                                 @endphp
@@ -126,7 +131,7 @@
                                 {{-- Ticket --}}
                                 <a href="{{ route('cambio-aceite.ticket', $cambioAceite) }}"
                                    aria-label="Ticket del cambio de aceite"
-                                   class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                                   class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>

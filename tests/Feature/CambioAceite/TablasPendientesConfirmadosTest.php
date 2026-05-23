@@ -24,7 +24,9 @@ class TablasPendientesConfirmadosTest extends TestCase
     {
         parent::setUp();
 
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
+        $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
     }
 
@@ -211,7 +213,7 @@ class TablasPendientesConfirmadosTest extends TestCase
      */
     public function test_unauthenticated_user_is_redirected_to_login(): void
     {
-        $this->get('/cambio-aceite')->assertRedirect('/login');
-        $this->get('/cambio-aceite/confirmados')->assertRedirect('/login');
+        $this->get('/cambio-aceite')->assertRedirect('/');
+        $this->get('/cambio-aceite/confirmados')->assertRedirect('/');
     }
 }

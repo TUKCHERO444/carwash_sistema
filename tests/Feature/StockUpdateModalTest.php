@@ -247,7 +247,7 @@ class StockUpdateModalTest extends TestCase
         );
 
         $response->assertStatus(302);
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/');
     }
 
     /**

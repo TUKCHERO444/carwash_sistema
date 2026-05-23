@@ -178,6 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             inputTotal.value = subtotal.toFixed(2);
         }
+
+        const btnFact = document.querySelector('[data-facturacion="on"]');
+        if (btnFact) {
+            const baseTotal = parseFloat(inputTotal.value) || 0;
+            inputTotal.dataset.baseTotal = baseTotal.toFixed(2);
+            inputTotal.value = (baseTotal * 1.18).toFixed(2);
+        }
+
         sincronizarHiddens(items, form, 'hidden-producto', ['producto_id', 'cantidad', 'precio_unitario', 'subtotal']);
     }
 
@@ -295,6 +303,35 @@ document.addEventListener('DOMContentLoaded', () => {
     ['monto_efectivo', 'monto_yape', 'monto_izipay'].forEach(id => {
         document.getElementById(id).addEventListener('input', validarMixto);
     });
+
+    // ── Facturación (IGV 18%) ──
+    window.toggleFacturacion = function(btn) {
+        const totalInput = document.getElementById('total');
+        if (!totalInput) return;
+
+        const activa = btn.dataset.facturacion === 'on';
+
+        if (!activa) {
+            const baseTotal = parseFloat(totalInput.value) || 0;
+            totalInput.dataset.baseTotal = baseTotal.toFixed(2);
+            totalInput.value = (baseTotal * 1.18).toFixed(2);
+            btn.dataset.facturacion = 'on';
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Remover Facturación';
+        } else {
+            const baseTotal = parseFloat(totalInput.dataset.baseTotal) || 0;
+            totalInput.value = baseTotal.toFixed(2);
+            btn.dataset.facturacion = 'off';
+            btn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Añadir Facturación';
+        }
+
+        totalInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
 
     // ── Initialise ──
     renderTabla();

@@ -66,11 +66,11 @@ class UserIndexViewPropertyTest extends TestCase
 
             if ($activo === 1) {
                 // Badge: green "Activo"
-                $response->assertSee('bg-green-100 text-green-800', false);
+                $response->assertSee('bg-green-100 dark:bg-green-900/30 text-green-800', false);
                 $response->assertSee('Activo');
 
                 // Toggle button: yellow/amber "Inactivar"
-                $response->assertSee('bg-yellow-100 text-yellow-800', false);
+                $response->assertSee('bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800', false);
                 $response->assertSee('Inactivar');
 
                 // data-toggle-url attribute present
@@ -78,11 +78,11 @@ class UserIndexViewPropertyTest extends TestCase
                 $response->assertSee('data-user-id="' . $user->id . '"', false);
             } else {
                 // Badge: red "Inactivo"
-                $response->assertSee('bg-red-100 text-red-800', false);
+                $response->assertSee('bg-red-100 dark:bg-red-900/30 text-red-800', false);
                 $response->assertSee('Inactivo');
 
                 // Toggle button: green "Activar"
-                $response->assertSee('bg-green-100 text-green-800', false);
+                $response->assertSee('bg-green-100 dark:bg-green-900/30 text-green-800', false);
                 $response->assertSee('Activar');
 
                 // data-toggle-url attribute present

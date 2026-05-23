@@ -81,6 +81,7 @@ function actualizarCantidad(idx, val) {
     items[idx].total    = +(cantidad * items[idx].precio).toFixed(2);
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    _aplicarIgvSiActivo();
     sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
 }
 
@@ -93,6 +94,7 @@ function eliminarItem(idx) {
     items.splice(idx, 1);
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    _aplicarIgvSiActivo();
     sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
 }
 
@@ -116,6 +118,7 @@ function onAgregarProducto(producto) {
 
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    _aplicarIgvSiActivo();
     sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
 
     const inputBuscar = document.getElementById('buscar-producto');
@@ -216,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+            _aplicarIgvSiActivo();
             sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
         });
     }
@@ -232,9 +236,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (errorEl) errorEl.classList.add('hidden');
             }
             recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+            _aplicarIgvSiActivo();
             sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
         });
     }
 
     // NO recalcular totales en la carga inicial — preservar precio/total del servidor
+
+    // ── Facturación (IGV 18%) ──
+    window.toggleFacturacion = function(btn) {
+        const totalInput = document.getElementById('total');
+        if (!totalInput) return;
+
+        const activa = btn.dataset.facturacion === 'on';
+
+        if (!activa) {
+            const baseTotal = parseFloat(totalInput.value) || 0;
+            totalInput.dataset.baseTotal = baseTotal.toFixed(2);
+            totalInput.value = (baseTotal * 1.18).toFixed(2);
+            btn.dataset.facturacion = 'on';
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Remover Facturación';
+        } else {
+            const baseTotal = parseFloat(totalInput.dataset.baseTotal) || 0;
+            totalInput.value = baseTotal.toFixed(2);
+            btn.dataset.facturacion = 'off';
+            btn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            const txt = btn.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Añadir Facturación';
+        }
+
+        totalInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    window._aplicarIgvSiActivo = function() {
+        const btn = document.querySelector('[data-facturacion="on"]');
+        if (!btn) return;
+        const totalInput = document.getElementById('total');
+        if (!totalInput) return;
+        const baseTotal = parseFloat(totalInput.value) || 0;
+        totalInput.dataset.baseTotal = baseTotal.toFixed(2);
+        totalInput.value = (baseTotal * 1.18).toFixed(2);
+    };
 });
