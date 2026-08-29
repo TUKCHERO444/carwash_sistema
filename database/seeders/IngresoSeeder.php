@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Ingreso;
+use App\Models\Automotor;
 use App\Models\Cliente;
+use App\Models\Ingreso;
 use App\Models\User;
 use App\Models\Vehiculo;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class IngresoSeeder extends Seeder
 {
@@ -26,11 +27,15 @@ class IngresoSeeder extends Seeder
                 ? round($precio * $faker->randomFloat(2, 0.7, 0.99), 2)
                 : $precio;
 
+            $clienteId = $faker->randomElement($clienteIds);
+            $automotorPlaca = Automotor::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
+
             Ingreso::create([
-                'cliente_id' => $faker->randomElement($clienteIds),
+                'cliente_id' => $clienteId,
+                'automotor_id' => $automotorPlaca,
                 'vehiculo_id' => $faker->randomElement($vehiculoIds),
                 'fecha' => $faker->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
-                'foto' => $tieneFoto ? 'fotos/ingreso_' . ($i + 1) . '.jpg' : null,
+                'foto' => $tieneFoto ? 'fotos/ingreso_'.($i + 1).'.jpg' : null,
                 'precio' => $precio,
                 'total' => $total,
                 'user_id' => $faker->randomElement($userIds),

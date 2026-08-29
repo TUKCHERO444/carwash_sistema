@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\Caja;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CambioAceite extends Model
 {
@@ -19,7 +17,7 @@ class CambioAceite extends Model
      */
     public function getFotoUrlAttribute(): ?string
     {
-        if (!$this->foto) {
+        if (! $this->foto) {
             return null;
         }
 
@@ -27,13 +25,14 @@ class CambioAceite extends Model
             return $this->foto;
         }
 
-        return asset('storage/' . $this->foto);
+        return asset('storage/'.$this->foto);
     }
 
     protected $table = 'cambio_aceites';
 
     protected $fillable = [
         'cliente_id',
+        'automotor_id',
         'trabajador_id',
         'fecha',
         'precio',
@@ -50,12 +49,12 @@ class CambioAceite extends Model
     ];
 
     protected $casts = [
-        'fecha'          => 'date',
-        'precio'         => 'decimal:2',
-        'total'          => 'decimal:2',
+        'fecha' => 'date',
+        'precio' => 'decimal:2',
+        'total' => 'decimal:2',
         'monto_efectivo' => 'decimal:2',
-        'monto_yape'     => 'decimal:2',
-        'monto_izipay'   => 'decimal:2',
+        'monto_yape' => 'decimal:2',
+        'monto_izipay' => 'decimal:2',
     ];
 
     /**
@@ -64,6 +63,15 @@ class CambioAceite extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    /**
+     * Relación con Automotor (vehículo físico atendido).
+     * FK automotor_id apunta a la PK string automotores.placa.
+     */
+    public function automotor(): BelongsTo
+    {
+        return $this->belongsTo(Automotor::class, 'automotor_id', 'placa');
     }
 
     /**
@@ -80,7 +88,7 @@ class CambioAceite extends Model
     public function trabajadores(): BelongsToMany
     {
         return $this->belongsToMany(Trabajador::class, 'cambio_aceite_trabajadores')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -105,8 +113,8 @@ class CambioAceite extends Model
     public function productos(): BelongsToMany
     {
         return $this->belongsToMany(Producto::class, 'cambio_productos')
-                    ->withPivot('cantidad', 'precio', 'total')
-                    ->withTimestamps();
+            ->withPivot('cantidad', 'precio', 'total')
+            ->withTimestamps();
     }
 
     /**

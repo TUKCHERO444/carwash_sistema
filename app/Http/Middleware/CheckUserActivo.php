@@ -18,13 +18,15 @@ class CheckUserActivo
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && !Auth::user()->activo) {
+        if (Auth::check() && ! Auth::user()->activo) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')
                 ->withErrors(['email' => 'Tu cuenta ha sido desactivada.']);
         }
+
         return $next($request);
     }
 }

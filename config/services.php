@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'vehicle_api' => [
+        'url' => env('VEHICLE_API_URL'),
+        'token' => env('VEHICLE_API_TOKEN'),
+    ],
+
+    'dni_api' => [
+        'url' => env('DNI_API_URL', 'https://api.json.pe/api/dni'),
+        'token' => env('VEHICLE_API_TOKEN'),
+    ],
+
 ];

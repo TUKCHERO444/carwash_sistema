@@ -2,22 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cliente;
 use App\Models\Ingreso;
 use App\Models\Servicio;
 use App\Models\Trabajador;
 use App\Models\Vehiculo;
 use App\Services\CajaService;
+use App\Services\ClienteAutomotorService;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class IngresoController extends Controller
 {
-    public function __construct(private CajaService $cajaService) {}
+    /**
+     * Regla de placa: 6-7 caracteres alfanuméricos y opcional guion medio.
+     */
+    private const PLACA_RULE = 'regex:/^[A-Z0-9-]{6,7}$/i';
+
+    public function __construct(
+        private CajaService $cajaService,
+        private ClienteAutomotorService $clienteAutomotorService,
+    ) {}
+
     public function index(): View
     {
         $ingresos = Ingreso::with(['cliente', 'vehiculo', 'trabajadores'])
@@ -46,19 +56,19 @@ class IngresoController extends Controller
         }
 
         $ingreso->load(['cliente', 'vehiculo', 'trabajadores', 'servicios']);
-        $vehiculos    = Vehiculo::orderBy('nombre')->get();
+        $vehiculos = Vehiculo::orderBy('nombre')->get();
         $trabajadores = Trabajador::where('estado', true)->orderBy('nombre')->get();
 
         $serviciosData = $ingreso->servicios->map(fn ($s) => [
-            'id'     => $s->id,
+            'id' => $s->id,
             'nombre' => $s->nombre,
             'precio' => (float) $s->precio,
         ])->values()->all();
 
         $montosData = [
             'efectivo' => $ingreso->monto_efectivo,
-            'yape'     => $ingreso->monto_yape,
-            'izipay'   => $ingreso->monto_izipay,
+            'yape' => $ingreso->monto_yape,
+            'izipay' => $ingreso->monto_izipay,
         ];
 
         return view('ingresos.confirmar', compact('ingreso', 'vehiculos', 'trabajadores', 'serviciosData', 'montosData'));
@@ -67,45 +77,39 @@ class IngresoController extends Controller
     public function procesarConfirmacion(Request $request, Ingreso $ingreso): RedirectResponse
     {
         $caja = $this->cajaService->getCajaActiva();
-        if (!$caja) {
+        if (! $caja) {
             return back()->with('error_caja', true);
         }
 
         $request->validate([
-            'vehiculo_id'              => ['required', 'integer', 'exists:vehiculos,id'],
-            'placa'                    => ['required', 'string', 'max:7'],
-            'nombre'                   => ['nullable', 'string', 'max:100'],
-            'telefono'                 => ['nullable', 'string', 'max:20'],
-            'dni'      => ['nullable', 'string', 'max:8'],
-            'fecha'                    => ['required', 'date'],
-            'foto'                     => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
-            'trabajadores_ids'         => ['required', 'array', 'min:1'],
-            'trabajadores_ids.*'       => ['integer', 'exists:trabajadores,id'],
-            'servicios'                => ['nullable', 'array'],
-            'servicios.*.servicio_id'  => ['required', 'integer', 'exists:servicios,id'],
-            'precio'                   => ['required', 'numeric', 'min:0'],
-            'total'                    => ['required', 'numeric', 'gt:0'],
-            'metodo_pago'              => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo'           => ['nullable', 'numeric', 'min:0'],
-            'monto_yape'               => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay'             => ['nullable', 'numeric', 'min:0'],
+            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
+            'nombre' => ['nullable', 'string', 'max:100'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'dni' => ['nullable', 'string', 'max:8'],
+            'fecha' => ['required', 'date'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'trabajadores_ids' => ['required', 'array', 'min:1'],
+            'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
+            'servicios' => ['nullable', 'array'],
+            'servicios.*.servicio_id' => ['required', 'integer', 'exists:servicios,id'],
+            'precio' => ['required', 'numeric', 'min:0'],
+            'total' => ['required', 'numeric', 'gt:0'],
+            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
+            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
+            'monto_yape' => ['nullable', 'numeric', 'min:0'],
+            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
         ], [
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al ingreso.',
-            'trabajadores_ids.min'      => 'Debe asignar al menos un trabajador al ingreso.',
-            'foto.image'               => 'El archivo debe ser una imagen válida.',
-            'foto.max'                 => 'La imagen no puede superar 5 MB.',
+            'trabajadores_ids.min' => 'Debe asignar al menos un trabajador al ingreso.',
+            'foto.image' => 'El archivo debe ser una imagen válida.',
+            'foto.max' => 'La imagen no puede superar 5 MB.',
         ]);
 
         try {
             DB::transaction(function () use ($request, $caja, $ingreso) {
-                $cliente = Cliente::updateOrCreate(
-                    ['placa' => $request->placa],
-                    [
-                        'nombre'   => $request->nombre,
-                        'telefono' => $request->telefono,
-                        'dni'      => $request->dni,
-                    ]
-                );
+                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
+                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id, true);
 
                 $foto = $ingreso->foto;
                 if ($request->hasFile('foto')) {
@@ -115,7 +119,10 @@ class IngresoController extends Controller
                             $parts = explode('/', $ingreso->foto);
                             $filename = end($parts);
                             $publicId = pathinfo($filename, PATHINFO_FILENAME);
-                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                            try {
+                                Cloudinary::uploadApi()->destroy($publicId);
+                            } catch (\Exception $e) {
+                            }
                         } elseif (Storage::disk('public')->exists($ingreso->foto)) {
                             Storage::disk('public')->delete($ingreso->foto);
                         }
@@ -125,18 +132,19 @@ class IngresoController extends Controller
                 }
 
                 $ingreso->update([
-                    'cliente_id'     => $cliente->id,
-                    'vehiculo_id'    => $request->vehiculo_id,
-                    'fecha'          => $request->fecha,
-                    'precio'         => $request->precio,
-                    'total'          => $request->total,
-                    'foto'           => $foto,
-                    'metodo_pago'    => $request->metodo_pago,
+                    'cliente_id' => $cliente->id,
+                    'automotor_id' => $automotor->placa,
+                    'vehiculo_id' => $request->vehiculo_id,
+                    'fecha' => $request->fecha,
+                    'precio' => $request->precio,
+                    'total' => $request->total,
+                    'foto' => $foto,
+                    'metodo_pago' => $request->metodo_pago,
                     'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape'     => $request->metodo_pago === 'mixto' ? $request->monto_yape     : null,
-                    'monto_izipay'   => $request->metodo_pago === 'mixto' ? $request->monto_izipay   : null,
-                    'estado'         => 'confirmado',
-                    'caja_id'        => $caja->id,
+                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
+                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
+                    'estado' => 'confirmado',
+                    'caja_id' => $caja->id,
                 ]);
 
                 $ingreso->trabajadores()->sync($request->trabajadores_ids);
@@ -154,17 +162,17 @@ class IngresoController extends Controller
 
     public function create(): View
     {
-        $vehiculos    = Vehiculo::all();
+        $vehiculos = Vehiculo::all();
         $trabajadores = Trabajador::where('estado', true)->get();
 
         return view('ingresos.create', compact('vehiculos', 'trabajadores'));
     }
 
-    public function buscarServicios(Request $request): \Illuminate\Http\JsonResponse
+    public function buscarServicios(Request $request): JsonResponse
     {
         $q = $request->get('q', '');
 
-        $servicios = Servicio::where('nombre', 'like', '%' . $q . '%')
+        $servicios = Servicio::where('nombre', 'like', '%'.$q.'%')
             ->select('id', 'nombre', 'precio')
             ->limit(10)
             ->get();
@@ -175,35 +183,29 @@ class IngresoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'vehiculo_id'             => ['required', 'integer', 'exists:vehiculos,id'],
-            'placa'                   => ['required', 'string', 'max:7'],
-            'nombre'                  => ['nullable', 'string', 'max:100'],
-            'telefono'                => ['nullable', 'string', 'max:20'],
-            'dni'                     => ['nullable', 'string', 'max:8'],
-            'fecha'                   => ['required', 'date'],
-            'foto'                    => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
-            'trabajadores_ids'        => ['required', 'array', 'min:1'],
-            'trabajadores_ids.*'      => ['integer', 'exists:trabajadores,id'],
-            'servicios'               => ['nullable', 'array'],
+            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
+            'nombre' => ['nullable', 'string', 'max:100'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'dni' => ['nullable', 'string', 'max:8'],
+            'fecha' => ['required', 'date'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'trabajadores_ids' => ['required', 'array', 'min:1'],
+            'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
+            'servicios' => ['nullable', 'array'],
             'servicios.*.servicio_id' => ['required', 'integer', 'exists:servicios,id'],
         ], [
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al ingreso.',
-            'trabajadores_ids.min'      => 'Debe asignar al menos un trabajador al ingreso.',
-            'foto.image'               => 'El archivo debe ser una imagen válida.',
-            'foto.max'                 => 'La imagen no puede superar 5 MB.',
+            'trabajadores_ids.min' => 'Debe asignar al menos un trabajador al ingreso.',
+            'foto.image' => 'El archivo debe ser una imagen válida.',
+            'foto.max' => 'La imagen no puede superar 5 MB.',
         ]);
 
         $ingreso = null;
         try {
             DB::transaction(function () use ($request, &$ingreso) {
-                $cliente = Cliente::updateOrCreate(
-                    ['placa' => $request->placa],
-                    [
-                        'nombre'   => $request->nombre,
-                        'telefono' => $request->telefono,
-                        'dni'      => $request->dni,
-                    ]
-                );
+                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
+                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
 
                 $foto = null;
                 if ($request->hasFile('foto')) {
@@ -212,20 +214,21 @@ class IngresoController extends Controller
                 }
 
                 // Calculate precio server-side: vehiculo price + sum of selected servicios prices
-                $vehiculo        = Vehiculo::findOrFail($request->vehiculo_id);
-                $servicioIds     = collect($request->servicios ?? [])->pluck('servicio_id')->filter()->all();
-                $sumServicios    = Servicio::whereIn('id', $servicioIds)->sum('precio');
-                $precio          = $vehiculo->precio + $sumServicios;
+                $vehiculo = Vehiculo::findOrFail($request->vehiculo_id);
+                $servicioIds = collect($request->servicios ?? [])->pluck('servicio_id')->filter()->all();
+                $sumServicios = Servicio::whereIn('id', $servicioIds)->sum('precio');
+                $precio = $vehiculo->precio + $sumServicios;
 
                 $ingreso = Ingreso::create([
-                    'cliente_id'  => $cliente->id,
+                    'cliente_id' => $cliente->id,
+                    'automotor_id' => $automotor->placa,
                     'vehiculo_id' => $request->vehiculo_id,
-                    'fecha'       => $request->fecha,
-                    'precio'      => $precio,
-                    'total'       => $precio,
-                    'foto'        => $foto,
-                    'user_id'     => auth()->id(),
-                    'estado'      => 'pendiente',
+                    'fecha' => $request->fecha,
+                    'precio' => $precio,
+                    'total' => $precio,
+                    'foto' => $foto,
+                    'user_id' => auth()->id(),
+                    'estado' => 'pendiente',
                 ]);
 
                 $ingreso->trabajadores()->sync($request->trabajadores_ids);
@@ -250,19 +253,19 @@ class IngresoController extends Controller
     public function edit(Ingreso $ingreso): View
     {
         $ingreso->load(['cliente', 'trabajadores', 'servicios']);
-        $vehiculos    = Vehiculo::all();
+        $vehiculos = Vehiculo::all();
         $trabajadores = Trabajador::where('estado', true)->get();
 
         $serviciosExistentes = $ingreso->servicios->map(fn ($s) => [
-            'id'     => $s->id,
+            'id' => $s->id,
             'nombre' => $s->nombre,
             'precio' => (float) $s->precio,
         ])->values()->all();
 
         $ingresoMontos = [
             'efectivo' => $ingreso->monto_efectivo,
-            'yape'     => $ingreso->monto_yape,
-            'izipay'   => $ingreso->monto_izipay,
+            'yape' => $ingreso->monto_yape,
+            'izipay' => $ingreso->monto_izipay,
         ];
 
         return view('ingresos.edit', compact('ingreso', 'vehiculos', 'trabajadores', 'serviciosExistentes', 'ingresoMontos'));
@@ -271,41 +274,34 @@ class IngresoController extends Controller
     public function update(Request $request, Ingreso $ingreso): RedirectResponse
     {
         $request->validate([
-            'vehiculo_id'              => ['required', 'integer', 'exists:vehiculos,id'],
-            'placa'                    => ['required', 'string', 'max:7'],
-            'nombre'                   => ['nullable', 'string', 'max:100'],
-            'telefono'                 => ['nullable', 'string', 'max:20'],
-            'dni'                      => ['nullable', 'string', 'max:8'],
-            'fecha'                    => ['required', 'date'],
-            'foto'                     => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
-            'trabajadores_ids'         => ['required', 'array', 'min:1'],
-            'trabajadores_ids.*'       => ['integer', 'exists:trabajadores,id'],
-            'servicios'                => ['nullable', 'array'],
-            'servicios.*.servicio_id'  => ['required', 'integer', 'exists:servicios,id'],
-            'precio'                   => ['required', 'numeric', 'min:0'],
-            'total'                    => ['required', 'numeric', 'gt:0'],
-            'metodo_pago'              => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo'           => ['nullable', 'numeric', 'min:0'],
-            'monto_yape'               => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay'             => ['nullable', 'numeric', 'min:0'],
+            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
+            'nombre' => ['nullable', 'string', 'max:100'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'dni' => ['nullable', 'string', 'max:8'],
+            'fecha' => ['required', 'date'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'trabajadores_ids' => ['required', 'array', 'min:1'],
+            'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
+            'servicios' => ['nullable', 'array'],
+            'servicios.*.servicio_id' => ['required', 'integer', 'exists:servicios,id'],
+            'precio' => ['required', 'numeric', 'min:0'],
+            'total' => ['required', 'numeric', 'gt:0'],
+            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
+            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
+            'monto_yape' => ['nullable', 'numeric', 'min:0'],
+            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
         ], [
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al ingreso.',
-            'trabajadores_ids.min'      => 'Debe asignar al menos un trabajador al ingreso.',
-            'foto.image'               => 'El archivo debe ser una imagen válida.',
-            'foto.max'                 => 'La imagen no puede superar 5 MB.',
+            'trabajadores_ids.min' => 'Debe asignar al menos un trabajador al ingreso.',
+            'foto.image' => 'El archivo debe ser una imagen válida.',
+            'foto.max' => 'La imagen no puede superar 5 MB.',
         ]);
 
         try {
             DB::transaction(function () use ($request, $ingreso) {
-                // Update or create client by plate
-                $cliente = Cliente::updateOrCreate(
-                    ['placa' => $request->placa],
-                    [
-                        'nombre'   => $request->nombre,
-                        'telefono' => $request->telefono,
-                        'dni'      => $request->dni,
-                    ]
-                );
+                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
+                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
 
                 $foto = $ingreso->foto;
                 if ($request->hasFile('foto')) {
@@ -315,7 +311,10 @@ class IngresoController extends Controller
                             $parts = explode('/', $ingreso->foto);
                             $filename = end($parts);
                             $publicId = pathinfo($filename, PATHINFO_FILENAME);
-                            try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                            try {
+                                Cloudinary::uploadApi()->destroy($publicId);
+                            } catch (\Exception $e) {
+                            }
                         } elseif (Storage::disk('public')->exists($ingreso->foto)) {
                             Storage::disk('public')->delete($ingreso->foto);
                         }
@@ -325,16 +324,17 @@ class IngresoController extends Controller
                 }
 
                 $ingreso->update([
-                    'cliente_id'     => $cliente->id,
-                    'vehiculo_id'    => $request->vehiculo_id,
-                    'fecha'          => $request->fecha,
-                    'precio'         => $request->precio,
-                    'total'          => $request->total,
-                    'foto'           => $foto,
-                    'metodo_pago'    => $request->metodo_pago,
+                    'cliente_id' => $cliente->id,
+                    'automotor_id' => $automotor->placa,
+                    'vehiculo_id' => $request->vehiculo_id,
+                    'fecha' => $request->fecha,
+                    'precio' => $request->precio,
+                    'total' => $request->total,
+                    'foto' => $foto,
+                    'metodo_pago' => $request->metodo_pago,
                     'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape'     => $request->metodo_pago === 'mixto' ? $request->monto_yape     : null,
-                    'monto_izipay'   => $request->metodo_pago === 'mixto' ? $request->monto_izipay   : null,
+                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
+                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                 ]);
 
                 $ingreso->trabajadores()->sync($request->trabajadores_ids);
@@ -346,6 +346,7 @@ class IngresoController extends Controller
                 return redirect()->route('ingresos.confirmar', $ingreso)
                     ->with('success', 'Ingreso actualizado correctamente.');
             }
+
             return redirect()->route('ingresos.show', $ingreso)
                 ->with('success', 'Ingreso actualizado correctamente.');
         } catch (\Throwable $e) {
@@ -362,7 +363,10 @@ class IngresoController extends Controller
                     $parts = explode('/', $ingreso->foto);
                     $filename = end($parts);
                     $publicId = pathinfo($filename, PATHINFO_FILENAME);
-                    try { Cloudinary::uploadApi()->destroy($publicId); } catch (\Exception $e) {}
+                    try {
+                        Cloudinary::uploadApi()->destroy($publicId);
+                    } catch (\Exception $e) {
+                    }
                 } elseif (Storage::disk('public')->exists($ingreso->foto)) {
                     Storage::disk('public')->delete($ingreso->foto);
                 }

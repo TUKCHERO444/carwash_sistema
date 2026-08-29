@@ -16,6 +16,7 @@ import {
     validarMixto,
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
+import Swal from 'sweetalert2';
 
 // ── Datos iniciales desde la vista Blade ──
 const productosConfirmar  = window.productosConfirmar  ?? [];
@@ -23,12 +24,15 @@ const confirmarMetodoPago = window.confirmarMetodoPago ?? 'efectivo';
 const confirmarMontos     = window.confirmarMontos     ?? {};
 
 // ── Estado local ──
+// En confirmación, el stock disponible = stock_actual + cantidad_actual del ticket
+// (porque el backend restaura el stock anterior antes de descontar)
 let items = productosConfirmar.map(p => ({
     producto_id: p.id,
     nombre:      p.nombre,
     precio:      +parseFloat(p.precio).toFixed(2),
     cantidad:    p.cantidad ?? 1,
     total:       +parseFloat(p.total ?? p.precio).toFixed(2),
+    stock:       +(p.stock ?? 0) + (p.cantidad ?? 1),
 }));
 
 // ── Funciones expuestas en window para uso inline desde Blade ──
@@ -76,7 +80,18 @@ window.confirmarEliminacion = function confirmarEliminacion() {
  * @param {string|number} val - Nuevo valor de cantidad.
  */
 function actualizarCantidad(idx, val) {
-    const cantidad = Math.max(1, parseInt(val) || 1);
+    let cantidad = Math.max(1, parseInt(val) || 1);
+
+    if (items[idx].stock && cantidad > items[idx].stock) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Stock insuficiente',
+            text: `Solo hay ${items[idx].stock} unidades disponibles de "${items[idx].nombre}".`,
+            confirmButtonColor: '#3085d6',
+        });
+        cantidad = Math.max(1, items[idx].stock);
+    }
+
     items[idx].cantidad = cantidad;
     items[idx].total    = +(cantidad * items[idx].precio).toFixed(2);
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
@@ -108,12 +123,24 @@ function onAgregarProducto(producto) {
     // Sin duplicados — ignorar si ya está en la tabla
     if (items.find(i => i.producto_id === producto.id)) return;
 
+    const stock = +producto.stock || 0;
+    if (stock <= 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Sin stock',
+            text: `El producto "${producto.nombre}" no tiene unidades disponibles.`,
+            confirmButtonColor: '#3085d6',
+        });
+        return;
+    }
+
     items.push({
         producto_id: producto.id,
         nombre:      producto.nombre,
         cantidad:    1,
         precio:      +parseFloat(producto.precio_venta).toFixed(2),
         total:       +parseFloat(producto.precio_venta).toFixed(2),
+        stock:       stock,
     });
 
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);

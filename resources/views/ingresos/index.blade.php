@@ -88,7 +88,7 @@
                                 {{ $ingreso->fecha->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-gray-700 dark:text-text-secondary-dark">
-                                {{ $ingreso->cliente->placa }}
+                                {{ $ingreso->automotor->placa ?? 'N/A' }}
                                 @if($ingreso->cliente->nombre)
                                     — {{ $ingreso->cliente->nombre }}
                                 @endif
@@ -162,7 +162,7 @@
                                     @method('DELETE')
                                     <button type="submit"
                                             aria-label="Eliminar ingreso"
-                                            onclick="return confirm('¿Está seguro de eliminar este ingreso?')"
+                                            data-confirm="¿Está seguro de eliminar este ingreso?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

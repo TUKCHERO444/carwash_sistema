@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('ingreso_id')->constrained('ingresos')->onDelete('cascade');
             $table->foreignId('trabajador_id')->constrained('trabajadores')->onDelete('cascade');
             $table->timestamps();
-            
+
             $table->unique(['ingreso_id', 'trabajador_id']);
         });
     }

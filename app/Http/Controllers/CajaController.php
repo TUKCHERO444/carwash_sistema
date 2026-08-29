@@ -90,9 +90,9 @@ class CajaController extends Controller
     public function registrarEgreso(Request $request): RedirectResponse
     {
         $request->validate([
-            'monto'       => ['required', 'numeric', 'gt:0'],
+            'monto' => ['required', 'numeric', 'gt:0'],
             'descripcion' => ['required', 'string', 'max:500'],
-            'tipo_pago'   => ['required', 'in:efectivo,yape'],
+            'tipo_pago' => ['required', 'in:efectivo,yape'],
         ]);
 
         $caja = $this->cajaService->getCajaActiva();
@@ -104,10 +104,10 @@ class CajaController extends Controller
 
         try {
             $this->cajaService->registrarEgreso($caja, [
-                'monto'       => $request->monto,
+                'monto' => $request->monto,
                 'descripcion' => $request->descripcion,
-                'tipo_pago'   => $request->tipo_pago,
-                'user_id'     => auth()->id(),
+                'tipo_pago' => $request->tipo_pago,
+                'user_id' => auth()->id(),
             ]);
 
             return redirect()->route('caja.index')

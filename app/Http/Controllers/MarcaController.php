@@ -1,0 +1,103 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Marca;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+class MarcaController extends Controller
+{
+    /**
+     * Solo letras (con acentos españoles y ñ) y espacios internos simples.
+     * Rechaza números, símbolos y espacios dobles.
+     */
+    private const SOLO_LETRAS_RULE = 'regex:/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
+     * Letras, números y espacios internos simples. Rechaza símbolos.
+     */
+    private const ALFANUMERICO_RULE = 'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
+     * Display a listing of all marcas ordered by name.
+     */
+    public function index(): View
+    {
+        $marcas = Marca::withCount('productos')->orderBy('nombre')->paginate(10);
+
+        return view('marcas.index', compact('marcas'));
+    }
+
+    /**
+     * Show the form for creating a new marca.
+     */
+    public function create(): View
+    {
+        return view('marcas.create');
+    }
+
+    /**
+     * Store a newly created marca in the database.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'nombre' => ['required', 'string', 'max:150', 'unique:marcas,nombre', self::SOLO_LETRAS_RULE],
+            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+        ]);
+
+        Marca::create([
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+        ]);
+
+        return redirect()->route('marcas.index')
+            ->with('success', 'Marca creada correctamente.');
+    }
+
+    /**
+     * Show the form for editing an existing marca.
+     */
+    public function edit(Marca $marca): View
+    {
+        return view('marcas.edit', compact('marca'));
+    }
+
+    /**
+     * Update the specified marca in the database.
+     */
+    public function update(Request $request, Marca $marca): RedirectResponse
+    {
+        $request->validate([
+            'nombre' => ['required', 'string', 'max:150', 'unique:marcas,nombre,'.$marca->id, self::SOLO_LETRAS_RULE],
+            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+        ]);
+
+        $marca->update([
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+        ]);
+
+        return redirect()->route('marcas.index')
+            ->with('success', 'Marca actualizada correctamente.');
+    }
+
+    /**
+     * Remove the specified marca from the database.
+     * Rejects deletion if the marca has products assigned.
+     */
+    public function destroy(Marca $marca): RedirectResponse
+    {
+        if ($marca->productos()->exists()) {
+            return redirect()->route('marcas.index')
+                ->with('error', 'No se puede eliminar la marca porque tiene productos asignados.');
+        }
+
+        $marca->delete();
+
+        return redirect()->route('marcas.index')
+            ->with('success', 'Marca eliminada correctamente.');
+    }
+}

@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\Caja;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Ingreso extends Model
 {
@@ -18,7 +16,7 @@ class Ingreso extends Model
      */
     public function getFotoUrlAttribute(): ?string
     {
-        if (!$this->foto) {
+        if (! $this->foto) {
             return null;
         }
 
@@ -26,11 +24,12 @@ class Ingreso extends Model
             return $this->foto;
         }
 
-        return asset('storage/' . $this->foto);
+        return asset('storage/'.$this->foto);
     }
 
     protected $fillable = [
         'cliente_id',
+        'automotor_id',
         'vehiculo_id',
         'fecha',
         'estado',
@@ -46,12 +45,12 @@ class Ingreso extends Model
     ];
 
     protected $casts = [
-        'fecha'          => 'date',
-        'precio'         => 'decimal:2',
-        'total'          => 'decimal:2',
+        'fecha' => 'date',
+        'precio' => 'decimal:2',
+        'total' => 'decimal:2',
         'monto_efectivo' => 'decimal:2',
-        'monto_yape'     => 'decimal:2',
-        'monto_izipay'   => 'decimal:2',
+        'monto_yape' => 'decimal:2',
+        'monto_izipay' => 'decimal:2',
     ];
 
     /**
@@ -60,6 +59,15 @@ class Ingreso extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    /**
+     * Relación con Automotor (vehículo físico atendido).
+     * FK automotor_id apunta a la PK string automotores.placa.
+     */
+    public function automotor(): BelongsTo
+    {
+        return $this->belongsTo(Automotor::class, 'automotor_id', 'placa');
     }
 
     /**
@@ -92,7 +100,7 @@ class Ingreso extends Model
     public function trabajadores(): BelongsToMany
     {
         return $this->belongsToMany(Trabajador::class, 'ingreso_trabajadores')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -101,7 +109,7 @@ class Ingreso extends Model
     public function servicios(): BelongsToMany
     {
         return $this->belongsToMany(Servicio::class, 'detalle_servicios')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**

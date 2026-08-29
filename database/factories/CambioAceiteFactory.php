@@ -15,17 +15,17 @@ class CambioAceiteFactory extends Factory
     public function definition(): array
     {
         return [
-            'cliente_id'     => Cliente::factory(),
-            'trabajador_id'  => Trabajador::factory(),
-            'user_id'        => User::factory(),
-            'fecha'          => fake()->date(),
-            'precio'         => fake()->randomFloat(2, 10, 500),
-            'total'          => function (array $attributes) {
+            'cliente_id' => Cliente::factory(),
+            'trabajador_id' => Trabajador::factory(),
+            'user_id' => User::factory(),
+            'fecha' => fake()->date(),
+            'precio' => fake()->randomFloat(2, 10, 500),
+            'total' => function (array $attributes) {
                 return $attributes['precio'];
             },
-            'descripcion'    => fake()->optional()->sentence(),
-            'metodo_pago'    => fake()->randomElement(['efectivo', 'yape', 'izipay']),
-            'caja_id'        => null,
+            'descripcion' => fake()->optional()->sentence(),
+            'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
+            'caja_id' => null,
         ];
     }
 }

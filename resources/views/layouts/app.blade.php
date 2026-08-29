@@ -6,72 +6,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
-        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var isDark = document.documentElement.classList.contains('dark');
-
-            // Sync initial icon state for ALL toggle buttons
-            document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
-                var darkIcon  = btn.querySelector('[data-theme-icon="dark"]');
-                var lightIcon = btn.querySelector('[data-theme-icon="light"]');
-                if (isDark) {
-                    if (lightIcon) lightIcon.classList.remove('hidden');
-                    if (darkIcon)  darkIcon.classList.add('hidden');
-                } else {
-                    if (darkIcon)  darkIcon.classList.remove('hidden');
-                    if (lightIcon) lightIcon.classList.add('hidden');
-                }
-            });
-
-            function applyTheme(dark) {
-                if (dark) {
-                    document.documentElement.classList.add('dark');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.setItem('theme', 'light');
-                }
-                // Update icons on ALL toggle buttons
-                document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
-                    var darkIcon  = btn.querySelector('[data-theme-icon="dark"]');
-                    var lightIcon = btn.querySelector('[data-theme-icon="light"]');
-                    if (dark) {
-                        if (lightIcon) lightIcon.classList.remove('hidden');
-                        if (darkIcon)  darkIcon.classList.add('hidden');
-                    } else {
-                        if (darkIcon)  darkIcon.classList.remove('hidden');
-                        if (lightIcon) lightIcon.classList.add('hidden');
-                    }
-                });
-            }
-
-            document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    applyTheme(!document.documentElement.classList.contains('dark'));
-                });
-            });
-        });
-    </script>
+    @include('partials.theme-script')
 </head>
 <body class="flex h-screen bg-gray-50 dark:bg-background-dark text-gray-900 dark:text-text-primary-dark overflow-hidden transition-colors duration-300">
 
 @php
     $userManagementActive    = request()->routeIs('users.*', 'roles.*', 'trabajadores.*');
-    $productManagementActive = request()->routeIs('productos.*', 'categorias.*');
+    $productManagementActive = request()->routeIs('productos.*', 'categorias.*', 'marcas.*');
     $categoriasActive        = request()->routeIs('categorias.*');
     $ventasActive            = request()->routeIs('ventas.*');
     $ingresosActive          = request()->routeIs('ingresos.*');
     $cambioAceiteActive      = request()->routeIs('cambio-aceite.*');
     $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $ingresosActive;
     $cajaActive              = request()->routeIs('caja.*');
-    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*');
+    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*');
 @endphp
 
     {{-- Sidebar: visible en desktop (≥1024px), oculto en móvil --}}
@@ -220,11 +168,16 @@
                               {{ $categoriasActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Categorías
                     </a>
+                    <a href="{{ route('marcas.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('marcas.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Marcas
+                    </a>
                 </div>
             </div>
             @endcan
 
-            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes'])
+            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores'])
             <div data-dropdown="gestion-administrativa">
                 <button data-dropdown-toggle="gestion-administrativa"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -261,6 +214,13 @@
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('clientes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Clientes
+                    </a>
+                    @endcan
+                    @can('acceso-automotores')
+                    <a href="{{ route('automotores.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('automotores.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Automotores
                     </a>
                     @endcan
                 </div>
@@ -430,11 +390,16 @@
                           {{ $categoriasActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Categorías
                 </a>
+                <a href="{{ route('marcas.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('marcas.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Marcas
+                </a>
             </div>
         </div>
         @endcan
 
-        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes'])
+        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores'])
         <div data-dropdown="gestion-administrativa-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-administrativa-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -475,6 +440,13 @@
                     Clientes
                 </a>
                 @endcan
+                @can('acceso-automotores')
+                <a href="{{ route('automotores.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('automotores.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Automotores
+                </a>
+                @endcan
             </div>
         </div>
         @endcanany
@@ -494,18 +466,22 @@
     </nav>
 
     {{-- Global Image Viewer Modal --}}
-    <div id="image-viewer-modal" 
-         role="dialog" 
-         aria-modal="true" 
+    <div id="image-viewer-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="image-viewer-title"
+         data-modal
+         data-modal-animated
          class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
         {{-- Fixed size container --}}
-        <div class="relative bg-surface dark:bg-slate-900 rounded-2xl border border-main shadow-2xl overflow-hidden w-[95vw] h-[95vw] max-w-[500px] max-h-[500px] md:w-[500px] md:h-[500px] flex flex-col scale-95 transition-transform duration-300">
-
+        <div data-modal-panel
+             class="relative bg-surface dark:bg-slate-900 rounded-2xl border border-main shadow-2xl overflow-hidden w-[95vw] h-[95vw] max-w-[500px] max-h-[500px] md:w-[500px] md:h-[500px] flex flex-col scale-95 transition-transform duration-300">
 
             {{-- Header --}}
             <div class="flex items-center justify-between p-4 border-b border-main bg-gray-50/50 dark:bg-slate-800/50">
-                <h3 class="text-sm font-semibold text-primary">Vista previa de imagen</h3>
-                <button id="close-image-viewer" 
+                <h3 id="image-viewer-title" class="text-sm font-semibold text-primary">Vista previa de imagen</h3>
+                <button type="button"
+                        data-modal-close
                         class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 text-secondary transition-colors"
                         aria-label="Cerrar vista previa">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -515,14 +491,14 @@
             </div>
             {{-- Image Container --}}
             <div class="flex-1 flex items-center justify-center p-2 bg-gray-100 dark:bg-slate-950/50">
-                <img id="viewer-image" 
-                     src="" 
-                     alt="Vista previa" 
+                <img id="viewer-image"
+                     src=""
+                     alt="Vista previa"
                      class="max-w-full max-h-full object-contain rounded-lg">
             </div>
         </div>
         {{-- Click outside to close area --}}
-        <div class="absolute inset-0 -z-10" id="image-viewer-overlay"></div>
+        <div class="absolute inset-0 -z-10" data-modal-overlay></div>
     </div>
 
 </body>

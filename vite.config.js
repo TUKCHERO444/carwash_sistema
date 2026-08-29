@@ -24,10 +24,23 @@ export default defineConfig({
                 'resources/js/productos/edit.js',
                 // Vehiculos
                 'resources/js/vehiculos/create.js',
+                // Clientes
+                'resources/js/clientes/validate.js',
+                // Categorias
+                'resources/js/categorias/validate.js',
+                // Marcas
+                'resources/js/marcas/validate.js',
+                // Automotores
+                'resources/js/automotores/validate.js',
                 // Users
                 'resources/js/users/toggle.js',
+                'resources/js/users/validate.js',
+                // Roles
+                'resources/js/roles/validate.js',
                 // Trabajadores
                 'resources/js/trabajadores/index.js',
+                'resources/js/trabajadores/create.js',
+                'resources/js/trabajadores/edit.js',
             ],
             refresh: true,
         }),

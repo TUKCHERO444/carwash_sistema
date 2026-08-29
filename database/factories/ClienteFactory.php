@@ -18,7 +18,6 @@ class ClienteFactory extends Factory
     public function definition(): array
     {
         return [
-            'placa' => strtoupper($this->faker->bothify('???-###')),
             'nombre' => $this->faker->name(),
             'dni' => $this->faker->numerify('########'),
             'telefono' => $this->faker->phoneNumber(),

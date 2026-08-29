@@ -18,11 +18,12 @@
                     name="email"
                     value="{{ old('email') }}"
                     autocomplete="email"
+                    @error('email') aria-describedby="email-error" aria-invalid="true" @enderror
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark
                         {{ $errors->has('email') ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-border-dark' }}"
                 >
                 @error('email')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p id="email-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -36,11 +37,12 @@
                     id="password"
                     name="password"
                     autocomplete="current-password"
+                    @error('password') aria-describedby="password-error" aria-invalid="true" @enderror
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark
                         {{ $errors->has('password') ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-border-dark' }}"
                 >
                 @error('password')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p id="password-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 

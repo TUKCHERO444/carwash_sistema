@@ -139,6 +139,10 @@ function buildRow(p) {
             </td>
 
             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                ${escHtml(p.descripcion ?? '—')}
+            </td>
+
+            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                 ${escHtml(p.categoria)}
             </td>
 

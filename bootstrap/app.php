@@ -5,6 +5,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Spatie\Permission\Exceptions\UnauthorizedException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
         $middleware->appendToGroup('web', CheckUserActivo::class);
@@ -25,9 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (UnauthorizedException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'No tienes permisos para realizar esta acción.'
+                    'message' => 'No tienes permisos para realizar esta acción.',
                 ], 403);
             }
+
             return redirect()->route('dashboard')
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
         });

@@ -1,10 +1,16 @@
 import './bootstrap';
+import './modal';
 import './stock-modal';
 import './image-viewer';
+import './confirmations';
+import { initInputFilters } from './utils/input-filters.js';
 
 
 // Toggle para dropdowns y dropups de navegación
 document.addEventListener('DOMContentLoaded', () => {
+    // Filtrado en vivo global para inputs/textarea con [data-filter]
+    initInputFilters();
+
     document.querySelectorAll('[data-dropdown-toggle]').forEach(button => {
         button.addEventListener('click', () => {
             const key = button.dataset.dropdownToggle;

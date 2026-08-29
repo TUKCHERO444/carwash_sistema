@@ -16,6 +16,7 @@ export function calcularTotal(items, porcentaje) {
     return +(subtotal * (1 - pct / 100)).toFixed(2);
 }
 
+import Swal from 'sweetalert2';
 import { Validation } from '../utils/validation.js';
 
 /**
@@ -31,7 +32,7 @@ export function renderTablaHTML(items) {
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
             <td class="px-4 py-6 text-sm text-primary">${item.nombre}</td>
             <td class="px-4 py-6">
-                <input type="number" min="1" value="${item.cantidad}"
+                <input type="number" min="1" max="${item.stock}" value="${item.cantidad}"
                     class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                     onchange="actualizarCantidad(${idx}, this.value)">
             </td>
@@ -130,9 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Expose to window so inline onclick handlers in rendered HTML can call them
     window.agregarProducto = function agregarProducto(producto) {
+        const stock = parseInt(producto.stock) || 0;
         const existente = items.find(i => i.producto_id === producto.id);
         if (existente) {
-            existente.cantidad++;
+            const nuevaCantidad = existente.cantidad + 1;
+            if (nuevaCantidad > existente.stock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock insuficiente',
+                    html: `No hay suficiente stock de <strong>${existente.nombre}</strong>.<br>Stock disponible: <strong>${existente.stock}</strong>`,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Entendido',
+                });
+                return;
+            }
+            existente.cantidad = nuevaCantidad;
             existente.subtotal = +(existente.cantidad * existente.precio_unitario).toFixed(2);
         } else {
             items.push({
@@ -141,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cantidad:        1,
                 precio_unitario: +parseFloat(producto.precio_venta).toFixed(2),
                 subtotal:        +parseFloat(producto.precio_venta).toFixed(2),
+                stock:           stock,
             });
         }
         renderTabla();
@@ -150,9 +164,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.actualizarCantidad = function actualizarCantidad(idx, val) {
-        const cantidad = Math.max(1, parseInt(val) || 1);
-        items[idx].cantidad = cantidad;
-        items[idx].subtotal = +(cantidad * items[idx].precio_unitario).toFixed(2);
+        const cantidadIngresada = parseInt(val) || 1;
+        const stock = items[idx].stock;
+
+        if (cantidadIngresada > stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuficiente',
+                html: `La cantidad ingresada (<strong>${cantidadIngresada}</strong>) excede el stock disponible de <strong>${items[idx].nombre}</strong>.<br>Stock disponible: <strong>${stock}</strong>`,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido',
+            }).then(() => {
+                const input = document.querySelector(`#tbody-detalle tr:nth-child(${idx + 1}) input[type="number"]`);
+                if (input) {
+                    input.value = stock;
+                    input.focus();
+                }
+            });
+            items[idx].cantidad = stock;
+        } else {
+            items[idx].cantidad = Math.max(1, cantidadIngresada);
+        }
+
+        items[idx].subtotal = +(items[idx].cantidad * items[idx].precio_unitario).toFixed(2);
         renderTabla();
         recalcularTotales();
     };
@@ -214,6 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (this.checked) {
             inputTotal.readOnly = false;
             inputTotal.classList.remove('bg-gray-50');
+            const subtotal = parseFloat(inputAncla.value || 0);
+            const btnFact = document.querySelector('[data-facturacion="on"]');
+            const limite = btnFact ? subtotal * 1.18 : subtotal;
+            if (parseFloat(inputTotal.value || 0) > limite) {
+                inputTotal.value = limite.toFixed(2);
+            }
             inputTotal.focus();
         } else {
             inputTotal.readOnly = true;
@@ -280,6 +320,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Re-validate mixto when total is edited manually
     inputTotal.addEventListener('input', function () {
+        if (toggleDescManual.checked) {
+            const subtotal = parseFloat(inputAncla.value || 0);
+            const btnFact = document.querySelector('[data-facturacion="on"]');
+            const limite = btnFact ? subtotal * 1.18 : subtotal;
+            const entered = parseFloat(inputTotal.value || 0);
+
+            if (entered <= 0) {
+                inputTotal.value = subtotal.toFixed(2);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Valor no válido',
+                    text: 'El precio no puede ser 0 ni negativo.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Entendido',
+                });
+            } else if (entered > limite) {
+                inputTotal.value = limite.toFixed(2);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Precio excede el subtotal',
+                    text: `El precio no puede superar S/ ${limite.toFixed(2)}.`,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Entendido',
+                });
+            }
+        }
         if (getMetodoPago() === 'mixto') validarMixto();
     });
 

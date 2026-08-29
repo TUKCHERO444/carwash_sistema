@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::table('ventas', function (Blueprint $table) {
             $table->foreignId('caja_id')->nullable()->after('user_id')
-                  ->constrained('cajas')->onDelete('set null');
+                ->constrained('cajas')->onDelete('set null');
         });
 
         Schema::table('cambio_aceites', function (Blueprint $table) {
             $table->foreignId('caja_id')->nullable()->after('user_id')
-                  ->constrained('cajas')->onDelete('set null');
+                ->constrained('cajas')->onDelete('set null');
         });
 
         Schema::table('ingresos', function (Blueprint $table) {
             $table->foreignId('caja_id')->nullable()->after('user_id')
-                  ->constrained('cajas')->onDelete('set null');
+                ->constrained('cajas')->onDelete('set null');
         });
     }
 

@@ -263,7 +263,7 @@
 
             <div class="data-row">
                 <span class="label">Placa:</span>
-                <span class="value">{{ $ingreso->cliente->placa }}</span>
+                <span class="value">{{ $ingreso->automotor->placa ?? 'N/A' }}</span>
             </div>
 
             @if($ingreso->cliente->nombre)

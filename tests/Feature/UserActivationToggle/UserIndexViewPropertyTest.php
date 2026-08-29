@@ -74,8 +74,8 @@ class UserIndexViewPropertyTest extends TestCase
                 $response->assertSee('Inactivar');
 
                 // data-toggle-url attribute present
-                $response->assertSee('data-toggle-url="' . route('users.toggle', $user) . '"', false);
-                $response->assertSee('data-user-id="' . $user->id . '"', false);
+                $response->assertSee('data-toggle-url="'.route('users.toggle', $user).'"', false);
+                $response->assertSee('data-user-id="'.$user->id.'"', false);
             } else {
                 // Badge: red "Inactivo"
                 $response->assertSee('bg-red-100 dark:bg-red-900/30 text-red-800', false);
@@ -86,8 +86,8 @@ class UserIndexViewPropertyTest extends TestCase
                 $response->assertSee('Activar');
 
                 // data-toggle-url attribute present
-                $response->assertSee('data-toggle-url="' . route('users.toggle', $user) . '"', false);
-                $response->assertSee('data-user-id="' . $user->id . '"', false);
+                $response->assertSee('data-toggle-url="'.route('users.toggle', $user).'"', false);
+                $response->assertSee('data-user-id="'.$user->id.'"', false);
             }
 
             // Clean up for next iteration

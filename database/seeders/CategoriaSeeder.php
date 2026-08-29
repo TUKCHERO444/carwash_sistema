@@ -37,13 +37,13 @@ class CategoriaSeeder extends Seeder
         // 2. Mapa de categoría => palabras clave (orden importa: Aceites antes que Líquidos)
         $keywordMap = [
             'Aceites y Lubricantes' => ['aceite', 'lubricante', 'lubricación', 'grasa'],
-            'Filtros'               => ['filtro'],
-            'Frenos'                => ['freno', 'pastilla', 'disco de freno', 'líquido de freno'],
-            'Suspensión'            => ['suspensión', 'amortiguador', 'resorte', 'muelle'],
-            'Neumáticos'            => ['neumático', 'llanta', 'rueda', 'cubierta'],
-            'Batería y Eléctrico'   => ['batería', 'bujía', 'alternador', 'arranque', 'eléctrico', 'fusible'],
-            'Correas y Cadenas'     => ['correa', 'cadena', 'banda'],
-            'Líquidos'              => ['líquido', 'refrigerante', 'anticongelante', 'coolant'],
+            'Filtros' => ['filtro'],
+            'Frenos' => ['freno', 'pastilla', 'disco de freno', 'líquido de freno'],
+            'Suspensión' => ['suspensión', 'amortiguador', 'resorte', 'muelle'],
+            'Neumáticos' => ['neumático', 'llanta', 'rueda', 'cubierta'],
+            'Batería y Eléctrico' => ['batería', 'bujía', 'alternador', 'arranque', 'eléctrico', 'fusible'],
+            'Correas y Cadenas' => ['correa', 'cadena', 'banda'],
+            'Líquidos' => ['líquido', 'refrigerante', 'anticongelante', 'coolant'],
         ];
 
         // Palabras que excluyen de "Líquidos" (van a Aceites y Lubricantes)

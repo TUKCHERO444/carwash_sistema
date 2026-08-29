@@ -108,7 +108,7 @@
                                     @method('DELETE')
                                     <button type="submit"
                                             aria-label="Eliminar usuario {{ $user->name }}"
-                                            onclick="return confirm('¿Estás seguro?')"
+                                            data-confirm="¿Estás seguro de eliminar este usuario?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

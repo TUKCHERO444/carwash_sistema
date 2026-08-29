@@ -29,7 +29,7 @@
 
     {{-- Form --}}
     <div class="bg-surface rounded-lg border border-main p-6 max-w-lg">
-        <form action="{{ route('productos.update', $producto) }}" method="POST" enctype="multipart/form-data" novalidate>
+        <form id="form-producto" action="{{ route('productos.update', $producto) }}" method="POST" enctype="multipart/form-data" novalidate>
             @csrf
             @method('PUT')
 
@@ -44,6 +44,7 @@
                     name="nombre"
                     value="{{ old('nombre', $producto->nombre) }}"
                     autocomplete="off"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="Nombre del producto"
@@ -53,7 +54,30 @@
                 @enderror
             </div>
 
-            {{-- Categoría --}}
+            {{-- Descripción --}}
+            <div class="mb-5">
+                <label for="descripcion" class="label-main mb-1">
+                    Descripción
+                </label>
+                <input
+                    type="text"
+                    id="descripcion"
+                    name="descripcion"
+                    value="{{ old('descripcion', $producto->descripcion) }}"
+                    autocomplete="off"
+                    maxlength="100"
+                    data-filter="alphanumeric"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('descripcion') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="Descripción del producto (letras y números)"
+                >
+                <p class="mt-1 text-xs text-secondary">Solo letras y números. Máximo 100 caracteres.</p>
+                @error('descripcion')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Categoría (edit) --}}
             <div class="mb-5">
                 <label for="categoria_id" class="label-main mb-1">
                     Categoría
@@ -76,6 +100,29 @@
                 @enderror
             </div>
 
+            {{-- Marca --}}
+            <div class="mb-5">
+                <label for="marca_id" class="label-main mb-1">
+                    Marca
+                </label>
+                <select
+                    id="marca_id"
+                    name="marca_id"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('marca_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                >
+                    <option value="">Sin marca</option>
+                    @foreach($marcas as $marca)
+                        <option value="{{ $marca->id }}" {{ old('marca_id', $producto->marca_id) == $marca->id ? 'selected' : '' }}>
+                            {{ $marca->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('marca_id')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Precio Compra --}}
             <div class="mb-5">
                 <label for="precio_compra" class="label-main mb-1">
@@ -88,6 +135,7 @@
                     value="{{ old('precio_compra', $producto->precio_compra) }}"
                     step="0.01"
                     min="0.01"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('precio_compra') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0.00"
@@ -109,6 +157,7 @@
                     value="{{ old('precio_venta', $producto->precio_venta) }}"
                     step="0.01"
                     min="0.01"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('precio_venta') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0.00"
@@ -129,6 +178,7 @@
                     name="stock"
                     value="{{ old('stock', $producto->stock) }}"
                     min="0"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('stock') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0"
@@ -149,6 +199,7 @@
                     name="inventario"
                     value="{{ old('inventario', $producto->inventario) }}"
                     min="0"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('inventario') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0"

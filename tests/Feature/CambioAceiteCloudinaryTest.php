@@ -3,17 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\CambioAceite;
-use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Models\User;
-use App\Models\Caja;
+use Cloudinary\Api\ApiResponse;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Spatie\Permission\Models\Permission;
+use Tests\TestCase;
 
 class CambioAceiteCloudinaryTest extends TestCase
 {
@@ -24,7 +22,7 @@ class CambioAceiteCloudinaryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Crear permisos necesarios
         Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
 
@@ -40,7 +38,7 @@ class CambioAceiteCloudinaryTest extends TestCase
         $producto = Producto::factory()->create(['precio_venta' => 40, 'stock' => 10]);
         $trabajador = Trabajador::factory()->create();
 
-        $mockResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockResponse = \Mockery::mock(ApiResponse::class);
         $mockResponse->shouldReceive('offsetGet')->with('secure_url')->andReturn('https://res.cloudinary.com/test/image/upload/v1/cambio.jpg');
 
         Cloudinary::shouldReceive('uploadApi->upload')
@@ -59,20 +57,20 @@ class CambioAceiteCloudinaryTest extends TestCase
                     'producto_id' => $producto->id,
                     'cantidad' => 2,
                     'precio' => 40,
-                    'total' => 80
-                ]
+                    'total' => 80,
+                ],
             ],
         ];
 
         $response = $this->post(route('cambio-aceite.store'), $data);
 
         $response->assertRedirect(route('cambio-aceite.index'));
-        
+
         $this->assertDatabaseHas('cambio_aceites', [
             'foto' => 'https://res.cloudinary.com/test/image/upload/v1/cambio.jpg',
             'precio' => 80,
         ]);
-        
+
         $this->assertEquals(8, $producto->fresh()->stock);
     }
 
@@ -87,14 +85,14 @@ class CambioAceiteCloudinaryTest extends TestCase
         $trabajador = Trabajador::factory()->create();
 
         // Mock Delete
-        $mockDestroyResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockDestroyResponse = \Mockery::mock(ApiResponse::class);
         Cloudinary::shouldReceive('uploadApi->destroy')
             ->once()
             ->with('old_cambio')
             ->andReturn($mockDestroyResponse);
 
         // Mock Upload
-        $mockResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockResponse = \Mockery::mock(ApiResponse::class);
         $mockResponse->shouldReceive('offsetGet')->with('secure_url')->andReturn('https://res.cloudinary.com/test/image/upload/v2/new_cambio.jpg');
 
         Cloudinary::shouldReceive('uploadApi->upload')
@@ -116,18 +114,18 @@ class CambioAceiteCloudinaryTest extends TestCase
                     'producto_id' => $producto->id,
                     'cantidad' => 1,
                     'precio' => 100,
-                    'total' => 100
-                ]
+                    'total' => 100,
+                ],
             ],
         ];
 
         $response = $this->put(route('cambio-aceite.update', $cambio), $data);
 
         $response->assertRedirect(route('cambio-aceite.show', $cambio));
-        
+
         $this->assertDatabaseHas('cambio_aceites', [
             'id' => $cambio->id,
-            'foto' => 'https://res.cloudinary.com/test/image/upload/v2/new_cambio.jpg'
+            'foto' => 'https://res.cloudinary.com/test/image/upload/v2/new_cambio.jpg',
         ]);
     }
 
@@ -141,7 +139,7 @@ class CambioAceiteCloudinaryTest extends TestCase
         $producto = Producto::factory()->create();
         $cambio->productos()->attach($producto, ['cantidad' => 1, 'precio' => 10, 'total' => 10]);
 
-        $mockDestroyResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockDestroyResponse = \Mockery::mock(ApiResponse::class);
         Cloudinary::shouldReceive('uploadApi->destroy')
             ->once()
             ->with('to_delete_aceite')

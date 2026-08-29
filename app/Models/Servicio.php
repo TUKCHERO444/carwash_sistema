@@ -12,6 +12,7 @@ class Servicio extends Model
 
     protected $fillable = [
         'nombre',
+        'descripcion',
         'precio',
     ];
 
@@ -25,6 +26,6 @@ class Servicio extends Model
     public function ingresos(): BelongsToMany
     {
         return $this->belongsToMany(Ingreso::class, 'detalle_servicios')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 }

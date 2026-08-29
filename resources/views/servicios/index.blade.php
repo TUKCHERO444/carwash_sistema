@@ -42,6 +42,9 @@
                             Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Descripción
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Precio
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
@@ -54,6 +57,9 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                              <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
                                 {{ $servicio->nombre }}
+                            </td>
+                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $servicio->descripcion ?? '—' }}
                             </td>
                              <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 S/ {{ number_format($servicio->precio, 2) }}
@@ -74,7 +80,7 @@
                                     @method('DELETE')
                                     <button type="submit"
                                             aria-label="Eliminar servicio {{ $servicio->nombre }}"
-                                            onclick="return confirm('¿Estás seguro de que deseas eliminar este servicio?')"
+                                            data-confirm="¿Estás seguro de que deseas eliminar este servicio?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

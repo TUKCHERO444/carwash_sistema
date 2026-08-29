@@ -10,6 +10,28 @@ use Illuminate\Http\Request;
 class ServicioController extends Controller
 {
     /**
+     * Regla de validación alfanumérica para el nombre (letras, números
+     * y espacios; rechaza símbolos). Máximo 30 caracteres.
+     */
+    private const NOMBRE_RULES = [
+        'required',
+        'string',
+        'max:30',
+        'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]+$/u',
+    ];
+
+    /**
+     * Regla de validación alfanumérica para la descripción.
+     * Admite letras, números y espacios; rechaza símbolos.
+     */
+    private const DESCRIPCION_RULES = [
+        'nullable',
+        'string',
+        'max:100',
+        'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]+$/u',
+    ];
+
+    /**
      * Muestra la lista paginada de servicios.
      */
     public function index(): View
@@ -33,11 +55,12 @@ class ServicioController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
+            'nombre' => self::NOMBRE_RULES,
+            'descripcion' => self::DESCRIPCION_RULES,
             'precio' => ['required', 'numeric', 'gt:0'],
         ]);
 
-        Servicio::create($request->only('nombre', 'precio'));
+        Servicio::create($request->only('nombre', 'descripcion', 'precio'));
 
         return redirect()->route('servicios.index')
             ->with('success', 'Servicio creado correctamente.');
@@ -58,11 +81,12 @@ class ServicioController extends Controller
     public function update(Request $request, Servicio $servicio): RedirectResponse
     {
         $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
+            'nombre' => self::NOMBRE_RULES,
+            'descripcion' => self::DESCRIPCION_RULES,
             'precio' => ['required', 'numeric', 'gt:0'],
         ]);
 
-        $servicio->update($request->only('nombre', 'precio'));
+        $servicio->update($request->only('nombre', 'descripcion', 'precio'));
 
         return redirect()->route('servicios.index')
             ->with('success', 'Servicio actualizado correctamente.');

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('producto_id')->constrained('productos')->onDelete('cascade');
             $table->integer('cantidad')->default(1);
             $table->timestamps();
-            
+
             $table->unique(['cambio_aceite_id', 'producto_id']);
         });
     }

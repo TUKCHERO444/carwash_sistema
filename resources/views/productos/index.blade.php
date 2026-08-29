@@ -85,6 +85,9 @@
                             Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Descripción
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Categoría
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
@@ -127,6 +130,11 @@
                             {{-- Nombre --}}
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
                                 {{ $producto->nombre }}
+                            </td>
+
+                            {{-- Descripción --}}
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $producto->descripcion ?? '—' }}
                             </td>
 
                             {{-- Categoría --}}
@@ -204,7 +212,7 @@
                                     @method('DELETE')
                                     <button type="submit"
                                             aria-label="Eliminar producto {{ $producto->nombre }}"
-                                            onclick="return confirm('¿Estás seguro de que deseas eliminar este producto?')"
+                                            data-confirm="¿Estás seguro de que deseas eliminar este producto?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -232,12 +240,8 @@
 @vite('resources/js/productos/index.js')
 
 {{-- Stock Update Modal --}}
-<div id="stock-modal" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title"
-     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 p-6 border border-main transition-colors duration-300">
-        <h2 id="stock-modal-title" class="text-lg font-semibold text-primary mb-1">
-            Actualizar stock
-        </h2>
+<x-modal id="stock-modal" title="Actualizar stock" maxWidth="sm">
+    <div class="px-6 pb-4 sm:pb-6">
         <p id="stock-modal-nombre" class="text-sm text-secondary mb-4"></p>
 
         <div class="mb-4 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
@@ -259,17 +263,17 @@
                    placeholder="Ej: 50">
             <p id="stock-modal-error" role="alert" class="hidden mt-1 text-xs text-red-600"></p>
         </form>
-
-        <div class="flex justify-end gap-2 mt-6">
-            <button type="button" id="stock-modal-cancel"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-primary-dark bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
-                Cancelar
-            </button>
-            <button type="button" id="stock-modal-submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                Confirmar
-            </button>
-        </div>
     </div>
-</div>
+
+    <x-slot:footer>
+        <button type="button" id="stock-modal-submit" form="stock-modal-form"
+                class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            Confirmar
+        </button>
+        <button type="button" data-modal-close
+                class="mt-3 sm:mt-0 w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-primary-dark bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+            Cancelar
+        </button>
+    </x-slot:footer>
+</x-modal>
 @endsection

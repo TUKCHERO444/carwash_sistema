@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Laravel') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.theme-script')
 </head>
 <body class="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center transition-colors duration-300">
 

@@ -99,12 +99,12 @@ class LoginTest extends TestCase
     public function test_post_login_with_valid_credentials_redirects_to_dashboard_and_creates_session(): void
     {
         $user = User::factory()->create([
-            'email'    => 'usuario@example.com',
+            'email' => 'usuario@example.com',
             'password' => bcrypt('password123'),
         ]);
 
         $response = $this->post('/', [
-            'email'    => 'usuario@example.com',
+            'email' => 'usuario@example.com',
             'password' => 'password123',
         ]);
 
@@ -119,7 +119,7 @@ class LoginTest extends TestCase
     public function test_post_login_with_nonexistent_email_returns_to_login_with_email_error(): void
     {
         $response = $this->post('/', [
-            'email'    => 'noexiste@example.com',
+            'email' => 'noexiste@example.com',
             'password' => 'cualquierpassword',
         ]);
 
@@ -134,12 +134,12 @@ class LoginTest extends TestCase
     public function test_post_login_with_incorrect_password_returns_generic_error_message(): void
     {
         User::factory()->create([
-            'email'    => 'usuario@example.com',
+            'email' => 'usuario@example.com',
             'password' => bcrypt('passwordcorrecto'),
         ]);
 
         $response = $this->post('/', [
-            'email'    => 'usuario@example.com',
+            'email' => 'usuario@example.com',
             'password' => 'passwordincorrecto',
         ]);
 
@@ -156,7 +156,7 @@ class LoginTest extends TestCase
     public function test_post_login_with_empty_email_returns_required_validation_error(): void
     {
         $response = $this->post('/', [
-            'email'    => '',
+            'email' => '',
             'password' => 'password123',
         ]);
 
@@ -171,7 +171,7 @@ class LoginTest extends TestCase
     public function test_post_login_with_empty_password_returns_required_validation_error(): void
     {
         $response = $this->post('/', [
-            'email'    => 'usuario@example.com',
+            'email' => 'usuario@example.com',
             'password' => '',
         ]);
 
@@ -186,7 +186,7 @@ class LoginTest extends TestCase
     public function test_post_login_with_invalid_email_format_returns_format_validation_error(): void
     {
         $response = $this->post('/', [
-            'email'    => 'esto-no-es-un-email',
+            'email' => 'esto-no-es-un-email',
             'password' => 'password123',
         ]);
 

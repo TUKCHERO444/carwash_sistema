@@ -29,10 +29,42 @@ export const Validation = {
             }
         });
 
+        // 1.1 Validar longitud exacta (data-validate-length="N")
+        // Rechaza el registro si el valor no tiene exactamente N caracteres.
+        // Solo aplica a campos no vacíos (para permitir opcionales como teléfono),
+        // excepto si el campo también es [required] (entonces su vacío ya se
+        // valida en el paso 1).
+        const lengthInputs = form.querySelectorAll('[data-validate-length]');
+        lengthInputs.forEach(input => {
+            const value = input.value.trim();
+            if (!value && !input.required) return; // opcional vacío → válido
+            if (!value) return; // ya cubierto por el paso 1 (required)
+            const len = parseInt(input.dataset.validateLength, 10);
+            if (!Number.isNaN(len) && value.length !== len) {
+                this.showError(input, `Debe tener exactamente ${len} caracteres.`);
+                isValid = false;
+                if (!firstError) firstError = input;
+            }
+        });
+
+        // 1.2 Validar formato de correo electrónico (data-validate-email)
+        // Rechaza el registro si el valor no tiene un formato de email válido.
+        // Solo aplica a campos no vacíos (para permitir opcionales).
+        const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const emailInputs = form.querySelectorAll('[data-validate-email]');
+        emailInputs.forEach(input => {
+            const value = input.value.trim();
+            if (!value) return; // opcional vacío → válido (o ya cubierto por required)
+            if (!EMAIL_REGEX.test(value)) {
+                this.showError(input, 'Ingrese un correo electrónico válido.');
+                isValid = false;
+                if (!firstError) firstError = input;
+            }
+        });
+
         // 2. Validar checkboxes (ej: trabajadores)
         // Buscamos grupos que tengan al menos un checkbox con data-validate-min="1"
-        const checkboxGroups = form.querySelectorAll('[data-validate-group]');
-        const groupsChecked = {};
+        const checkboxGroups = form.querySelectorAll('[data-validate-group]');        const groupsChecked = {};
 
         checkboxGroups.forEach(cb => {
             const groupName = cb.dataset.validateGroup;

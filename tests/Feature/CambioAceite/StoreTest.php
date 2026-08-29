@@ -6,6 +6,7 @@ use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -16,40 +17,42 @@ class StoreTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Trabajador $trabajador;
+
     private Producto $producto;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->producto = Producto::create([
-            'nombre'        => 'Aceite 10W40',
+            'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
-            'precio_venta'  => 35.00,
-            'stock'         => 10,
-            'inventario'    => 10,
-            'activo'        => true,
+            'precio_venta' => 35.00,
+            'stock' => 10,
+            'inventario' => 10,
+            'activo' => true,
         ]);
     }
 
     private function validPayload(array $overrides = []): array
     {
         return array_merge([
-            'placa'        => 'ABC123',
-            'nombre'       => 'Juan Pérez',
+            'placa' => 'ABC123',
+            'nombre' => 'Juan Pérez',
             'trabajadores_ids' => [$this->trabajador->id],
-            'fecha'        => now()->toDateString(),
-            'productos'    => [
+            'fecha' => now()->toDateString(),
+            'productos' => [
                 [
                     'producto_id' => $this->producto->id,
-                    'cantidad'    => 2,
-                    'precio'      => 35.00,
-                    'total'       => 70.00,
+                    'cantidad' => 2,
+                    'precio' => 35.00,
+                    'total' => 70.00,
                 ],
             ],
         ], $overrides);
@@ -98,7 +101,7 @@ class StoreTest extends TestCase
         // 2 × 35.00 = 70.00
         $this->assertDatabaseHas('cambio_aceites', [
             'precio' => 70.00,
-            'total'  => 70.00,
+            'total' => 70.00,
         ]);
     }
 
@@ -112,9 +115,9 @@ class StoreTest extends TestCase
 
         $this->assertDatabaseHas('cambio_productos', [
             'producto_id' => $this->producto->id,
-            'cantidad'    => 2,
-            'precio'      => 35.00,
-            'total'       => 70.00,
+            'cantidad' => 2,
+            'precio' => 35.00,
+            'total' => 70.00,
         ]);
     }
 

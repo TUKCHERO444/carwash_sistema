@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Caja;
 
 class Venta extends Model
 {
@@ -24,11 +23,11 @@ class Venta extends Model
     ];
 
     protected $casts = [
-        'subtotal'       => 'decimal:2',
-        'total'          => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'total' => 'decimal:2',
         'monto_efectivo' => 'decimal:2',
-        'monto_yape'     => 'decimal:2',
-        'monto_izipay'   => 'decimal:2',
+        'monto_yape' => 'decimal:2',
+        'monto_izipay' => 'decimal:2',
     ];
 
     /**
@@ -61,7 +60,7 @@ class Venta extends Model
     public function productos(): BelongsToMany
     {
         return $this->belongsToMany(Producto::class, 'detalle_ventas')
-                    ->withPivot('cantidad', 'precio_unitario', 'subtotal')
-                    ->withTimestamps();
+            ->withPivot('cantidad', 'precio_unitario', 'subtotal')
+            ->withTimestamps();
     }
 }

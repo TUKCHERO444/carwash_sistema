@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Caja extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'estado',
@@ -19,9 +20,9 @@ class Caja extends Model
     ];
 
     protected $casts = [
-        'monto_inicial'  => 'decimal:2',
+        'monto_inicial' => 'decimal:2',
         'fecha_apertura' => 'datetime',
-        'fecha_cierre'   => 'datetime',
+        'fecha_cierre' => 'datetime',
     ];
 
     /**

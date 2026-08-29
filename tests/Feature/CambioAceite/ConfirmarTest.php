@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -19,44 +20,48 @@ class ConfirmarTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Trabajador $trabajador;
+
     private Cliente $cliente;
+
     private Producto $producto;
+
     private CambioAceite $pendiente;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
         $this->producto = Producto::create([
-            'nombre'        => 'Aceite 10W40',
+            'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
-            'precio_venta'  => 35.00,
-            'stock'         => 10,
-            'inventario'    => 10,
-            'activo'        => true,
+            'precio_venta' => 35.00,
+            'stock' => 10,
+            'inventario' => 10,
+            'activo' => true,
         ]);
 
         $this->pendiente = CambioAceite::create([
-            'cliente_id'    => $this->cliente->id,
+            'cliente_id' => $this->cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 70.00,
-            'total'         => 70.00,
-            'estado'        => 'pendiente',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'estado' => 'pendiente',
         ]);
 
         // Associate product with the ticket
         $this->pendiente->productos()->attach($this->producto->id, [
             'cantidad' => 2,
-            'precio'   => 35.00,
-            'total'    => 70.00,
+            'precio' => 35.00,
+            'total' => 70.00,
         ]);
     }
 
@@ -92,14 +97,14 @@ class ConfirmarTest extends TestCase
     public function test_confirmar_redirects_to_confirmados_if_already_confirmed(): void
     {
         $confirmado = CambioAceite::create([
-            'cliente_id'    => $this->cliente->id,
+            'cliente_id' => $this->cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 70.00,
-            'total'         => 70.00,
-            'estado'        => 'confirmado',
-            'metodo_pago'   => 'efectivo',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'estado' => 'confirmado',
+            'metodo_pago' => 'efectivo',
         ]);
 
         $response = $this->actingAs($this->user)
@@ -113,19 +118,19 @@ class ConfirmarTest extends TestCase
     private function confirmPayload(array $overrides = []): array
     {
         return array_merge([
-            'placa'        => 'ABC123',
-            'nombre'       => 'Juan',
+            'placa' => 'ABC123',
+            'nombre' => 'Juan',
             'trabajadores_ids' => [$this->trabajador->id],
-            'fecha'        => now()->toDateString(),
-            'precio'       => 70.00,
-            'total'        => 70.00,
-            'metodo_pago'  => 'efectivo',
-            'productos'    => [
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'metodo_pago' => 'efectivo',
+            'productos' => [
                 [
                     'producto_id' => $this->producto->id,
-                    'cantidad'    => 2,
-                    'precio'      => 35.00,
-                    'total'       => 70.00,
+                    'cantidad' => 2,
+                    'precio' => 35.00,
+                    'total' => 70.00,
                 ],
             ],
         ], $overrides);
@@ -134,7 +139,7 @@ class ConfirmarTest extends TestCase
     /**
      * Req 4.7 — procesarConfirmacion() without active caja returns error_caja and does not change estado.
      */
-    public function test_procesarConfirmacion_without_caja_returns_error_caja(): void
+    public function test_procesar_confirmacion_without_caja_returns_error_caja(): void
     {
         // No caja created — no active session
 
@@ -150,7 +155,7 @@ class ConfirmarTest extends TestCase
     /**
      * Req 4.3 — procesarConfirmacion() with active caja changes estado to 'confirmado' and redirects to index.
      */
-    public function test_procesarConfirmacion_with_caja_confirms_ticket_and_redirects_to_index(): void
+    public function test_procesar_confirmacion_with_caja_confirms_ticket_and_redirects_to_index(): void
     {
         Caja::factory()->abierta()->create();
 
@@ -166,7 +171,7 @@ class ConfirmarTest extends TestCase
     /**
      * Req 4.2 — procesarConfirmacion() stores payment data on confirmation.
      */
-    public function test_procesarConfirmacion_stores_payment_data(): void
+    public function test_procesar_confirmacion_stores_payment_data(): void
     {
         $caja = Caja::factory()->abierta()->create();
 
@@ -174,17 +179,17 @@ class ConfirmarTest extends TestCase
             ->post("/cambio-aceite/{$this->pendiente->id}/confirmar", $this->confirmPayload());
 
         $this->assertDatabaseHas('cambio_aceites', [
-            'id'          => $this->pendiente->id,
-            'estado'      => 'confirmado',
+            'id' => $this->pendiente->id,
+            'estado' => 'confirmado',
             'metodo_pago' => 'efectivo',
-            'caja_id'     => $caja->id,
+            'caja_id' => $caja->id,
         ]);
     }
 
     /**
      * Req 4.4 — procesarConfirmacion() with total <= 0 returns validation error.
      */
-    public function test_procesarConfirmacion_with_zero_total_returns_validation_error(): void
+    public function test_procesar_confirmacion_with_zero_total_returns_validation_error(): void
     {
         Caja::factory()->abierta()->create();
 
@@ -200,7 +205,7 @@ class ConfirmarTest extends TestCase
     /**
      * Req 4.1 — procesarConfirmacion() requires metodo_pago.
      */
-    public function test_procesarConfirmacion_requires_metodo_pago(): void
+    public function test_procesar_confirmacion_requires_metodo_pago(): void
     {
         Caja::factory()->abierta()->create();
 
@@ -213,7 +218,7 @@ class ConfirmarTest extends TestCase
     /**
      * Req 4.6 — procesarConfirmacion() accepts all valid payment methods.
      */
-    public function test_procesarConfirmacion_accepts_all_valid_payment_methods(): void
+    public function test_procesar_confirmacion_accepts_all_valid_payment_methods(): void
     {
         foreach (['efectivo', 'yape', 'izipay'] as $metodo) {
             // Reset ticket state

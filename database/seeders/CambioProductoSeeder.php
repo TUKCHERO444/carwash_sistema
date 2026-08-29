@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CambioAceite;
 use App\Models\CambioProducto;
 use App\Models\Producto;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class CambioProductoSeeder extends Seeder
 {
@@ -46,17 +46,17 @@ class CambioProductoSeeder extends Seeder
                     ->where('producto_id', $productoId)
                     ->exists();
 
-                if (!$existe) {
+                if (! $existe) {
                     $cantidad = $faker->numberBetween(1, 5);
-                    $precio   = (float) $productos->find($productoId)->precio_venta;
-                    $total    = round($cantidad * $precio, 2);
+                    $precio = (float) $productos->find($productoId)->precio_venta;
+                    $total = round($cantidad * $precio, 2);
 
                     CambioProducto::create([
                         'cambio_aceite_id' => $cambioAceite->id,
-                        'producto_id'      => $productoId,
-                        'cantidad'         => $cantidad,
-                        'precio'           => $precio,
-                        'total'            => $total,
+                        'producto_id' => $productoId,
+                        'cantidad' => $cantidad,
+                        'precio' => $precio,
+                        'total' => $total,
                     ]);
                 }
             }

@@ -40,19 +40,19 @@ class LoginPropertyTest extends TestCase
         $iterations = 100;
 
         for ($i = 0; $i < $iterations; $i++) {
-            $email    = $faker->unique()->safeEmail();
+            $email = $faker->unique()->safeEmail();
             $password = $faker->password(minLength: 8, maxLength: 32);
 
             // Create the user with a hashed password
             User::create([
-                'name'     => $faker->name(),
-                'email'    => $email,
+                'name' => $faker->name(),
+                'email' => $email,
                 'password' => bcrypt($password),
             ]);
 
             // Auth::attempt() must return true for valid credentials
             $result = Auth::attempt([
-                'email'    => $email,
+                'email' => $email,
                 'password' => $password,
             ]);
 
@@ -84,14 +84,14 @@ class LoginPropertyTest extends TestCase
         $faker->unique(true); // reset unique generator
 
         $expectedError = 'Las credenciales proporcionadas no coinciden con nuestros registros.';
-        $iterations    = 100;
+        $iterations = 100;
 
         // Create one real user so we can also test wrong-password scenarios
-        $realEmail    = $faker->unique()->safeEmail();
+        $realEmail = $faker->unique()->safeEmail();
         $realPassword = $faker->password(minLength: 8, maxLength: 32);
         User::create([
-            'name'     => $faker->name(),
-            'email'    => $realEmail,
+            'name' => $faker->name(),
+            'email' => $realEmail,
             'password' => bcrypt($realPassword),
         ]);
 
@@ -100,14 +100,14 @@ class LoginPropertyTest extends TestCase
             if ($i % 2 === 0) {
                 // Non-existent email
                 $credentials = [
-                    'email'    => $faker->unique()->safeEmail(),
+                    'email' => $faker->unique()->safeEmail(),
                     'password' => $faker->password(minLength: 8),
                 ];
             } else {
                 // Existing email but wrong password
                 $credentials = [
-                    'email'    => $realEmail,
-                    'password' => $faker->password(minLength: 8) . '_wrong_' . $i,
+                    'email' => $realEmail,
+                    'password' => $faker->password(minLength: 8).'_wrong_'.$i,
                 ];
             }
 
@@ -167,19 +167,19 @@ class LoginPropertyTest extends TestCase
 
             switch ($type) {
                 case 'empty_email':
-                    $payload       = ['email' => '', 'password' => $faker->password(minLength: 8)];
+                    $payload = ['email' => '', 'password' => $faker->password(minLength: 8)];
                     $expectedField = 'email';
                     break;
 
                 case 'empty_password':
-                    $payload       = ['email' => $faker->safeEmail(), 'password' => ''];
+                    $payload = ['email' => $faker->safeEmail(), 'password' => ''];
                     $expectedField = 'password';
                     break;
 
                 case 'invalid_email_format':
                 default:
-                    $invalidEmail  = $invalidEmailFormats[$i % count($invalidEmailFormats)];
-                    $payload       = ['email' => $invalidEmail, 'password' => $faker->password(minLength: 8)];
+                    $invalidEmail = $invalidEmailFormats[$i % count($invalidEmailFormats)];
+                    $payload = ['email' => $invalidEmail, 'password' => $faker->password(minLength: 8)];
                     $expectedField = 'email';
                     break;
             }
@@ -212,7 +212,7 @@ class LoginPropertyTest extends TestCase
 
         // The only protected route defined in this spec
         $protectedRoute = '/dashboard';
-        $iterations     = 100;
+        $iterations = 100;
 
         for ($i = 0; $i < $iterations; $i++) {
             // Ensure no authenticated session exists

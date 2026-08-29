@@ -33,13 +33,14 @@ class LoginController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'string', 'email'],
+            'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
 
         if (Auth::attempt($credentials)) {
-            if (!Auth::user()->activo) {
+            if (! Auth::user()->activo) {
                 Auth::logout();
+
                 return back()->withErrors([
                     'email' => 'Tu cuenta está inactiva. Contacta al administrador.',
                 ])->withInput($request->except('password'));

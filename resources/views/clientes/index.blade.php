@@ -45,9 +45,6 @@
                             Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Placa
-                        </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -59,14 +56,11 @@
                                 {{ $cliente->dni }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
-                                {{ $cliente->nombre }}
-                            </td>
-                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $cliente->placa }}
+                                {{ $cliente->nombre_completo }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 <a href="{{ route('clientes.edit', $cliente) }}"
-                                   aria-label="Editar cliente {{ $cliente->nombre }}"
+                                   aria-label="Editar cliente {{ $cliente->nombre_completo }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -79,8 +73,8 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            aria-label="Eliminar cliente {{ $cliente->nombre }}"
-                                            onclick="return confirm('¿Estás seguro de que deseas eliminar este cliente?')"
+                                            aria-label="Eliminar cliente {{ $cliente->nombre_completo }}"
+                                            data-confirm="¿Estás seguro de que deseas eliminar este cliente?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

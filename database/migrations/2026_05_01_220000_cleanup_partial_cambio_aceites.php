@@ -11,7 +11,7 @@ return new class extends Migration
     {
         if (Schema::hasColumn('cambio_aceites', 'precio')) {
             // Check if the FK constraint exists before trying to drop it
-            $fkExists = collect(\DB::select("
+            $fkExists = collect(DB::select("
                 SELECT CONSTRAINT_NAME
                 FROM information_schema.TABLE_CONSTRAINTS
                 WHERE TABLE_SCHEMA = DATABASE()
@@ -30,7 +30,7 @@ return new class extends Migration
                         $columns[] = $col;
                     }
                 }
-                if (!empty($columns)) {
+                if (! empty($columns)) {
                     $table->dropColumn($columns);
                 }
             });

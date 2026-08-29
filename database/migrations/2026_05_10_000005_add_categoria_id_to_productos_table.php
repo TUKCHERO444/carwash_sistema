@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::table('productos', function (Blueprint $table) {
             $table->unsignedBigInteger('categoria_id')->nullable()->after('inventario');
             $table->foreign('categoria_id')
-                  ->references('id')
-                  ->on('categorias')
-                  ->onDelete('set null');
+                ->references('id')
+                ->on('categorias')
+                ->onDelete('set null');
         });
     }
 

@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\DetalleServicio;
 use App\Models\Ingreso;
 use App\Models\Servicio;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class DetalleServicioSeeder extends Seeder
 {
@@ -34,9 +34,9 @@ class DetalleServicioSeeder extends Seeder
                     ->where('servicio_id', $servicioId)
                     ->exists();
 
-                if (!$existe) {
+                if (! $existe) {
                     DetalleServicio::create([
-                        'ingreso_id'  => $ingreso->id,
+                        'ingreso_id' => $ingreso->id,
                         'servicio_id' => $servicioId,
                     ]);
                 }

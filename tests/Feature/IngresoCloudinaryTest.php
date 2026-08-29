@@ -2,19 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
 use App\Models\Ingreso;
 use App\Models\Servicio;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
-use App\Models\Caja;
+use Cloudinary\Api\ApiResponse;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Spatie\Permission\Models\Permission;
+use Tests\TestCase;
 
 class IngresoCloudinaryTest extends TestCase
 {
@@ -25,7 +23,7 @@ class IngresoCloudinaryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Crear permisos necesarios
         Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
 
@@ -42,7 +40,7 @@ class IngresoCloudinaryTest extends TestCase
         $trabajador = Trabajador::factory()->create();
         $servicio = Servicio::factory()->create(['precio' => 20]);
 
-        $mockResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockResponse = \Mockery::mock(ApiResponse::class);
         $mockResponse->shouldReceive('offsetGet')->with('secure_url')->andReturn('https://res.cloudinary.com/test/image/upload/v1/ingreso.jpg');
 
         Cloudinary::shouldReceive('uploadApi->upload')
@@ -58,14 +56,14 @@ class IngresoCloudinaryTest extends TestCase
             'foto' => $file,
             'trabajadores_ids' => [$trabajador->id],
             'servicios' => [
-                ['servicio_id' => $servicio->id]
+                ['servicio_id' => $servicio->id],
             ],
         ];
 
         $response = $this->post(route('ingresos.store'), $data);
 
         $response->assertRedirect(route('ingresos.index'));
-        
+
         $this->assertDatabaseHas('ingresos', [
             'foto' => 'https://res.cloudinary.com/test/image/upload/v1/ingreso.jpg',
             'precio' => 70, // 50 + 20
@@ -84,14 +82,14 @@ class IngresoCloudinaryTest extends TestCase
         $trabajador = Trabajador::factory()->create();
 
         // Mock Delete
-        $mockDestroyResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockDestroyResponse = \Mockery::mock(ApiResponse::class);
         Cloudinary::shouldReceive('uploadApi->destroy')
             ->once()
             ->with('old_ingreso')
             ->andReturn($mockDestroyResponse);
 
         // Mock Upload
-        $mockResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockResponse = \Mockery::mock(ApiResponse::class);
         $mockResponse->shouldReceive('offsetGet')->with('secure_url')->andReturn('https://res.cloudinary.com/test/image/upload/v2/new_ingreso.jpg');
 
         Cloudinary::shouldReceive('uploadApi->upload')
@@ -115,10 +113,10 @@ class IngresoCloudinaryTest extends TestCase
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('ingresos.show', $ingreso));
-        
+
         $this->assertDatabaseHas('ingresos', [
             'id' => $ingreso->id,
-            'foto' => 'https://res.cloudinary.com/test/image/upload/v2/new_ingreso.jpg'
+            'foto' => 'https://res.cloudinary.com/test/image/upload/v2/new_ingreso.jpg',
         ]);
     }
 
@@ -130,7 +128,7 @@ class IngresoCloudinaryTest extends TestCase
         $url = 'https://res.cloudinary.com/test/image/upload/v1/to_delete.jpg';
         $ingreso = Ingreso::factory()->create(['foto' => $url]);
 
-        $mockDestroyResponse = \Mockery::mock(\Cloudinary\Api\ApiResponse::class);
+        $mockDestroyResponse = \Mockery::mock(ApiResponse::class);
         Cloudinary::shouldReceive('uploadApi->destroy')
             ->once()
             ->with('to_delete')

@@ -14,15 +14,36 @@ import {
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
 import { Validation } from '../utils/validation.js';
+import Swal from 'sweetalert2';
 
 // ── Estado local ──
 let items = []; // [{producto_id, nombre, cantidad, precio, total}]
 
 // ── Callbacks de tabla ──
 function actualizarCantidad(idx, val) {
-    const cantidad = Math.max(1, parseInt(val) || 1);
-    items[idx].cantidad = cantidad;
-    items[idx].total    = +(cantidad * items[idx].precio).toFixed(2);
+    const cantidadIngresada = parseInt(val) || 1;
+    const stock = items[idx].stock;
+
+    if (stock != null && cantidadIngresada > stock) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Stock insuficiente',
+            html: `La cantidad ingresada (<strong>${cantidadIngresada}</strong>) excede el stock disponible de <strong>${items[idx].nombre}</strong>.<br>Stock disponible: <strong>${stock}</strong>`,
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Entendido',
+        }).then(() => {
+            const input = document.querySelector(`#tbody-detalle tr:nth-child(${idx + 1}) input[type="number"]`);
+            if (input) {
+                input.value = stock;
+                input.focus();
+            }
+        });
+        items[idx].cantidad = stock;
+    } else {
+        items[idx].cantidad = Math.max(1, cantidadIngresada);
+    }
+
+    items[idx].total = +(items[idx].cantidad * items[idx].precio).toFixed(2);
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
     sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
@@ -37,9 +58,21 @@ function eliminarItem(idx) {
 
 // ── Callback para agregar un producto desde la búsqueda ──
 function onAgregarProducto(producto) {
+    const stock = parseInt(producto.stock) || 0;
     const existente = items.find(i => i.producto_id === producto.id);
     if (existente) {
-        existente.cantidad++;
+        const nuevaCantidad = existente.cantidad + 1;
+        if (existente.stock != null && nuevaCantidad > existente.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuficiente',
+                html: `No hay suficiente stock de <strong>${existente.nombre}</strong>.<br>Stock disponible: <strong>${existente.stock}</strong>`,
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Entendido',
+            });
+            return;
+        }
+        existente.cantidad = nuevaCantidad;
         existente.total = +(existente.cantidad * existente.precio).toFixed(2);
     } else {
         items.push({
@@ -48,6 +81,7 @@ function onAgregarProducto(producto) {
             cantidad:    1,
             precio:      +parseFloat(producto.precio_venta).toFixed(2),
             total:       +parseFloat(producto.precio_venta).toFixed(2),
+            stock:       stock,
         });
     }
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);

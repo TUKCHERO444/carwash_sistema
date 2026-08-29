@@ -4,9 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AuthSeeder extends Seeder
 {
@@ -32,16 +31,17 @@ class AuthSeeder extends Seeder
             'acceso-ventas',
             'acceso-caja',
             'acceso-clientes',
-            'acceso-vehiculos'
+            'acceso-vehiculos',
+            'acceso-automotores',
         ]);
 
         // Create admin user if it doesn't exist (idempotent)
         $admin = User::firstOrCreate(
             ['email' => 'admin@sistema.com'],
             [
-                'name'     => 'Administrador',
+                'name' => 'Administrador',
                 'password' => bcrypt('password'),
-                'activo'   => true,
+                'activo' => true,
             ]
         );
 

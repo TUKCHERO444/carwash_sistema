@@ -17,8 +17,8 @@ class CambioProducto extends Model
 
     protected $casts = [
         'cantidad' => 'integer',
-        'precio'   => 'decimal:2',
-        'total'    => 'decimal:2',
+        'precio' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     /**

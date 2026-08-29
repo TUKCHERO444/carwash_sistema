@@ -78,7 +78,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium">
-                                {{ $ingreso->cliente->placa }}
+                                {{ $ingreso->automotor->placa ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm">
                                 <a href="{{ route('ingresos.confirmar', $ingreso) }}"

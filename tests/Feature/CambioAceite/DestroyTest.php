@@ -9,6 +9,7 @@ use App\Models\Trabajador;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -19,45 +20,48 @@ class DestroyTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Trabajador $trabajador;
+
     private Cliente $cliente;
+
     private Producto $producto;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
         $this->producto = Producto::create([
-            'nombre'        => 'Aceite 10W40',
+            'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
-            'precio_venta'  => 35.00,
-            'stock'         => 8,  // already decremented (2 used)
-            'inventario'    => 10,
-            'activo'        => true,
+            'precio_venta' => 35.00,
+            'stock' => 8,  // already decremented (2 used)
+            'inventario' => 10,
+            'activo' => true,
         ]);
     }
 
     private function createPendienteWithProduct(): CambioAceite
     {
         $ticket = CambioAceite::create([
-            'cliente_id'    => $this->cliente->id,
+            'cliente_id' => $this->cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 70.00,
-            'total'         => 70.00,
-            'estado'        => 'pendiente',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'estado' => 'pendiente',
         ]);
 
         $ticket->productos()->attach($this->producto->id, [
             'cantidad' => 2,
-            'precio'   => 35.00,
-            'total'    => 70.00,
+            'precio' => 35.00,
+            'total' => 70.00,
         ]);
 
         return $ticket;
@@ -116,20 +120,20 @@ class DestroyTest extends TestCase
         Storage::disk('public')->put($fotoPath, 'fake image content');
 
         $ticket = CambioAceite::create([
-            'cliente_id'    => $this->cliente->id,
+            'cliente_id' => $this->cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 70.00,
-            'total'         => 70.00,
-            'estado'        => 'pendiente',
-            'foto'          => $fotoPath,
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'estado' => 'pendiente',
+            'foto' => $fotoPath,
         ]);
 
         $ticket->productos()->attach($this->producto->id, [
             'cantidad' => 2,
-            'precio'   => 35.00,
-            'total'    => 70.00,
+            'precio' => 35.00,
+            'total' => 70.00,
         ]);
 
         $this->actingAs($this->user)

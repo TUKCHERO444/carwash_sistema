@@ -14,8 +14,8 @@ return new class extends Migration
     {
         Schema::table('cambio_aceites', function (Blueprint $table) {
             $table->enum('estado', ['pendiente', 'confirmado'])
-                  ->default('pendiente')
-                  ->after('fecha');
+                ->default('pendiente')
+                ->after('fecha');
         });
 
         // Todos los cambios de aceite existentes se marcan como confirmados

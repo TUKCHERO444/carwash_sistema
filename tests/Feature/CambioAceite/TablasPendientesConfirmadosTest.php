@@ -3,11 +3,11 @@
 namespace Tests\Feature\CambioAceite;
 
 use App\Models\CambioAceite;
-use App\Models\Caja;
 use App\Models\Cliente;
 use App\Models\Trabajador;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
@@ -18,13 +18,14 @@ class TablasPendientesConfirmadosTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Trabajador $trabajador;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
@@ -60,31 +61,32 @@ class TablasPendientesConfirmadosTest extends TestCase
         $cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
 
         $pendiente = CambioAceite::create([
-            'cliente_id'    => $cliente->id,
+            'cliente_id' => $cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 50.00,
-            'total'         => 50.00,
-            'estado'        => 'pendiente',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 50.00,
+            'total' => 50.00,
+            'estado' => 'pendiente',
         ]);
 
         $confirmado = CambioAceite::create([
-            'cliente_id'    => $cliente->id,
+            'cliente_id' => $cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 80.00,
-            'total'         => 80.00,
-            'estado'        => 'confirmado',
-            'metodo_pago'   => 'efectivo',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 80.00,
+            'total' => 80.00,
+            'estado' => 'confirmado',
+            'metodo_pago' => 'efectivo',
         ]);
 
         $response = $this->actingAs($this->user)->get('/cambio-aceite');
 
         $response->assertViewHas('cambioAceites', function ($collection) use ($pendiente, $confirmado) {
             $ids = $collection->pluck('id');
-            return $ids->contains($pendiente->id) && !$ids->contains($confirmado->id);
+
+            return $ids->contains($pendiente->id) && ! $ids->contains($confirmado->id);
         });
     }
 
@@ -126,13 +128,13 @@ class TablasPendientesConfirmadosTest extends TestCase
         $cliente = Cliente::create(['placa' => 'XYZ999', 'nombre' => 'Pedro']);
 
         $pendiente = CambioAceite::create([
-            'cliente_id'    => $cliente->id,
+            'cliente_id' => $cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 60.00,
-            'total'         => 60.00,
-            'estado'        => 'pendiente',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 60.00,
+            'total' => 60.00,
+            'estado' => 'pendiente',
         ]);
 
         $response = $this->actingAs($this->user)->get('/cambio-aceite');
@@ -170,31 +172,32 @@ class TablasPendientesConfirmadosTest extends TestCase
         $cliente = Cliente::create(['placa' => 'DEF456', 'nombre' => 'María']);
 
         $pendiente = CambioAceite::create([
-            'cliente_id'    => $cliente->id,
+            'cliente_id' => $cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 50.00,
-            'total'         => 50.00,
-            'estado'        => 'pendiente',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 50.00,
+            'total' => 50.00,
+            'estado' => 'pendiente',
         ]);
 
         $confirmado = CambioAceite::create([
-            'cliente_id'    => $cliente->id,
+            'cliente_id' => $cliente->id,
             'trabajador_id' => $this->trabajador->id,
-            'user_id'       => $this->user->id,
-            'fecha'         => now()->toDateString(),
-            'precio'        => 80.00,
-            'total'         => 80.00,
-            'estado'        => 'confirmado',
-            'metodo_pago'   => 'efectivo',
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 80.00,
+            'total' => 80.00,
+            'estado' => 'confirmado',
+            'metodo_pago' => 'efectivo',
         ]);
 
         $response = $this->actingAs($this->user)->get('/cambio-aceite/confirmados');
 
         $response->assertViewHas('cambioAceites', function ($collection) use ($pendiente, $confirmado) {
             $ids = $collection->pluck('id');
-            return $ids->contains($confirmado->id) && !$ids->contains($pendiente->id);
+
+            return $ids->contains($confirmado->id) && ! $ids->contains($pendiente->id);
         });
     }
 

@@ -15,14 +15,14 @@ class IngresoFactory extends Factory
     public function definition(): array
     {
         return [
-            'cliente_id'  => Cliente::factory(),
+            'cliente_id' => Cliente::factory(),
             'vehiculo_id' => Vehiculo::factory(),
-            'user_id'     => User::factory(),
-            'fecha'       => fake()->date(),
-            'precio'      => 0,
-            'total'       => 0,
-            'estado'      => 'pendiente',
-            'caja_id'     => null,
+            'user_id' => User::factory(),
+            'fecha' => fake()->date(),
+            'precio' => 0,
+            'total' => 0,
+            'estado' => 'pendiente',
+            'caja_id' => null,
         ];
     }
 
@@ -36,9 +36,9 @@ class IngresoFactory extends Factory
     public function confirmado(): static
     {
         return $this->state(fn (array $attributes) => [
-            'estado'      => 'confirmado',
-            'precio'      => fake()->randomFloat(2, 10, 500),
-            'total'       => fake()->randomFloat(2, 10, 500),
+            'estado' => 'confirmado',
+            'precio' => fake()->randomFloat(2, 10, 500),
+            'total' => fake()->randomFloat(2, 10, 500),
             'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
         ]);
     }

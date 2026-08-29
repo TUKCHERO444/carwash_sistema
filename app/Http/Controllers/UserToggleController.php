@@ -24,13 +24,13 @@ class UserToggleController extends Controller
         }
 
         // 2. Solo administradores pueden inactivar a otros administradores
-        if ($user->hasRole('Administrador') && !auth()->user()->hasRole('Administrador')) {
+        if ($user->hasRole('Administrador') && ! auth()->user()->hasRole('Administrador')) {
             return response()->json([
                 'message' => 'No tienes permisos suficientes para cambiar el estado de un Administrador.',
             ], 403);
         }
 
-        $user->activo = !$user->activo;
+        $user->activo = ! $user->activo;
         $user->save();
 
         $message = $user->activo
@@ -38,7 +38,7 @@ class UserToggleController extends Controller
             : 'Usuario inactivado correctamente.';
 
         return response()->json([
-            'activo'  => (bool) $user->activo,
+            'activo' => (bool) $user->activo,
             'message' => $message,
         ], 200);
     }

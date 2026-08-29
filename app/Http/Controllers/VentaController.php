@@ -43,7 +43,8 @@ class VentaController extends Controller
         $q = $request->get('q', '');
 
         $productos = Producto::where('activo', true)
-            ->where('nombre', 'like', '%' . $q . '%')
+            ->where('nombre', 'like', '%'.$q.'%')
+            ->where('stock', '>', 0)
             ->select('id', 'nombre', 'precio_venta', 'stock')
             ->limit(10)
             ->get();
@@ -59,57 +60,66 @@ class VentaController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $caja = $this->cajaService->getCajaActiva();
-        if (!$caja) {
+        if (! $caja) {
             return back()->with('error_caja', true);
         }
 
         $request->validate([
-            'observacion'                 => ['nullable', 'string', 'max:500'],
-            'subtotal'                    => ['required', 'numeric', 'min:0'],
-            'total'                       => ['required', 'numeric', 'gt:0'],
-            'metodo_pago'                 => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo'              => ['nullable', 'numeric', 'min:0'],
-            'monto_yape'                  => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay'                => ['nullable', 'numeric', 'min:0'],
-            'productos'                   => ['required', 'array', 'min:1'],
-            'productos.*.producto_id'     => ['required', 'integer', 'exists:productos,id'],
-            'productos.*.cantidad'        => ['required', 'integer', 'min:1'],
+            'observacion' => ['nullable', 'string', 'max:500'],
+            'subtotal' => ['required', 'numeric', 'min:0'],
+            'total' => ['required', 'numeric', 'gt:0'],
+            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
+            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
+            'monto_yape' => ['nullable', 'numeric', 'min:0'],
+            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
+            'productos' => ['required', 'array', 'min:1'],
+            'productos.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
+            'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio_unitario' => ['required', 'numeric', 'gt:0'],
-            'productos.*.subtotal'        => ['required', 'numeric', 'min:0'],
+            'productos.*.subtotal' => ['required', 'numeric', 'min:0'],
         ], [
             'productos.required' => 'Debe agregar al menos un producto a la venta.',
-            'productos.min'      => 'Debe agregar al menos un producto a la venta.',
+            'productos.min' => 'Debe agregar al menos un producto a la venta.',
         ]);
+
+        foreach ($request->productos as $item) {
+            $producto = Producto::findOrFail($item['producto_id']);
+            if ($item['cantidad'] > $producto->stock) {
+                return back()->withErrors([
+                    "productos.{$item['producto_id']}.cantidad" => "La cantidad de \"{$producto->nombre}\" ({$item['cantidad']}) excede el stock disponible ({$producto->stock}).",
+                ])->withInput();
+            }
+        }
 
         $venta = null;
         DB::transaction(function () use ($request, $caja, &$venta) {
-            $nextId      = (Venta::max('id') ?? 0) + 1;
-            $correlativo = 'VTA-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            $nextId = (Venta::max('id') ?? 0) + 1;
+            $correlativo = 'VTA-'.str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
             $venta = Venta::create([
-                'correlativo'    => $correlativo,
-                'observacion'    => $request->observacion,
-                'subtotal'       => $request->subtotal,
-                'total'          => $request->total,
-                'metodo_pago'    => $request->metodo_pago,
+                'correlativo' => $correlativo,
+                'observacion' => $request->observacion,
+                'subtotal' => $request->subtotal,
+                'total' => $request->total,
+                'metodo_pago' => $request->metodo_pago,
                 'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                'monto_yape'     => $request->metodo_pago === 'mixto' ? $request->monto_yape     : null,
-                'monto_izipay'   => $request->metodo_pago === 'mixto' ? $request->monto_izipay   : null,
-                'user_id'        => auth()->id(),
-                'caja_id'        => $caja->id,
+                'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
+                'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
+                'user_id' => auth()->id(),
+                'caja_id' => $caja->id,
             ]);
 
             foreach ($request->productos as $item) {
                 DetalleVenta::create([
-                    'venta_id'        => $venta->id,
-                    'producto_id'     => $item['producto_id'],
-                    'cantidad'        => $item['cantidad'],
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['producto_id'],
+                    'cantidad' => $item['cantidad'],
                     'precio_unitario' => $item['precio_unitario'],
-                    'subtotal'        => $item['subtotal'],
+                    'subtotal' => $item['subtotal'],
                 ]);
 
                 Producto::where('id', $item['producto_id'])
-                        ->decrement('stock', $item['cantidad']);
+                    ->decrement('stock', $item['cantidad']);
             }
         });
 
@@ -147,7 +157,7 @@ class VentaController extends Controller
             DB::transaction(function () use ($venta) {
                 foreach ($venta->detalles as $detalle) {
                     Producto::where('id', $detalle->producto_id)
-                            ->increment('stock', $detalle->cantidad);
+                        ->increment('stock', $detalle->cantidad);
                 }
                 $venta->delete();
             });

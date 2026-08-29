@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('stock')->default(0);
             $table->integer('inventario')->default(0);
             $table->timestamps();
-            
+
             $table->index('stock');
         });
     }

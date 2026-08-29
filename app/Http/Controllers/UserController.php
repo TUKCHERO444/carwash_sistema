@@ -12,6 +12,12 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     /**
+     * Solo letras (con acentos españoles y ñ) y espacios internos simples.
+     * Rechaza números, símbolos y espacios dobles.
+     */
+    private const SOLO_LETRAS_RULE = 'regex:/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
      * Display a paginated listing of users with their roles.
      */
     public function index(): View
@@ -37,15 +43,15 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name' => ['required', 'string', 'max:20', self::SOLO_LETRAS_RULE],
+            'email' => ['required', 'string', 'email:rfc', 'max:100', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role'     => ['required', 'string', 'exists:roles,name'],
+            'role' => ['required', 'string', 'exists:roles,name'],
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
@@ -71,18 +77,18 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'name' => ['required', 'string', 'max:20', self::SOLO_LETRAS_RULE],
+            'email' => ['required', 'string', 'email:rfc', 'max:100', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'sometimes', 'string', 'min:8', 'confirmed'],
-            'role'     => ['required', 'string', 'exists:roles,name'],
+            'role' => ['required', 'string', 'exists:roles,name'],
         ]);
 
         $data = [
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
         ];
 
-        if (!empty($request->password)) {
+        if (! empty($request->password)) {
             $data['password'] = Hash::make($request->password);
         }
 

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('trabajador_id')->constrained('trabajadores')->onDelete('cascade');
             $table->date('fecha');
             $table->timestamps();
-            
+
             $table->index('fecha');
         });
     }

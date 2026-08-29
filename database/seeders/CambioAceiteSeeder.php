@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Automotor;
 use App\Models\CambioAceite;
 use App\Models\Cliente;
 use App\Models\Trabajador;
@@ -15,9 +16,9 @@ class CambioAceiteSeeder extends Seeder
     {
         $faker = Faker::create('es_ES');
 
-        $clienteIds        = Cliente::pluck('id')->toArray();
+        $clienteIds = Cliente::pluck('id')->toArray();
         $trabajadoresActivos = Trabajador::where('estado', true)->pluck('id')->toArray();
-        $userIds           = User::pluck('id')->toArray();
+        $userIds = User::pluck('id')->toArray();
 
         for ($i = 0; $i < 40; $i++) {
             // precio base del servicio de cambio de aceite
@@ -28,14 +29,18 @@ class CambioAceiteSeeder extends Seeder
                 ? round($precio * $faker->randomFloat(2, 0.8, 0.99), 2)
                 : $precio;
 
+            $clienteId = $faker->randomElement($clienteIds);
+            $automotorPlaca = Automotor::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
+
             CambioAceite::create([
-                'cliente_id'    => $faker->randomElement($clienteIds),
+                'cliente_id' => $clienteId,
+                'automotor_id' => $automotorPlaca,
                 'trabajador_id' => $faker->randomElement($trabajadoresActivos),
-                'fecha'         => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
-                'precio'        => $precio,
-                'total'         => $total,
-                'descripcion'   => $faker->optional(0.4)->sentence(),
-                'user_id'       => $faker->randomElement($userIds),
+                'fecha' => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
+                'precio' => $precio,
+                'total' => $total,
+                'descripcion' => $faker->optional(0.4)->sentence(),
+                'user_id' => $faker->randomElement($userIds),
             ]);
         }
     }

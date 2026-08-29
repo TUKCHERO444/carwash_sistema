@@ -238,7 +238,7 @@
 
             <div class="data-row">
                 <span class="label">Placa:</span>
-                <span class="value">{{ $cambioAceite->cliente->placa }}</span>
+                <span class="value">{{ $cambioAceite->automotor->placa ?? 'N/A' }}</span>
             </div>
 
             @if($cambioAceite->cliente->nombre)

@@ -14,8 +14,8 @@ return new class extends Migration
     {
         Schema::table('ingresos', function (Blueprint $table) {
             $table->enum('estado', ['pendiente', 'confirmado'])
-                  ->default('pendiente')
-                  ->after('fecha');
+                ->default('pendiente')
+                ->after('fecha');
         });
 
         // Todos los ingresos existentes se marcan como confirmados para preservar datos históricos

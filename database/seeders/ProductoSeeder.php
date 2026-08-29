@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Marca;
 use App\Models\Producto;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
@@ -16,6 +17,22 @@ class ProductoSeeder extends Seeder
     public function run(): void
     {
         $faker = Faker::create('es_ES');
+
+        // Mapeo de marca => palabras clave para asignación automática
+        $marcaMap = [
+            'Motul' => ['aceite motor 5w-30', 'aceite motor 10w-40', 'aceite transmisión'],
+            'Castrol' => ['aceite motor 20w-50', 'aceite hidráulico'],
+            'Fram' => ['filtro de aceite', 'filtro de aire', 'filtro de combustible', 'filtro de cabina'],
+            'Brembo' => ['pastillas de freno', 'discos de freno'],
+            'Continental' => ['líquido de frenos'],
+            'Monroe' => ['amortiguador', 'resorte de suspensión'],
+            'Michelin' => ['neumático'],
+            'Varta' => ['batería'],
+            'NGK' => ['bujías'],
+            'ACDelco' => ['alternador'],
+            'Gates' => ['correa de distribución', 'correa de accesorios', 'tensor de correa'],
+            'Mobil' => ['refrigerante', 'aditivo limpiador'],
+        ];
 
         // Productos predefinidos por categoría con precio base de compra
         $productos = [
@@ -66,6 +83,15 @@ class ProductoSeeder extends Seeder
             ['nombre' => 'Aditivo Limpiador Motor',             'precio_compra_base' => 18.00],
         ];
 
+        // Precargar marcas
+        $marcas = [];
+        foreach ($marcaMap as $marcaNombre => $_) {
+            $marca = Marca::where('nombre', $marcaNombre)->first();
+            if ($marca) {
+                $marcas[$marcaNombre] = $marca->id;
+            }
+        }
+
         foreach ($productos as $producto) {
             // Aplicar variación aleatoria ±10% al precio base de compra
             $precioCompra = round($producto['precio_compra_base'] * $faker->randomFloat(2, 0.9, 1.1), 2);
@@ -79,14 +105,28 @@ class ProductoSeeder extends Seeder
                 $precioVenta = round($precioCompra * 1.20, 2);
             }
 
+            // Asignar marca por coincidencia de palabras clave
+            $nombreLower = mb_strtolower($producto['nombre']);
+            $marcaId = null;
+
+            foreach ($marcaMap as $marcaNombre => $keywords) {
+                foreach ($keywords as $keyword) {
+                    if (str_contains($nombreLower, $keyword)) {
+                        $marcaId = $marcas[$marcaNombre] ?? null;
+                        break 2;
+                    }
+                }
+            }
+
             Producto::create([
-                'nombre'        => $producto['nombre'],
+                'nombre' => $producto['nombre'],
                 'precio_compra' => $precioCompra,
-                'precio_venta'  => $precioVenta,
-                'stock'         => $faker->numberBetween(0, 100),
-                'inventario'    => $faker->numberBetween(0, 500),
-                'activo'        => 1,
-                'foto'          => null,
+                'precio_venta' => $precioVenta,
+                'stock' => $faker->numberBetween(0, 100),
+                'inventario' => $faker->numberBetween(0, 500),
+                'activo' => 1,
+                'foto' => null,
+                'marca_id' => $marcaId,
             ]);
         }
     }

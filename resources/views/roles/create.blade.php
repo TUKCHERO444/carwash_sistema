@@ -29,7 +29,7 @@
 
     {{-- Form --}}
     <div class="bg-surface rounded-lg border border-main p-6 max-w-lg">
-        <form action="{{ route('roles.store') }}" method="POST" novalidate>
+        <form id="form-rol" action="{{ route('roles.store') }}" method="POST" novalidate>
             @csrf
 
             {{-- Nombre del rol --}}
@@ -43,10 +43,14 @@
                     name="name"
                     value="{{ old('name') }}"
                     autocomplete="off"
+                    required
+                    maxlength="20"
+                    data-filter="letters"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('name') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="Nombre del rol"
                 >
+                <p class="mt-1 text-xs text-secondary">Solo letras. Máximo 20 caracteres.</p>
                 @error('name')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -113,4 +117,5 @@
     </div>
 
 </div>
+@vite('resources/js/roles/validate.js')
 @endsection

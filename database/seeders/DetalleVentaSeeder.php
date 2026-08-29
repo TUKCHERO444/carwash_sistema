@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\Venta;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class DetalleVentaSeeder extends Seeder
 {
@@ -33,16 +33,16 @@ class DetalleVentaSeeder extends Seeder
             $totalVenta = 0;
 
             foreach ($productosSeleccionados as $productoId) {
-                $cantidad       = $faker->numberBetween(1, 10);
+                $cantidad = $faker->numberBetween(1, 10);
                 $precioUnitario = (float) $productos[$productoId]->precio_venta;
-                $subtotal       = round($cantidad * $precioUnitario, 2);
+                $subtotal = round($cantidad * $precioUnitario, 2);
 
                 DetalleVenta::create([
-                    'venta_id'        => $venta->id,
-                    'producto_id'     => $productoId,
-                    'cantidad'        => $cantidad,
+                    'venta_id' => $venta->id,
+                    'producto_id' => $productoId,
+                    'cantidad' => $cantidad,
                     'precio_unitario' => $precioUnitario,
-                    'subtotal'        => $subtotal,
+                    'subtotal' => $subtotal,
                 ]);
 
                 $totalVenta += $subtotal;
@@ -51,7 +51,7 @@ class DetalleVentaSeeder extends Seeder
             // Actualizar el total de la venta con la suma de subtotales
             $venta->update([
                 'subtotal' => round($totalVenta, 2),
-                'total'    => round($totalVenta, 2),
+                'total' => round($totalVenta, 2),
             ]);
         }
     }

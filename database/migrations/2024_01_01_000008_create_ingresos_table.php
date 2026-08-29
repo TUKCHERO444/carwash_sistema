@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('fecha');
             $table->string('foto', 255)->nullable();
             $table->timestamps();
-            
+
             $table->index('fecha');
         });
     }

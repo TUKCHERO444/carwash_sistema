@@ -26,6 +26,7 @@ class StockUpdateModalTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Producto $producto;
 
     protected function setUp(): void
@@ -41,12 +42,12 @@ class StockUpdateModalTest extends TestCase
 
         // Create a product with known stock
         $this->producto = Producto::create([
-            'nombre'        => 'Aceite Motor 5W30',
+            'nombre' => 'Aceite Motor 5W30',
             'precio_compra' => 15.00,
-            'precio_venta'  => 25.00,
-            'stock'         => 10,
-            'inventario'    => 10,
-            'activo'        => true,
+            'precio_venta' => 25.00,
+            'stock' => 10,
+            'inventario' => 10,
+            'activo' => true,
         ]);
     }
 
@@ -75,13 +76,13 @@ class StockUpdateModalTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJson([
-            'success'     => true,
+            'success' => true,
             'nuevo_stock' => $nuevoStockEsperado,
         ]);
 
         $this->assertDatabaseHas('productos', [
-            'id'        => $this->producto->id,
-            'stock'     => $nuevoStockEsperado,
+            'id' => $this->producto->id,
+            'stock' => $nuevoStockEsperado,
             'inventario' => $nuevoStockEsperado,
         ]);
     }

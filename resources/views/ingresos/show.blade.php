@@ -40,7 +40,7 @@
             <div>
                 <dt class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Cliente</dt>
                 <dd class="mt-1 text-sm text-primary">
-                    {{ $ingreso->cliente->placa }}
+                    {{ $ingreso->automotor->placa ?? 'N/A' }}
                     @if($ingreso->cliente->nombre)
                         — {{ $ingreso->cliente->nombre }}
                     @endif

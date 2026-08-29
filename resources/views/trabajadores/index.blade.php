@@ -38,8 +38,14 @@
             <table class="min-w-full divide-y divide-main">
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
+                        <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Foto
+                        </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Nombre
+                            DNI
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Trabajador
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Estado
@@ -52,8 +58,26 @@
                 <tbody class="bg-surface divide-y divide-main">
                     @foreach($trabajadores as $trabajador)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="px-4 py-8 whitespace-nowrap">
+                                @if($trabajador->foto)
+                                    <img src="{{ $trabajador->foto_url }}"
+                                         alt="Foto de {{ $trabajador->nombre_completo }}"
+                                         class="w-10 h-10 object-cover rounded-full border border-main cursor-pointer viewer-thumbnail hover:opacity-80 transition-opacity">
+                                @else
+                                    <div class="w-10 h-10 rounded-full border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden"
+                                         title="Sin foto">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
-                                {{ $trabajador->nombre }}
+                                {{ $trabajador->dni }}
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
+                                {{ $trabajador->nombre_completo }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm">
                                 <span data-trabajador-id="{{ $trabajador->id }}"
@@ -63,7 +87,7 @@
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 <a href="{{ route('trabajadores.edit', $trabajador) }}"
-                                   aria-label="Editar trabajador {{ $trabajador->nombre }}"
+                                   aria-label="Editar trabajador {{ $trabajador->nombre_completo }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -76,8 +100,8 @@
                                         data-toggle-status
                                         data-url="{{ route('trabajadores.toggleStatus', $trabajador) }}"
                                         data-trabajador-id="{{ $trabajador->id }}"
-                                        data-trabajador-nombre="{{ $trabajador->nombre }}"
-                                        aria-label="{{ $trabajador->estado ? 'Inactivar' : 'Activar' }} trabajador {{ $trabajador->nombre }}"
+                                        data-trabajador-nombre="{{ $trabajador->nombre_completo }}"
+                                        aria-label="{{ $trabajador->estado ? 'Inactivar' : 'Activar' }} trabajador {{ $trabajador->nombre_completo }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                                                {{ $trabajador->estado
                                                     ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
@@ -89,8 +113,8 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            aria-label="Eliminar trabajador {{ $trabajador->nombre }}"
-                                            onclick="return confirm('¿Estás seguro?')"
+                                            aria-label="Eliminar trabajador {{ $trabajador->nombre_completo }}"
+                                            data-confirm="¿Estás seguro de eliminar este trabajador?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -10,6 +10,12 @@ use Illuminate\Http\Request;
 class VehiculoController extends Controller
 {
     /**
+     * Regla de validación alfanumérica (letras, números y espacios;
+     * rechaza símbolos).
+     */
+    private const ALFANUMERICO_RULE = 'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]+$/u';
+
+    /**
      * Display a paginated listing of vehículos.
      */
     public function index(): View
@@ -33,9 +39,9 @@ class VehiculoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'nombre'      => ['required', 'string', 'max:100'],
-            'descripcion' => ['nullable', 'string'],
-            'precio'      => ['required', 'numeric', 'gt:0'],
+            'nombre' => ['required', 'string', 'max:30', self::ALFANUMERICO_RULE],
+            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'precio' => ['required', 'numeric', 'gt:0'],
         ]);
 
         Vehiculo::create($request->only('nombre', 'descripcion', 'precio'));
@@ -58,9 +64,9 @@ class VehiculoController extends Controller
     public function update(Request $request, Vehiculo $vehiculo): RedirectResponse
     {
         $request->validate([
-            'nombre'      => ['required', 'string', 'max:100'],
-            'descripcion' => ['nullable', 'string'],
-            'precio'      => ['required', 'numeric', 'gt:0'],
+            'nombre' => ['required', 'string', 'max:30', self::ALFANUMERICO_RULE],
+            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'precio' => ['required', 'numeric', 'gt:0'],
         ]);
 
         $vehiculo->update($request->only('nombre', 'descripcion', 'precio'));

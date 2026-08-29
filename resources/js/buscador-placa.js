@@ -66,7 +66,7 @@ export function initBuscadorPlaca() {
                             </h3>
                             <div class="text-sm text-blue-700 grid grid-cols-2 gap-2">
                                 <div><strong>Placa:</strong> ${cliente.placa}</div>
-                                <div><strong>Nombre:</strong> ${cliente.nombre || 'N/A'}</div>
+                                <div><strong>Nombre:</strong> ${cliente.nombre_completo || cliente.nombre || 'N/A'}</div>
                                 <div><strong>Teléfono:</strong> ${cliente.telefono || 'N/A'}</div>
                                 <div><strong>Ingresos:</strong> ${cliente.ingresos_count}</div>
                                 <div><strong>Cambios Aceite:</strong> ${cliente.cambios_aceite_count}</div>

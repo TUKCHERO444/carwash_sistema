@@ -5,13 +5,10 @@
  */
 
 /**
- * Cierra el modal de stock ocultándolo con la clase `hidden`.
+ * Cierra el modal de stock usando el gestor global de modales (focus, Escape, backdrop).
  */
 function closeStockModal() {
-    const modal = document.getElementById('stock-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
+    closeModal('stock-modal');
 }
 
 /**
@@ -100,30 +97,13 @@ export function initStockModal() {
         hideModalError();
 
         // Mostrar el modal y enfocar el campo de cantidad
-        modal.classList.remove('hidden');
+        openModal('stock-modal');
         cantidadField.focus();
     });
 
     // ── Task 6.2: Cierre del modal ────────────────────────────────────────────
-
-    // Cerrar al hacer clic en el botón Cancelar
-    document.getElementById('stock-modal-cancel').addEventListener('click', closeStockModal);
-
-    // Cerrar al hacer clic en el backdrop (el div exterior, fuera del panel blanco)
-    modal.addEventListener('click', (e) => {
-        // El panel blanco es el primer hijo directo del modal
-        const panel = modal.querySelector('.bg-white');
-        if (panel && !panel.contains(e.target)) {
-            closeStockModal();
-        }
-    });
-
-    // Cerrar al presionar Escape
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-            closeStockModal();
-        }
-    });
+    // El cierre (botón Cancelar, backdrop y Escape) lo gestiona modal.js
+    // a través de data-modal-close, data-modal-overlay y el focus trap global.
 
     // ── Task 6.3: Envío del formulario con fetch PATCH ────────────────────────
     const submitBtn = document.getElementById('stock-modal-submit');

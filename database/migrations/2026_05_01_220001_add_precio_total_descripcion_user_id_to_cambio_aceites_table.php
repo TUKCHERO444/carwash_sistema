@@ -17,7 +17,7 @@ return new class extends Migration
         });
 
         // Backfill existing rows with the first user
-        \DB::table('cambio_aceites')->whereNull('user_id')->update(['user_id' => 1]);
+        DB::table('cambio_aceites')->whereNull('user_id')->update(['user_id' => 1]);
 
         Schema::table('cambio_aceites', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->nullable(false)->change();

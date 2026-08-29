@@ -11,6 +11,12 @@ use Spatie\Permission\Models\Role;
 class RoleController extends Controller
 {
     /**
+     * Solo letras (con acentos españoles y ñ) y espacios internos simples.
+     * Rechaza números, símbolos y espacios dobles.
+     */
+    private const SOLO_LETRAS_RULE = 'regex:/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
      * Display a listing of roles with their permissions.
      */
     public function index(): View
@@ -25,13 +31,26 @@ class RoleController extends Controller
      */
     public function create(): View
     {
-        $permissions = Permission::all()->groupBy(function($perm) {
-            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) return 'Seguridad';
-            if (str_contains($perm->name, 'trabajadores')) return 'Personal';
-            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) return 'Inventario y Servicios';
-            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes')) return 'Clientes y Vehículos';
-            if (str_contains($perm->name, 'ventas')) return 'Ventas y Operaciones';
-            if (str_contains($perm->name, 'caja')) return 'Caja y Reportes';
+        $permissions = Permission::all()->groupBy(function ($perm) {
+            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) {
+                return 'Seguridad';
+            }
+            if (str_contains($perm->name, 'trabajadores')) {
+                return 'Personal';
+            }
+            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) {
+                return 'Inventario y Servicios';
+            }
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes') || str_contains($perm->name, 'automotores')) {
+                return 'Clientes y Vehículos';
+            }
+            if (str_contains($perm->name, 'ventas')) {
+                return 'Ventas y Operaciones';
+            }
+            if (str_contains($perm->name, 'caja')) {
+                return 'Caja y Reportes';
+            }
+
             return 'Otros';
         });
 
@@ -44,13 +63,13 @@ class RoleController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'        => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'name' => ['required', 'string', 'max:20', self::SOLO_LETRAS_RULE, 'unique:roles,name'],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $role = Role::create([
-            'name'       => $request->name,
+            'name' => $request->name,
             'guard_name' => 'web',
         ]);
 
@@ -65,13 +84,26 @@ class RoleController extends Controller
      */
     public function edit(Role $role): View
     {
-        $permissions = Permission::all()->groupBy(function($perm) {
-            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) return 'Seguridad';
-            if (str_contains($perm->name, 'trabajadores')) return 'Personal';
-            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) return 'Inventario y Servicios';
-            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes')) return 'Clientes y Vehículos';
-            if (str_contains($perm->name, 'ventas')) return 'Ventas y Operaciones';
-            if (str_contains($perm->name, 'caja')) return 'Caja y Reportes';
+        $permissions = Permission::all()->groupBy(function ($perm) {
+            if (str_contains($perm->name, 'usuarios') || str_contains($perm->name, 'roles')) {
+                return 'Seguridad';
+            }
+            if (str_contains($perm->name, 'trabajadores')) {
+                return 'Personal';
+            }
+            if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) {
+                return 'Inventario y Servicios';
+            }
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes') || str_contains($perm->name, 'automotores')) {
+                return 'Clientes y Vehículos';
+            }
+            if (str_contains($perm->name, 'ventas')) {
+                return 'Ventas y Operaciones';
+            }
+            if (str_contains($perm->name, 'caja')) {
+                return 'Caja y Reportes';
+            }
+
             return 'Otros';
         });
 
@@ -84,7 +116,7 @@ class RoleController extends Controller
     public function update(Request $request, Role $role): RedirectResponse
     {
         $request->validate([
-            'name'        => ['required', 'string', 'max:255', 'unique:roles,name,' . $role->id],
+            'name' => ['required', 'string', 'max:20', self::SOLO_LETRAS_RULE, 'unique:roles,name,'.$role->id],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);

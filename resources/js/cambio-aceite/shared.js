@@ -5,6 +5,8 @@
  * Exporta funciones de inicialización de UI y funciones puras de cálculo para testing.
  */
 
+import Swal from 'sweetalert2';
+
 // ─────────────────────────────────────────────
 // Funciones puras de cálculo (exportadas para PBT)
 // ─────────────────────────────────────────────
@@ -39,7 +41,7 @@ export function renderTablaHTML(items, onActualizarCantidad, onEliminar) {
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
             <td class="px-4 py-2 text-sm text-primary">${item.nombre}</td>
             <td class="px-4 py-2">
-                <input type="number" min="1" value="${item.cantidad}"
+                <input type="number" min="1" max="${item.stock ?? ''}" value="${item.cantidad}"
                     class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                     data-cantidad-idx="${idx}">
             </td>
@@ -332,6 +334,12 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
                 if (inputTotal) {
                     inputTotal.readOnly = false;
                     inputTotal.classList.remove('bg-slate-50', 'dark:bg-slate-800/50');
+                    const subtotal = parseFloat(inputAncla?.value ?? 0);
+                    const btnFact = document.querySelector('[data-facturacion="on"]');
+                    const limite = btnFact ? subtotal * 1.18 : subtotal;
+                    if (parseFloat(inputTotal.value || 0) > limite) {
+                        inputTotal.value = limite.toFixed(2);
+                    }
                     inputTotal.focus();
                 }
             } else {
@@ -346,6 +354,32 @@ export function initMetodoPago({ options, radios, bloqueMixto, inputTotal, input
 
     if (inputTotal) {
         inputTotal.addEventListener('input', function () {
+            if (toggleDescManual?.checked) {
+                const subtotal = parseFloat(inputAncla?.value ?? 0);
+                const btnFact = document.querySelector('[data-facturacion="on"]');
+                const limite = btnFact ? subtotal * 1.18 : subtotal;
+                const entered = parseFloat(inputTotal.value || 0);
+
+                if (entered <= 0) {
+                    inputTotal.value = subtotal.toFixed(2);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Valor no válido',
+                        text: 'El precio no puede ser 0 ni negativo.',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'Entendido',
+                    });
+                } else if (entered > limite) {
+                    inputTotal.value = limite.toFixed(2);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Precio excede el subtotal',
+                        text: `El precio no puede superar S/ ${limite.toFixed(2)}.`,
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'Entendido',
+                    });
+                }
+            }
             if (getMetodoPago() === 'mixto') {
                 // Notificar a los callers para que re-validen mixto
                 inputTotal.dispatchEvent(new CustomEvent('mixto:revalidar', { bubbles: true }));

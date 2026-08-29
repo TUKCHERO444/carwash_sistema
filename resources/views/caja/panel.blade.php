@@ -12,14 +12,14 @@
             @endcan
             
             @if(!$caja)
-                <button type="button" onclick="document.getElementById('modal-abrir-caja').classList.remove('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                <button type="button" data-modal-open="modal-abrir-caja" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
                     Iniciar Caja
                 </button>
             @else
-                <button type="button" onclick="document.getElementById('modal-registrar-egreso').classList.remove('hidden')" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-primary-dark bg-white dark:bg-slate-800 border border-gray-300 dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                <button type="button" data-modal-open="modal-registrar-egreso" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-text-primary-dark bg-white dark:bg-slate-800 border border-gray-300 dark:border-border-dark rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                     Registrar Egreso
                 </button>
-                <button type="button" onclick="document.getElementById('modal-cerrar-caja').classList.remove('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                <button type="button" data-modal-open="modal-cerrar-caja" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
                     Cerrar Caja
                 </button>
             @endif
@@ -38,15 +38,15 @@
         </div>
     @endif
     
-    @if($errors->any())
-        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
-            <ul class="list-disc list-inside">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@if($errors->any())
+    <div role="alert" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
+        <ul class="list-disc list-inside">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
     @if(!$caja)
         <div class="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-border-dark p-12 text-center transition-colors duration-300">
@@ -57,7 +57,7 @@
             </div>
             <h3 class="text-lg font-medium text-gray-900 dark:text-text-primary-dark mb-2">Caja Cerrada</h3>
             <p class="text-gray-500 dark:text-text-secondary-dark mb-6">No hay ninguna sesión de caja activa en este momento.</p>
-            <button type="button" onclick="document.getElementById('modal-abrir-caja').classList.remove('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <button type="button" data-modal-open="modal-abrir-caja" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
                 Iniciar Caja
             </button>
         </div>
@@ -189,120 +189,90 @@
 
 <!-- Modal Abrir Caja -->
 @if(!$caja)
-<div id="modal-abrir-caja" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-slate-900/75 transition-opacity" onclick="document.getElementById('modal-abrir-caja').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div class="relative inline-block align-bottom bg-white dark:bg-surface-dark rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border dark:border-border-dark">
-            <form action="{{ route('caja.abrir') }}" method="POST">
-                @csrf
-                <div class="bg-white dark:bg-surface-dark px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-text-primary-dark" id="modal-title">Iniciar Sesión de Caja</h3>
-                            <div class="mt-4">
-                                <label for="monto_inicial" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Monto Inicial (S/)</label>
-                                <input type="number" step="0.01" min="0.01" name="monto_inicial" id="monto_inicial" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
-                            </div>
-                        </div>
-                    </div>
+<x-modal id="modal-abrir-caja" title="Iniciar Sesión de Caja">
+    <form action="{{ route('caja.abrir') }}" method="POST" id="form-abrir-caja">
+        @csrf
+        <div class="px-6 pb-4 sm:pb-6">
+            <div class="flex items-start gap-3 mb-4">
+                <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:h-10 sm:w-10">
+                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
                 </div>
-                <div class="bg-gray-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t dark:border-border-dark">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Iniciar Caja
-                    </button>
-                    <button type="button" onclick="document.getElementById('modal-abrir-caja').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
+                <p class="text-sm text-secondary">Registra el monto con el que abres la caja del día.</p>
+            </div>
+            <label for="monto_inicial" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Monto Inicial (S/)</label>
+            <input type="number" step="0.01" min="0.01" name="monto_inicial" id="monto_inicial" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
         </div>
-    </div>
-</div>
+    </form>
+    <x-slot:footer>
+        <button type="submit" form="form-abrir-caja" class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:text-sm">
+            Iniciar Caja
+        </button>
+        <button type="button" data-modal-close class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-colors">
+            Cancelar
+        </button>
+    </x-slot:footer>
+</x-modal>
 @endif
 
 <!-- Modal Registrar Egreso -->
 @if($caja)
-<div id="modal-registrar-egreso" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-slate-900/75 transition-opacity" onclick="document.getElementById('modal-registrar-egreso').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div class="relative inline-block align-bottom bg-white dark:bg-surface-dark rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border dark:border-border-dark">
-            <form action="{{ route('caja.egresos.store') }}" method="POST">
-                @csrf
-                <div class="bg-white dark:bg-surface-dark px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-text-primary-dark mb-4">Registrar Egreso Manual</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="monto" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Monto (S/)</label>
-                            <input type="number" step="0.01" min="0.01" name="monto" id="monto" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
-                        </div>
-                        <div>
-                            <label for="descripcion" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Descripción</label>
-                            <input type="text" name="descripcion" id="descripcion" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej. Pago de servicios">
-                        </div>
-                        <div>
-                            <label for="tipo_pago" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Tipo de Pago</label>
-                            <select name="tipo_pago" id="tipo_pago" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="efectivo">Efectivo</option>
-                                <option value="yape">Yape</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t dark:border-border-dark">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Registrar Egreso
-                    </button>
-                    <button type="button" onclick="document.getElementById('modal-registrar-egreso').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
+<x-modal id="modal-registrar-egreso" title="Registrar Egreso Manual">
+    <form action="{{ route('caja.egresos.store') }}" method="POST" id="form-registrar-egreso">
+        @csrf
+        <div class="px-6 pb-4 sm:pb-6 space-y-4">
+            <div>
+                <label for="monto" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Monto (S/)</label>
+                <input type="number" step="0.01" min="0.01" name="monto" id="monto" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+            </div>
+            <div>
+                <label for="descripcion" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Descripción</label>
+                <input type="text" name="descripcion" id="descripcion" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej. Pago de servicios">
+            </div>
+            <div>
+                <label for="tipo_pago" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Tipo de Pago</label>
+                <select name="tipo_pago" id="tipo_pago" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="yape">Yape</option>
+                </select>
+            </div>
         </div>
-    </div>
-</div>
+    </form>
+    <x-slot:footer>
+        <button type="submit" form="form-registrar-egreso" class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:text-sm">
+            Registrar Egreso
+        </button>
+        <button type="button" data-modal-close class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-colors">
+            Cancelar
+        </button>
+    </x-slot:footer>
+</x-modal>
 
 <!-- Modal Cerrar Caja -->
-<div id="modal-cerrar-caja" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-slate-900/75 transition-opacity" onclick="document.getElementById('modal-cerrar-caja').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div class="relative inline-block align-bottom bg-white dark:bg-surface-dark rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border dark:border-border-dark">
-            <form action="{{ route('caja.cerrar') }}" method="POST">
-                @csrf
-                <div class="bg-white dark:bg-surface-dark px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-text-primary-dark" id="modal-title">¿Cerrar Caja?</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500 dark:text-text-secondary-dark">¿Estás seguro de que deseas cerrar la caja actual? El balance final registrado será de <strong class="text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($resumen['balance_final'], 2) }}</strong>. Esta acción no se puede deshacer.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t dark:border-border-dark">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Sí, Cerrar Caja
-                    </button>
-                    <button type="button" onclick="document.getElementById('modal-cerrar-caja').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
+<x-modal id="modal-cerrar-caja" title="¿Cerrar Caja?">
+    <div class="px-6 pb-4 sm:pb-6">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <p class="text-sm text-secondary">¿Estás seguro de que deseas cerrar la caja actual? El balance final registrado será de <strong class="text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($resumen['balance_final'], 2) }}</strong>. Esta acción no se puede deshacer.</p>
         </div>
     </div>
-</div>
+    <form action="{{ route('caja.cerrar') }}" method="POST" id="form-cerrar-caja">
+        @csrf
+    </form>
+    <x-slot:footer>
+        <button type="submit" form="form-cerrar-caja" class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:text-sm">
+            Sí, Cerrar Caja
+        </button>
+        <button type="button" data-modal-close class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:text-sm transition-colors">
+            Cancelar
+        </button>
+    </x-slot:footer>
+</x-modal>
 @endif
 
 @endsection

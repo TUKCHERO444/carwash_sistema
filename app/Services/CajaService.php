@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Models\Caja;
-use App\Models\EgresoCaja;
-use App\Models\Venta;
 use App\Models\CambioAceite;
+use App\Models\EgresoCaja;
 use App\Models\Ingreso;
+use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 
 class CajaService
@@ -36,11 +36,11 @@ class CajaService
             }
 
             return Caja::create([
-                'user_id'        => $userId,
-                'estado'         => 'abierta',
-                'monto_inicial'  => $montoInicial,
+                'user_id' => $userId,
+                'estado' => 'abierta',
+                'monto_inicial' => $montoInicial,
                 'fecha_apertura' => now(),
-                'fecha_cierre'   => null,
+                'fecha_cierre' => null,
             ]);
         });
     }
@@ -57,7 +57,7 @@ class CajaService
         }
 
         $caja->update([
-            'estado'       => 'cerrada',
+            'estado' => 'cerrada',
             'fecha_cierre' => now(),
         ]);
 
@@ -67,9 +67,10 @@ class CajaService
     /**
      * Registra un egreso manual en la caja activa.
      *
-     * @param  Caja   $caja  La caja a la que se asocia el egreso.
+     * @param  Caja  $caja  La caja a la que se asocia el egreso.
      * @param  array  $data  Debe contener: monto, descripcion, tipo_pago.
      *                       Opcionalmente: user_id (si no se pasa, se usa el usuario autenticado).
+     *
      * @throws \RuntimeException si la caja está cerrada.
      */
     public function registrarEgreso(Caja $caja, array $data): EgresoCaja
@@ -79,20 +80,21 @@ class CajaService
         }
 
         return EgresoCaja::create([
-            'caja_id'     => $caja->id,
-            'monto'       => $data['monto'],
+            'caja_id' => $caja->id,
+            'monto' => $data['monto'],
             'descripcion' => $data['descripcion'],
-            'tipo_pago'   => $data['tipo_pago'],
-            'user_id'     => $data['user_id'] ?? auth()->id(),
+            'tipo_pago' => $data['tipo_pago'],
+            'user_id' => $data['user_id'] ?? auth()->id(),
         ]);
     }
 
     /**
      * Asocia una transacción existente (venta, cambio_aceite o ingreso) a la caja dada.
      *
-     * @param  string  $tipo           Tipo de transacción: 'venta', 'cambio_aceite' o 'ingreso'.
-     * @param  int     $transaccionId  ID del registro a asociar.
-     * @param  Caja    $caja           La caja a la que se asocia la transacción.
+     * @param  string  $tipo  Tipo de transacción: 'venta', 'cambio_aceite' o 'ingreso'.
+     * @param  int  $transaccionId  ID del registro a asociar.
+     * @param  Caja  $caja  La caja a la que se asocia la transacción.
+     *
      * @throws \RuntimeException si la caja está cerrada o el tipo no es válido.
      */
     public function asociarTransaccion(string $tipo, int $transaccionId, Caja $caja): void
@@ -102,10 +104,10 @@ class CajaService
         }
 
         $modelo = match ($tipo) {
-            'venta'         => Venta::class,
+            'venta' => Venta::class,
             'cambio_aceite' => CambioAceite::class,
-            'ingreso'       => Ingreso::class,
-            default         => throw new \InvalidArgumentException("Tipo de transacción inválido: {$tipo}"),
+            'ingreso' => Ingreso::class,
+            default => throw new \InvalidArgumentException("Tipo de transacción inválido: {$tipo}"),
         };
 
         $modelo::where('id', $transaccionId)->update(['caja_id' => $caja->id]);
@@ -135,11 +137,11 @@ class CajaService
         $cajaId = $caja->id;
 
         // Totales de ingresos por fuente
-        $totalVentas   = Venta::where('caja_id', $cajaId)->sum('total');
-        $totalCambios  = CambioAceite::where('caja_id', $cajaId)->sum('total');
+        $totalVentas = Venta::where('caja_id', $cajaId)->sum('total');
+        $totalCambios = CambioAceite::where('caja_id', $cajaId)->sum('total');
         $totalIngresos = Ingreso::where('caja_id', $cajaId)
-                                ->where('estado', 'confirmado')
-                                ->sum('total');
+            ->where('estado', 'confirmado')
+            ->sum('total');
 
         $totalIngresosCaja = (float) $totalVentas
                            + (float) $totalCambios
@@ -153,8 +155,8 @@ class CajaService
 
         // Distribución por modo de pago (ventas + cambios + ingresos confirmados)
         $montoEfectivo = 0.0;
-        $montoYape     = 0.0;
-        $montoIzipay   = 0.0;
+        $montoYape = 0.0;
+        $montoIzipay = 0.0;
 
         $fuentes = [
             Venta::where('caja_id', $cajaId)->get(),
@@ -176,22 +178,22 @@ class CajaService
                         break;
                     case 'mixto':
                         $montoEfectivo += (float) ($registro->monto_efectivo ?? 0);
-                        $montoYape     += (float) ($registro->monto_yape ?? 0);
-                        $montoIzipay   += (float) ($registro->monto_izipay ?? 0);
+                        $montoYape += (float) ($registro->monto_yape ?? 0);
+                        $montoIzipay += (float) ($registro->monto_izipay ?? 0);
                         break;
                 }
             }
         }
 
         return [
-            'total_ingresos'             => $totalIngresosCaja,
-            'total_egresos'              => $totalEgresos,
-            'balance_final'              => $balanceFinal,
-            'monto_efectivo'             => $montoEfectivo,
-            'monto_yape'                 => $montoYape,
-            'monto_izipay'               => $montoIzipay,
-            'total_ventas'               => (float) $totalVentas,
-            'total_cambios'              => (float) $totalCambios,
+            'total_ingresos' => $totalIngresosCaja,
+            'total_egresos' => $totalEgresos,
+            'balance_final' => $balanceFinal,
+            'monto_efectivo' => $montoEfectivo,
+            'monto_yape' => $montoYape,
+            'monto_izipay' => $montoIzipay,
+            'total_ventas' => (float) $totalVentas,
+            'total_cambios' => (float) $totalCambios,
             'total_ingresos_vehiculares' => (float) $totalIngresos,
         ];
     }

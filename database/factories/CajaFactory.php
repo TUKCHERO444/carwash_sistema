@@ -13,18 +13,18 @@ class CajaFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'        => User::factory(),
-            'estado'         => 'abierta',
-            'monto_inicial'  => fake()->randomFloat(2, 50, 500),
+            'user_id' => User::factory(),
+            'estado' => 'abierta',
+            'monto_inicial' => fake()->randomFloat(2, 50, 500),
             'fecha_apertura' => now(),
-            'fecha_cierre'   => null,
+            'fecha_cierre' => null,
         ];
     }
 
     public function abierta(): static
     {
         return $this->state(fn (array $attributes) => [
-            'estado'       => 'abierta',
+            'estado' => 'abierta',
             'fecha_cierre' => null,
         ]);
     }
@@ -32,7 +32,7 @@ class CajaFactory extends Factory
     public function cerrada(): static
     {
         return $this->state(fn (array $attributes) => [
-            'estado'       => 'cerrada',
+            'estado' => 'cerrada',
             'fecha_cierre' => now(),
         ]);
     }

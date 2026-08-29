@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Ingreso;
 use App\Models\IngresoTrabajador;
 use App\Models\Trabajador;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class IngresoTrabajadorSeeder extends Seeder
 {
@@ -35,9 +35,9 @@ class IngresoTrabajadorSeeder extends Seeder
                     ->where('trabajador_id', $trabajadorId)
                     ->exists();
 
-                if (!$existe) {
+                if (! $existe) {
                     IngresoTrabajador::create([
-                        'ingreso_id'    => $ingreso->id,
+                        'ingreso_id' => $ingreso->id,
                         'trabajador_id' => $trabajadorId,
                     ]);
                 }
