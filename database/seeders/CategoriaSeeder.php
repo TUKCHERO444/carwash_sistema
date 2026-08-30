@@ -17,14 +17,14 @@ class CategoriaSeeder extends Seeder
         $categorias = [];
 
         $categoriasData = [
-            ['nombre' => 'Aceites y Lubricantes', 'descripcion' => 'Aceites de motor, lubricantes y grasas para vehículos'],
-            ['nombre' => 'Filtros',                'descripcion' => 'Filtros de aceite, aire, combustible y habitáculo'],
-            ['nombre' => 'Frenos',                 'descripcion' => 'Pastillas, discos, tambores y líquido de frenos'],
-            ['nombre' => 'Suspensión',             'descripcion' => 'Amortiguadores, resortes, muelles y componentes de suspensión'],
-            ['nombre' => 'Neumáticos',             'descripcion' => 'Neumáticos, llantas, ruedas y cubiertas'],
-            ['nombre' => 'Batería y Eléctrico',    'descripcion' => 'Baterías, bujías, alternadores, arranques y componentes eléctricos'],
-            ['nombre' => 'Correas y Cadenas',      'descripcion' => 'Correas de distribución, cadenas y bandas'],
-            ['nombre' => 'Líquidos',               'descripcion' => 'Refrigerantes, anticongelantes y otros líquidos (excepto aceites)'],
+            ['nombre' => 'Aceites y Lubricantes', 'descripcion' => 'Aceites de motor lubricantes y grasas para vehículos'],
+            ['nombre' => 'Filtros',                'descripcion' => 'Filtros de aceite aire combustible y habitáculo'],
+            ['nombre' => 'Frenos',                 'descripcion' => 'Pastillas discos tambores y líquido de frenos'],
+            ['nombre' => 'Suspensión',             'descripcion' => 'Amortiguadores resortes muelles y componentes de suspensión'],
+            ['nombre' => 'Neumáticos',             'descripcion' => 'Neumáticos llantas ruedas y cubiertas'],
+            ['nombre' => 'Batería y Eléctrico',    'descripcion' => 'Baterías bujías alternadores arranques y componentes eléctricos'],
+            ['nombre' => 'Correas y Cadenas',      'descripcion' => 'Correas de distribución cadenas y bandas'],
+            ['nombre' => 'Líquidos',               'descripcion' => 'Refrigerantes anticongelantes y otros líquidos excepto aceites'],
         ];
 
         foreach ($categoriasData as $data) {

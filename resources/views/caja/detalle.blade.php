@@ -88,7 +88,7 @@
                         $todosIngresos = collect()
                             ->concat($caja->ventas->map(fn($v) => ['tipo' => 'Venta', 'total' => $v->total, 'metodo' => $v->metodo_pago, 'hora' => $v->created_at]))
                             ->concat($caja->cambioAceites->map(fn($c) => ['tipo' => 'Cambio de Aceite', 'total' => $c->total, 'metodo' => $c->metodo_pago, 'hora' => $c->created_at]))
-                            ->concat($caja->ingresos->where('estado', 'confirmado')->map(fn($i) => ['tipo' => 'Ingreso Vehicular', 'total' => $i->total, 'metodo' => $i->metodo_pago, 'hora' => $i->created_at]))
+                            ->concat($caja->lavados->where('estado', 'confirmado')->map(fn($i) => ['tipo' => 'Lavado Vehicular', 'total' => $i->total, 'metodo' => $i->metodo_pago, 'hora' => $i->created_at]))
                             ->sortByDesc('hora');
                     @endphp
                     

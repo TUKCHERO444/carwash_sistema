@@ -103,16 +103,16 @@ class ClienteController extends Controller
      * Elimina un cliente si no tiene registros asociados.
      *
      * Checks independientes (en orden):
-     *   1. $cliente->ingresos()->exists()   → redirect + flash 'error'
+     *   1. $cliente->lavados()->exists()   → redirect + flash 'error'
      *   2. $cliente->automotores()->exists() → redirect + flash 'error'
      *   3. $cliente->cambioAceites()->exists() → redirect + flash 'error'
      *   Si ninguno aplica → delete() + redirect + flash 'success'
      */
     public function destroy(Cliente $cliente): RedirectResponse
     {
-        if ($cliente->ingresos()->exists()) {
+        if ($cliente->lavados()->exists()) {
             return redirect()->route('clientes.index')
-                ->with('error', 'No se puede eliminar el cliente porque tiene ingresos asociados.');
+                ->with('error', 'No se puede eliminar el cliente porque tiene lavados asociados.');
         }
 
         if ($cliente->automotores()->exists()) {
@@ -161,7 +161,7 @@ class ClienteController extends Controller
                 'nombre' => $cliente->nombre,
                 'nombre_completo' => $cliente->nombre_completo,
                 'telefono' => $cliente->telefono,
-                'ingresos_count' => $cliente->ingresos()->count(),
+                'lavados_count' => $cliente->lavados()->count(),
                 'cambios_aceite_count' => $cliente->cambioAceites()->count(),
             ],
             'automotor' => [

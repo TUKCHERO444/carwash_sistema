@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
@@ -85,5 +86,13 @@ class Producto extends Model
         return $this->belongsToMany(Venta::class, 'detalle_ventas')
             ->withPivot('cantidad', 'precio_unitario', 'subtotal')
             ->withTimestamps();
+    }
+
+    /**
+     * Relación con los movimientos de Kardex del producto.
+     */
+    public function movimientos(): HasMany
+    {
+        return $this->hasMany(MovimientoKardex::class);
     }
 }

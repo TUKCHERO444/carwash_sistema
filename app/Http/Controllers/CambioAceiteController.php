@@ -7,8 +7,10 @@ use App\Models\CambioProducto;
 use App\Models\Cliente;
 use App\Models\Producto;
 use App\Models\Trabajador;
+use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\ClienteAutomotorService;
+use App\Services\KardexService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -24,9 +26,40 @@ class CambioAceiteController extends Controller
      */
     private const PLACA_RULE = 'regex:/^[A-Z0-9-]{6,7}$/i';
 
+    /**
+     * Solo letras (con acentos españoles y ñ) y espacios internos simples.
+     * Rechaza números, símbolos y espacios dobles.
+     */
+    private const SOLO_LETRAS_RULE = 'regex:/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
+     * DNI peruano: exactamente 8 dígitos.
+     */
+    private const DNI_RULE = 'regex:/^[0-9]{8}$/';
+
+    /**
+     * Teléfono móvil: exactamente 9 dígitos.
+     */
+    private const TELEFONO_RULE = 'regex:/^[0-9]{9}$/';
+
+    /**
+     * Reglas validación del cliente que persisten en Cliente/Automotor.
+     * Deben coincidir con el patrón estándar de ClienteController/AutomotorController.
+     */
+    private function clienteRules(): array
+    {
+        return [
+            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
+            'nombre' => ['nullable', 'string', 'max:100', self::SOLO_LETRAS_RULE],
+            'telefono' => ['nullable', 'string', 'digits:9', self::TELEFONO_RULE],
+            'dni' => ['nullable', 'string', 'digits:8', self::DNI_RULE],
+        ];
+    }
+
     public function __construct(
         private CajaService $cajaService,
         private ClienteAutomotorService $clienteAutomotorService,
+        private KardexService $kardexService,
     ) {}
 
     /**
@@ -53,16 +86,13 @@ class CambioAceiteController extends Controller
     /**
      * Crea CambioAceite con estado = 'pendiente'.
      * No valida caja ni campos de pago.
-     * Decrementa stock de productos en transacción.
+     * NO descuenta stock: el inventario se descuenta recién al confirmar el ticket
+     * (ver procesarConfirmacion).
      * Redirige a cambio-aceite.index (Tabla_Pendientes).
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'telefono' => ['nullable', 'string', 'max:20'],
-            'dni' => ['nullable', 'string', 'max:8'],
+        $request->validate(array_merge($this->clienteRules(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -73,7 +103,7 @@ class CambioAceiteController extends Controller
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio' => ['required', 'numeric', 'gt:0'],
             'productos.*.total' => ['required', 'numeric', 'min:0'],
-        ], [
+        ]), [
             'productos.required' => 'Debe agregar al menos un producto al cambio de aceite.',
             'productos.min' => 'Debe agregar al menos un producto al cambio de aceite.',
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al cambio de aceite.',
@@ -127,9 +157,6 @@ class CambioAceiteController extends Controller
                         'precio' => $item['precio'],
                         'total' => $item['total'],
                     ]);
-
-                    Producto::where('id', $item['producto_id'])
-                        ->decrement('stock', $item['cantidad']);
                 }
             });
 
@@ -188,11 +215,7 @@ class CambioAceiteController extends Controller
 
     public function update(Request $request, CambioAceite $cambioAceite): RedirectResponse
     {
-        $request->validate([
-            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'telefono' => ['nullable', 'string', 'max:20'],
-            'dni' => ['nullable', 'string', 'max:8'],
+        $request->validate(array_merge($this->clienteRules(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -209,7 +232,7 @@ class CambioAceiteController extends Controller
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio' => ['required', 'numeric', 'gt:0'],
             'productos.*.total' => ['required', 'numeric', 'min:0'],
-        ], [
+        ]), [
             'productos.required' => 'Debe agregar al menos un producto al cambio de aceite.',
             'productos.min' => 'Debe agregar al menos un producto al cambio de aceite.',
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al cambio de aceite.',
@@ -275,10 +298,21 @@ class CambioAceiteController extends Controller
                 // Cargar productos con pivot para restaurar stock
                 $cambioAceite->load('productos');
 
-                // Restaurar stock de los productos anteriores
+                // Restaurar stock de los productos anteriores (movimiento de entrada compensatorio)
                 foreach ($cambioAceite->productos as $productoAnterior) {
+                    $producto = Producto::find($productoAnterior->id);
+                    $stockAntes = $producto->stock;
+
                     Producto::where('id', $productoAnterior->id)
                         ->increment('stock', $productoAnterior->pivot->cantidad);
+
+                    $this->kardexService->registrarEntrada(
+                        $producto,
+                        $productoAnterior->pivot->cantidad,
+                        $stockAntes,
+                        'cambio_aceite',
+                        $automotor->placa
+                    );
                 }
 
                 $syncData = [];
@@ -291,10 +325,21 @@ class CambioAceiteController extends Controller
                 }
                 $cambioAceite->productos()->sync($syncData);
 
-                // Decrementar stock con los nuevos productos
+                // Decrementar stock con los nuevos productos (nueva salida)
                 foreach ($request->productos as $item) {
+                    $producto = Producto::find($item['producto_id']);
+                    $stockAntes = $producto->stock;
+
                     Producto::where('id', $item['producto_id'])
                         ->decrement('stock', $item['cantidad']);
+
+                    $this->kardexService->registrarSalida(
+                        $producto,
+                        $item['cantidad'],
+                        $stockAntes,
+                        'cambio_aceite',
+                        $automotor->placa
+                    );
                 }
             });
 
@@ -328,13 +373,31 @@ class CambioAceiteController extends Controller
                 }
             }
 
-            DB::transaction(function () use ($cambioAceite) {
-                // Cargar productos con pivot para restaurar stock
-                $cambioAceite->load('productos');
+            $placa = $cambioAceite->automotor_id;
 
-                foreach ($cambioAceite->productos as $producto) {
-                    Producto::where('id', $producto->id)
-                        ->increment('stock', $producto->pivot->cantidad);
+            DB::transaction(function () use ($cambioAceite, $placa) {
+                // El stock solo se descuenta al confirmar el ticket. Restaurar
+                // únicamente si el ticket ya estaba confirmado, registrando el
+                // movimiento compensatorio en el Kardex.
+                if ($cambioAceite->estado === 'confirmado') {
+                    // Cargar productos con pivot para restaurar stock
+                    $cambioAceite->load('productos');
+
+                    foreach ($cambioAceite->productos as $producto) {
+                        $modelo = Producto::find($producto->id);
+                        $stockAntes = $modelo->stock;
+
+                        Producto::where('id', $producto->id)
+                            ->increment('stock', $producto->pivot->cantidad);
+
+                        $this->kardexService->registrarEntrada(
+                            $modelo,
+                            $producto->pivot->cantidad,
+                            $stockAntes,
+                            'cambio_aceite',
+                            $placa ?? 'N/A'
+                        );
+                    }
                 }
 
                 $cambioAceite->delete();
@@ -425,11 +488,7 @@ class CambioAceiteController extends Controller
             return back()->with('error_caja', true);
         }
 
-        $request->validate([
-            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'telefono' => ['nullable', 'string', 'max:20'],
-            'dni' => ['nullable', 'string', 'max:8'],
+        $request->validate(array_merge($this->clienteRules(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -446,7 +505,7 @@ class CambioAceiteController extends Controller
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio' => ['required', 'numeric', 'gt:0'],
             'productos.*.total' => ['required', 'numeric', 'min:0'],
-        ], [
+        ]), [
             'productos.required' => 'Debe agregar al menos un producto al cambio de aceite.',
             'productos.min' => 'Debe agregar al menos un producto al cambio de aceite.',
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al cambio de aceite.',
@@ -491,11 +550,7 @@ class CambioAceiteController extends Controller
                     $foto = $result['secure_url'];
                 }
 
-                // Restaurar stock de productos anteriores
-                $cambioAceite->load('productos');
-                foreach ($cambioAceite->productos as $p) {
-                    Producto::where('id', $p->id)->increment('stock', $p->pivot->cantidad);
-                }
+                app(AuditService::class)->anotarAccion('confirmar');
 
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
@@ -517,7 +572,9 @@ class CambioAceiteController extends Controller
                 // Sincronizar trabajadores en pivote
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
 
-                // Sincronizar productos con valores finales y decrementar stock nuevo
+                // Sincronizar productos con valores finales y decrementar stock nuevo.
+                // Este es el ÚNICO punto donde el cambio de aceite descuenta inventario:
+                // se registra la salida en el Kardex por cada producto con la placa como origen.
                 $syncData = [];
                 foreach ($request->productos as $item) {
                     $syncData[$item['producto_id']] = [
@@ -525,8 +582,19 @@ class CambioAceiteController extends Controller
                         'precio' => $item['precio'],
                         'total' => $item['total'],
                     ];
+                    $producto = Producto::find($item['producto_id']);
+                    $stockAntes = $producto->stock;
+
                     Producto::where('id', $item['producto_id'])
                         ->decrement('stock', $item['cantidad']);
+
+                    $this->kardexService->registrarSalida(
+                        $producto,
+                        $item['cantidad'],
+                        $stockAntes,
+                        'cambio_aceite',
+                        $automotor->placa
+                    );
                 }
                 $cambioAceite->productos()->sync($syncData);
             });
@@ -546,11 +614,7 @@ class CambioAceiteController extends Controller
      */
     public function actualizarTicket(Request $request, CambioAceite $cambioAceite): RedirectResponse
     {
-        $request->validate([
-            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'telefono' => ['nullable', 'string', 'max:20'],
-            'dni' => ['nullable', 'string', 'max:8'],
+        $request->validate(array_merge($this->clienteRules(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -561,7 +625,7 @@ class CambioAceiteController extends Controller
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio' => ['required', 'numeric', 'gt:0'],
             'productos.*.total' => ['required', 'numeric', 'min:0'],
-        ], [
+        ]), [
             'productos.required' => 'Debe agregar al menos un producto al cambio de aceite.',
             'productos.min' => 'Debe agregar al menos un producto al cambio de aceite.',
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al cambio de aceite.',
@@ -606,15 +670,11 @@ class CambioAceiteController extends Controller
                     $foto = $result['secure_url'];
                 }
 
-                // Restaurar stock de productos anteriores
-                $cambioAceite->load('productos');
-                foreach ($cambioAceite->productos as $p) {
-                    Producto::where('id', $p->id)->increment('stock', $p->pivot->cantidad);
-                }
-
                 // Recalcular precio en servidor
                 $precio = collect($request->productos)
                     ->sum(fn ($p) => $p['cantidad'] * $p['precio']);
+
+                app(AuditService::class)->anotarAccion('actualizar ticket');
 
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
@@ -631,7 +691,7 @@ class CambioAceiteController extends Controller
                 // Sincronizar trabajadores en pivote
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
 
-                // Sincronizar productos y decrementar stock nuevo
+                // Sincronizar productos sin tocar stock (el pendiente no descuenta)
                 $syncData = [];
                 foreach ($request->productos as $item) {
                     $syncData[$item['producto_id']] = [
@@ -639,8 +699,6 @@ class CambioAceiteController extends Controller
                         'precio' => $item['precio'],
                         'total' => $item['total'],
                     ];
-                    Producto::where('id', $item['producto_id'])
-                        ->decrement('stock', $item['cantidad']);
                 }
                 $cambioAceite->productos()->sync($syncData);
             });

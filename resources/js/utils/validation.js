@@ -82,7 +82,7 @@ export const Validation = {
             }
         });
 
-        // 3. Validar tablas dinámicas (ej: servicios en ingresos, productos en ventas)
+        // 3. Validar tablas dinámicas (ej: servicios en lavados, productos en ventas)
         const dynamicTables = form.querySelectorAll('[data-validate-table]');
         dynamicTables.forEach(table => {
             const tbody = table.querySelector('tbody');

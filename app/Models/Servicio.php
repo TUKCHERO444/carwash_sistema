@@ -21,11 +21,11 @@ class Servicio extends Model
     ];
 
     /**
-     * Relación con Ingreso a través de detalle_servicios
+     * Relación con Lavado a través de detalle_servicios
      */
-    public function ingresos(): BelongsToMany
+    public function lavados(): BelongsToMany
     {
-        return $this->belongsToMany(Ingreso::class, 'detalle_servicios')
+        return $this->belongsToMany(Lavado::class, 'detalle_servicios')
             ->withTimestamps();
     }
 }

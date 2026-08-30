@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 
 class UserToggleController extends Controller
@@ -29,6 +30,8 @@ class UserToggleController extends Controller
                 'message' => 'No tienes permisos suficientes para cambiar el estado de un Administrador.',
             ], 403);
         }
+
+        app(AuditService::class)->anotarAccion('toggle activo');
 
         $user->activo = ! $user->activo;
         $user->save();

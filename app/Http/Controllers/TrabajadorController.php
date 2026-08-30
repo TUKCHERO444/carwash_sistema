@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trabajador;
+use App\Services\AuditService;
 use App\Services\DniApiService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
@@ -120,7 +121,7 @@ class TrabajadorController extends Controller
 
     /**
      * Remove the specified trabajador from the database.
-     * Deletion is blocked if the trabajador has related cambioAceites or ingresos.
+     * Deletion is blocked if the trabajador has related cambioAceites or lavados.
      * Deletes the Cloudinary/local image outside the relation checks flow.
      */
     public function destroy(Trabajador $trabajador): RedirectResponse
@@ -130,9 +131,9 @@ class TrabajadorController extends Controller
                 ->with('error', 'No se puede eliminar el trabajador porque tiene cambios de aceite asociados.');
         }
 
-        if ($trabajador->ingresos()->exists()) {
+        if ($trabajador->lavados()->exists()) {
             return redirect()->route('trabajadores.index')
-                ->with('error', 'No se puede eliminar el trabajador porque tiene ingresos asociados.');
+                ->with('error', 'No se puede eliminar el trabajador porque tiene lavados asociados.');
         }
 
         if ($trabajador->foto) {
@@ -162,6 +163,8 @@ class TrabajadorController extends Controller
     public function toggleStatus(Trabajador $trabajador): JsonResponse
     {
         try {
+            app(AuditService::class)->anotarAccion('toggle estado');
+
             $trabajador->estado = ! $trabajador->estado;
             $trabajador->save();
 

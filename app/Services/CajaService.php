@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\EgresoCaja;
-use App\Models\Ingreso;
+use App\Models\Lavado;
 use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 
@@ -106,7 +106,7 @@ class CajaService
         $modelo = match ($tipo) {
             'venta' => Venta::class,
             'cambio_aceite' => CambioAceite::class,
-            'ingreso' => Ingreso::class,
+            'ingreso' => Lavado::class,
             default => throw new \InvalidArgumentException("Tipo de transacción inválido: {$tipo}"),
         };
 
@@ -139,7 +139,7 @@ class CajaService
         // Totales de ingresos por fuente
         $totalVentas = Venta::where('caja_id', $cajaId)->sum('total');
         $totalCambios = CambioAceite::where('caja_id', $cajaId)->sum('total');
-        $totalIngresos = Ingreso::where('caja_id', $cajaId)
+        $totalIngresos = Lavado::where('caja_id', $cajaId)
             ->where('estado', 'confirmado')
             ->sum('total');
 
@@ -161,7 +161,7 @@ class CajaService
         $fuentes = [
             Venta::where('caja_id', $cajaId)->get(),
             CambioAceite::where('caja_id', $cajaId)->get(),
-            Ingreso::where('caja_id', $cajaId)->where('estado', 'confirmado')->get(),
+            Lavado::where('caja_id', $cajaId)->where('estado', 'confirmado')->get(),
         ];
 
         foreach ($fuentes as $registros) {

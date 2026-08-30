@@ -26,11 +26,12 @@ class DatabaseSeeder extends Seeder
             ServicioSeeder::class,
             CambioAceiteSeeder::class,
             CambioProductoSeeder::class,
-            IngresoSeeder::class,
-            IngresoTrabajadorSeeder::class,
+            LavadoSeeder::class,
+            LavadoTrabajadorSeeder::class,
             DetalleServicioSeeder::class,
             VentaSeeder::class,
             DetalleVentaSeeder::class,
+            KardexSeeder::class,
         ]);
     }
 }

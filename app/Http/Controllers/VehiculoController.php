@@ -77,13 +77,13 @@ class VehiculoController extends Controller
 
     /**
      * Remove the specified vehículo from the database.
-     * Blocked if the vehículo has associated ingresos.
+     * Blocked if the vehículo has associated lavados.
      */
     public function destroy(Vehiculo $vehiculo): RedirectResponse
     {
-        if ($vehiculo->ingresos()->exists()) {
+        if ($vehiculo->lavados()->exists()) {
             return redirect()->route('vehiculos.index')
-                ->with('error', 'No se puede eliminar el vehículo porque tiene ingresos asociados.');
+                ->with('error', 'No se puede eliminar el vehículo porque tiene lavados asociados.');
         }
 
         $vehiculo->delete();

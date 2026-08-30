@@ -1,0 +1,329 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="p-6">
+
+    {{-- Flash messages --}}
+    @if(session('success'))
+        <div role="alert" class="mb-4 px-4 py-3 rounded-lg bg-green-100 text-green-800 border border-green-200 text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div role="alert" class="mb-4 px-4 py-3 rounded-lg bg-red-100 text-red-800 border border-red-200 text-sm">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- Header --}}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark">Confirmar Lavado</h1>
+        <a href="{{ route('lavados.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Volver a Pendientes
+        </a>
+    </div>
+
+    {{-- Resumen superior --}}
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+        <h2 class="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Resumen del Lavado</h2>
+        <p class="text-sm text-blue-700 dark:text-blue-400"><strong>Placa:</strong> {{ $lavado->automotor->placa ?? 'N/A' }}</p>
+        <div class="text-sm text-blue-700 dark:text-blue-400 mt-1">
+            <strong>Servicios asignados:</strong>
+            @if($lavado->servicios->count() > 0)
+                <ul class="list-disc list-inside ml-2">
+                    @foreach($lavado->servicios as $servicio)
+                        <li>{{ $servicio->nombre }}</li>
+                    @endforeach
+                </ul>
+            @else
+                Ninguno
+            @endif
+        </div>
+    </div>
+
+    {{-- Form container --}}
+    <div class="bg-surface rounded-lg border border-main p-6">
+        <form id="form-lavado" action="{{ route('lavados.procesarConfirmacion', $lavado) }}" method="POST" enctype="multipart/form-data" novalidate>
+            @csrf
+            {{-- Validation error for servicios --}}
+            @error('servicios')
+                <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-400 text-sm text-red-600">
+                    {{ $message }}
+                </div>
+            @enderror
+
+            {{-- ── Vehículo ── --}}
+            <div class="mb-5">
+                <label for="vehiculo_id" class="label-main mb-1">
+                    Vehículo <span class="text-red-500">*</span>
+                </label>
+                <select id="vehiculo_id" name="vehiculo_id" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main {{ $errors->has('vehiculo_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                    <option value="" data-precio="0">-- Seleccione un vehículo --</option>
+                    @foreach($vehiculos as $vehiculo)
+                        <option value="{{ $vehiculo->id }}" data-precio="{{ $vehiculo->precio }}" {{ old('vehiculo_id', $lavado->vehiculo_id) == $vehiculo->id ? 'selected' : '' }}>
+                            {{ $vehiculo->nombre }} — S/ {{ number_format($vehiculo->precio, 2) }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('vehiculo_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Placa ── --}}
+            <div class="mb-5">
+                <label for="placa" class="label-main mb-1">Placa <span class="text-red-500">*</span></label>
+                <input type="text" id="placa" name="placa" required maxlength="7" data-filter="alphanumeric" value="{{ old('placa', $lavado->automotor->placa ?? '') }}" placeholder="Ej: ABC-123" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('placa') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Nombre ── --}}
+            <div class="mb-5">
+                <label for="nombre" class="label-main mb-1">Nombre <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
+                <input type="text" id="nombre" name="nombre" data-filter="letters" maxlength="100" value="{{ old('nombre', $lavado->cliente->nombre ?? '') }}" placeholder="Nombre del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('nombre') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── DNI ── --}}
+            <div class="mb-5">
+                <label for="dni" class="label-main mb-1">DNI <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
+                <input type="text" id="dni" name="dni" data-filter="digits" data-length="8" maxlength="8" value="{{ old('dni', $lavado->cliente->dni ?? '') }}" placeholder="DNI del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('dni') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('dni') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Teléfono ── --}}
+            <div class="mb-5">
+                <label for="telefono" class="label-main mb-1">Teléfono <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
+                <input type="text" id="telefono" name="telefono" data-filter="digits" data-length="9" maxlength="9" value="{{ old('telefono', $lavado->cliente->telefono ?? '') }}" placeholder="Teléfono del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('telefono') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('telefono') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Resumen del Cliente ── --}}
+            <div id="cliente-summary-container" class="mb-5 hidden">
+            </div>
+
+            {{-- ── Fecha ── --}}
+            <div class="mb-5">
+                <label for="fecha" class="label-main mb-1">Fecha <span class="text-red-500">*</span></label>
+                <input type="date" id="fecha" name="fecha" required value="{{ old('fecha', $lavado->fecha ? $lavado->fecha->format('Y-m-d') : date('Y-m-d')) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('fecha') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('fecha') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- ── Foto ── --}}
+            <div class="mb-5">
+                <label for="foto" class="label-main mb-1">Foto del vehículo <span class="text-text-secondary-dark font-normal">(opcional)</span></label>
+                @if($lavado->foto)
+                    <div class="mb-3">
+                        <p class="text-xs text-text-secondary-dark mb-1">Foto actual:</p>
+                        <img id="foto-current" src="{{ $lavado->foto_url }}" alt="Foto actual" class="rounded-lg max-h-48 object-cover border border-main">
+                    </div>
+                @endif
+                <input type="file" id="foto" name="foto" accept="image/*" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('foto') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                @error('foto') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                <img id="foto-preview" src="" alt="Vista previa" class="hidden mt-3 rounded-lg max-h-48 object-cover border border-main">
+            </div>
+
+            {{-- ── Trabajadores ── --}}
+            @php $trabajadoresAsignados = old('trabajadores_ids', $lavado->trabajadores->pluck('id')->toArray()); @endphp
+            <div class="mb-5">
+                <label class="label-main mb-2">Trabajadores <span class="text-red-500">*</span> <span class="text-xs font-normal text-text-secondary-dark">(al menos 1)</span></label>
+                @error('trabajadores_ids')
+                    <p class="mb-2 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    @foreach($trabajadores as $trabajador)
+                        <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50
+                                      {{ in_array($trabajador->id, $trabajadoresAsignados) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-main' }}
+                                      trabajador-option">
+                            <input type="checkbox" name="trabajadores_ids[]" value="{{ $trabajador->id }}"
+                                   class="trabajador-checkbox w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800"
+                                   {{ in_array($trabajador->id, $trabajadoresAsignados) ? 'checked' : '' }}>
+                            <span class="text-sm text-secondary">{{ $trabajador->nombre }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p id="error-trabajadores" class="hidden mt-1 text-xs text-red-600">Debe seleccionar al menos un trabajador.</p>
+            </div>
+
+            {{-- ── Búsqueda de servicios ── --}}
+            <div class="mb-6">
+                <label for="buscar-servicio" class="label-main mb-1">Buscar servicio</label>
+                <div class="relative">
+                    <input type="text" id="buscar-servicio" autocomplete="off" placeholder="Escribe el nombre del servicio..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-main">
+                    <div id="resultados-busqueda" class="hidden absolute z-10 w-full mt-1 bg-surface border border-main rounded-lg shadow-lg max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            {{-- ── Tabla de servicios ── --}}
+            <div class="mb-6 overflow-x-auto">
+                <table class="min-w-full divide-y divide-main">
+                    <thead class="bg-gray-50 dark:bg-slate-800/50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Servicio</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Precio</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-servicios" class="bg-surface divide-y divide-main"></tbody>
+                </table>
+            </div>
+
+            {{-- ── Sección de totales y pago ── --}}
+            <div class="mb-6 max-w-sm space-y-4">
+                {{-- Precio --}}
+                <div>
+                    <label for="precio" class="label-main mb-1">Precio</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-secondary">S/</span>
+                        <input type="number" id="precio" name="precio" step="0.01" readonly value="{{ old('precio', number_format($lavado->precio, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm input-main bg-slate-50 dark:bg-slate-800/50">
+                    </div>
+                </div>
+
+                {{-- Descuentos --}}
+                <div>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-descuento" class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800">
+                        <span class="text-sm text-secondary">Aplicar descuento por porcentaje</span>
+                    </label>
+                </div>
+                <div id="campo-porcentaje" class="hidden">
+                    <label for="porcentaje" class="label-main mb-1">Porcentaje (%)</label>
+                    <input type="number" id="porcentaje" min="0" max="100" step="0.01" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p id="error-porcentaje" class="hidden mt-1 text-xs text-red-600">No puede superar 100.</p>
+                </div>
+                <div>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-descuento-manual" class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800">
+                        <span class="text-sm text-secondary">Aplicar descuento manual</span>
+                    </label>
+                </div>
+
+                {{-- Total --}}
+                <div>
+                    <label for="total" class="label-main mb-1">Total <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-secondary">S/</span>
+                        <input type="number" id="total" name="total" step="0.01" readonly value="{{ old('total', number_format($lavado->total, 2, '.', '')) }}" class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm bg-slate-50 dark:bg-slate-800/50 focus:outline-none input-main {{ $errors->has('total') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                    </div>
+                    @error('total') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Método de pago --}}
+                <div>
+                    <label class="label-main mb-2">Método de pago <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach(['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'] as $val => $label)
+                            <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors metodo-pago-option {{ old('metodo_pago', $lavado->metodo_pago ?? 'efectivo') === $val ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-main' }}">
+                                <input type="radio" name="metodo_pago" value="{{ $val }}" class="hidden metodo-pago-radio" {{ old('metodo_pago', $lavado->metodo_pago ?? 'efectivo') === $val ? 'checked' : '' }}>
+                                <span class="text-sm font-medium {{ old('metodo_pago', $lavado->metodo_pago ?? 'efectivo') === $val ? 'text-blue-700 dark:text-blue-400' : 'text-secondary' }}">{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('metodo_pago') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Mixto --}}
+                <div id="bloque-mixto" class="hidden space-y-3">
+                    <p class="text-xs text-secondary">Ingresa los montos. La suma debe igualar el total.</p>
+                    <div id="alerta-mixto" class="hidden px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400 text-xs">
+                        Suma (<span id="suma-mixto-display">0.00</span>) no coincide con total (<span id="total-mixto-display">0.00</span>).
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-secondary mb-1">Efectivo (S/)</label>
+                        <input type="number" id="monto_efectivo" name="monto_efectivo" step="0.01" min="0" value="{{ old('monto_efectivo', $lavado->monto_efectivo) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-secondary mb-1">Yape (S/)</label>
+                        <input type="number" id="monto_yape" name="monto_yape" step="0.01" min="0" value="{{ old('monto_yape', $lavado->monto_yape) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-secondary mb-1">Izipay (S/)</label>
+                        <input type="number" id="monto_izipay" name="monto_izipay" step="0.01" min="0" value="{{ old('monto_izipay', $lavado->monto_izipay) }}" class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── Acciones ── --}}
+            <div class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-main">
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Confirmar Lavado
+                </button>
+                <button type="button" onclick="toggleFacturacion(this)" data-facturacion="off" class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+                    <span class="facturacion-texto">Añadir Facturación</span>
+                </button>
+                <button type="button" onclick="submitActualizar()" class="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Actualizar Lavado
+                </button>
+                <button type="button" onclick="confirmarEliminacion()" class="inline-flex items-center gap-2 px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors ml-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Eliminar Lavado
+                </button>
+            </div>
+        </form>
+        
+        <form id="form-eliminar" action="{{ route('lavados.destroy', $lavado) }}" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+        </form>
+    </div>
+</div>
+
+{{-- Bloque de inicialización de datos (único <script> permitido en la vista) --}}
+<script>
+window.serviciosConfirmar  = @json($serviciosData);
+window.confirmarMetodoPago = @json($lavado->metodo_pago ?? 'efectivo');
+window.confirmarMontos     = @json($montosData);
+window._confirmarUpdateUrl = "{{ route('lavados.update', $lavado) }}";
+</script>
+@vite('resources/js/lavados/confirmar.js')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-lavado');
+    if (!form) return;
+    // Validate at least 1 trabajador on submit
+    form.addEventListener('submit', function(e) {
+        const checked = form.querySelectorAll('.trabajador-checkbox:checked');
+        const errMsg  = document.getElementById('error-trabajadores');
+        if (checked.length === 0) { e.preventDefault(); if (errMsg) errMsg.classList.remove('hidden'); }
+        else { if (errMsg) errMsg.classList.add('hidden'); }
+    });
+    form.querySelectorAll('.trabajador-checkbox').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const lbl = cb.closest('.trabajador-option');
+            lbl.classList.toggle('border-blue-500', cb.checked);
+            lbl.classList.toggle('bg-blue-50', cb.checked);
+            lbl.classList.toggle('dark:bg-blue-900/30', cb.checked);
+            lbl.classList.toggle('border-main', !cb.checked);
+        });
+    });
+});
+</script>
+@if(session('error_caja'))
+<x-modal id="modal-caja-cerrada" title="Caja Cerrada" open>
+    <div class="px-6 pb-4 sm:pb-6">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <p class="text-sm text-secondary">No puedes registrar cobros porque no hay ninguna sesión de caja activa. Debes iniciar la caja primero.</p>
+        </div>
+    </div>
+    <x-slot:footer>
+        <a href="{{ route('caja.index') }}" class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:text-sm">
+            Ir a Caja
+        </a>
+        <a href="{{ route('lavados.index') }}" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-main shadow-sm px-4 py-2 bg-surface text-base font-medium text-secondary hover:bg-slate-50 dark:hover:bg-slate-700 sm:text-sm">
+            Cancelar
+        </a>
+    </x-slot:footer>
+</x-modal>
+@endif
+
+@endsection

@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\AccionesAuditoriaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\AutomotorController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CambioAceiteController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\IngresoController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KardexController;
+use App\Http\Controllers\LavadoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\RoleController;
@@ -46,9 +49,9 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 // Protected dashboard
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware('auth')->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
 
 // User management & Settings (Administrador permissions)
 Route::middleware(['auth'])->group(function () {
@@ -127,25 +130,25 @@ Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
         ->name('ventas.ticket');
 
     // Ticket route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
-    Route::get('ingresos/{ingreso}/ticket', [IngresoController::class, 'ticket'])
-        ->name('ingresos.ticket');
+    Route::get('lavados/{lavado}/ticket', [LavadoController::class, 'ticket'])
+        ->name('lavados.ticket');
 
     // Ajax route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
-    Route::get('/ingresos/buscar-servicios', [IngresoController::class, 'buscarServicios'])
-        ->name('ingresos.buscar-servicios');
+    Route::get('/lavados/buscar-servicios', [LavadoController::class, 'buscarServicios'])
+        ->name('lavados.buscar-servicios');
 
     // Rutas nuevas — deben ir ANTES del resource para evitar que Laravel interprete
-    // 'confirmados' como un parámetro {ingreso}
-    Route::get('/ingresos/confirmados', [IngresoController::class, 'confirmados'])
-        ->name('ingresos.confirmados');
+    // 'confirmados' como un parámetro {lavado}
+    Route::get('/lavados/confirmados', [LavadoController::class, 'confirmados'])
+        ->name('lavados.confirmados');
 
-    Route::get('/ingresos/{ingreso}/confirmar', [IngresoController::class, 'confirmar'])
-        ->name('ingresos.confirmar');
+    Route::get('/lavados/{lavado}/confirmar', [LavadoController::class, 'confirmar'])
+        ->name('lavados.confirmar');
 
-    Route::post('/ingresos/{ingreso}/confirmar', [IngresoController::class, 'procesarConfirmacion'])
-        ->name('ingresos.procesarConfirmacion');
+    Route::post('/lavados/{lavado}/confirmar', [LavadoController::class, 'procesarConfirmacion'])
+        ->name('lavados.procesarConfirmacion');
 
-    Route::resource('ingresos', IngresoController::class);
+    Route::resource('lavados', LavadoController::class);
 
     // Cambio de Aceite — Ajax route BEFORE resource to avoid Route Model Binding conflicts
     Route::get('/cambio-aceite/buscar-productos', [CambioAceiteController::class, 'buscarProductos'])
@@ -183,4 +186,16 @@ Route::middleware(['auth', 'permission:acceso-caja'])->prefix('caja')->name('caj
         Route::get('/historial', [CajaController::class, 'historial'])->name('historial');
         Route::get('/{caja}', [CajaController::class, 'detalle'])->name('detalle');
     });
+});
+
+// Auditoría / Kardex (Protected by 'acceso-auditoria')
+Route::middleware(['auth', 'permission:acceso-auditoria'])->prefix('auditoria')->name('kardex.')->group(function () {
+    Route::get('/kardex', [KardexController::class, 'index'])->name('index');
+    Route::get('/kardex/producto/{producto}', [KardexController::class, 'porProducto'])->name('porProducto');
+});
+
+// Auditoría de Acciones (Protected by 'acceso-auditoria')
+Route::middleware(['auth', 'permission:acceso-auditoria'])->prefix('auditoria')->name('auditoria.')->group(function () {
+    Route::get('/acciones', [AccionesAuditoriaController::class, 'index'])->name('acciones.index');
+    Route::get('/acciones/{registroAuditoria}', [AccionesAuditoriaController::class, 'show'])->name('acciones.show');
 });

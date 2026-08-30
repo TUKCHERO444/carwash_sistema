@@ -22,7 +22,7 @@ class LayoutTest extends TestCase
 
     /**
      * 4.2 @yield('content') inyecta el contenido correcto:
-     * el HTML contiene "Dashboard" y "Bienvenido".
+     * el HTML contiene "Dashboard" y el titular del resumen.
      */
     public function test_content_section_is_injected(): void
     {
@@ -31,7 +31,7 @@ class LayoutTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertSee('Dashboard');
-        $response->assertSee('Bienvenido');
+        $response->assertSee('Resumen de ventas, lavados y cambios de aceite del local.');
     }
 
     /**

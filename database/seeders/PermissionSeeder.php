@@ -35,6 +35,9 @@ class PermissionSeeder extends Seeder
             // Caja
             'acceso-caja',
             'historial-caja',
+
+            // Auditoría
+            'acceso-auditoria',
         ];
 
         foreach ($permissions as $permission) {

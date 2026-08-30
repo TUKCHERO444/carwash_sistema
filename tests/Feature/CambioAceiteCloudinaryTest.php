@@ -71,7 +71,9 @@ class CambioAceiteCloudinaryTest extends TestCase
             'precio' => 80,
         ]);
 
-        $this->assertEquals(8, $producto->fresh()->stock);
+        // Al generar el ticket (pendiente) el stock NO se descuenta; solo se
+        // descuenta al confirmar el ticket.
+        $this->assertEquals(10, $producto->fresh()->stock);
     }
 
     /** @test */

@@ -8,16 +8,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DetalleServicio extends Model
 {
     protected $fillable = [
-        'ingreso_id',
+        'lavado_id',
         'servicio_id',
     ];
 
     /**
-     * Relación con Ingreso
+     * Relación con Lavado
      */
-    public function ingreso(): BelongsTo
+    public function lavado(): BelongsTo
     {
-        return $this->belongsTo(Ingreso::class);
+        return $this->belongsTo(Lavado::class);
     }
 
     /**

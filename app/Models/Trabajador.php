@@ -65,10 +65,10 @@ class Trabajador extends Model
     }
 
     /**
-     * Relación con Ingreso a través de ingreso_trabajadores
+     * Relación con Lavado a través de lavado_trabajadores
      */
-    public function ingresos(): BelongsToMany
+    public function lavados(): BelongsToMany
     {
-        return $this->belongsToMany(Ingreso::class, 'ingreso_trabajadores');
+        return $this->belongsToMany(Lavado::class, 'lavado_trabajadores');
     }
 }

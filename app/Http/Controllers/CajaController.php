@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caja;
+use App\Services\AuditService;
 use App\Services\CajaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class CajaController extends Controller
             $caja->load([
                 'ventas',
                 'cambioAceites',
-                'ingresos' => fn ($q) => $q->where('estado', 'confirmado'),
+                'lavados' => fn ($q) => $q->where('estado', 'confirmado'),
                 'egresos',
             ]);
         }
@@ -50,6 +51,8 @@ class CajaController extends Controller
         }
 
         try {
+            app(AuditService::class)->anotarAccion('abrir caja');
+
             $this->cajaService->abrirCaja(
                 (float) $request->monto_inicial,
                 auth()->id()
@@ -75,6 +78,8 @@ class CajaController extends Controller
         }
 
         try {
+            app(AuditService::class)->anotarAccion('cerrar caja');
+
             $this->cajaService->cerrarCaja($caja);
 
             return redirect()->route('caja.index')
@@ -103,6 +108,8 @@ class CajaController extends Controller
         }
 
         try {
+            app(AuditService::class)->anotarAccion('registrar egreso');
+
             $this->cajaService->registrarEgreso($caja, [
                 'monto' => $request->monto,
                 'descripcion' => $request->descripcion,

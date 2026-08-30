@@ -93,16 +93,16 @@ class ServicioController extends Controller
     }
 
     /**
-     * Elimina un servicio si no tiene ingresos asociados.
+     * Elimina un servicio si no tiene lavados asociados.
      *
-     * Si $servicio->ingresos()->exists() → redirect + flash 'error'
-     * Si no tiene ingresos               → delete() + redirect + flash 'success'
+     * Si $servicio->lavados()->exists() → redirect + flash 'error'
+     * Si no tiene lavados               → delete() + redirect + flash 'success'
      */
     public function destroy(Servicio $servicio): RedirectResponse
     {
-        if ($servicio->ingresos()->exists()) {
+        if ($servicio->lavados()->exists()) {
             return redirect()->route('servicios.index')
-                ->with('error', 'No se puede eliminar el servicio porque tiene ingresos asociados.');
+                ->with('error', 'No se puede eliminar el servicio porque tiene lavados asociados.');
         }
 
         $servicio->delete();

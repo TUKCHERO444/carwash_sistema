@@ -68,6 +68,7 @@
                     name="placa"
                     required
                     maxlength="7"
+                    data-filter="alphanumeric"
                     value="{{ old('placa', $cambioAceite->automotor->placa ?? '') }}"
                     placeholder="Ej: ABC-123"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
@@ -78,14 +79,14 @@
             {{-- ── Nombre ── --}}
             <div class="mb-5">
                 <label for="nombre" class="label-main mb-1">Nombre <span class="text-gray-400 font-normal">(opcional)</span></label>
-                <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $cambioAceite->cliente->nombre ?? '') }}" placeholder="Nombre del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                <input type="text" id="nombre" name="nombre" data-filter="letters" maxlength="100" value="{{ old('nombre', $cambioAceite->cliente->nombre ?? '') }}" placeholder="Nombre del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('nombre') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             {{-- ── DNI ── --}}
             <div class="mb-5">
                 <label for="dni" class="label-main mb-1">DNI <span class="text-gray-400 font-normal">(opcional)</span></label>
-                <input type="text" id="dni" name="dni" value="{{ old('dni', $cambioAceite->cliente->dni ?? '') }}" placeholder="DNI del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('dni') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                <input type="text" id="dni" name="dni" data-filter="digits" data-length="8" maxlength="8" value="{{ old('dni', $cambioAceite->cliente->dni ?? '') }}" placeholder="DNI del cliente" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('dni') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                 @error('dni') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -98,6 +99,9 @@
                     type="text"
                     id="telefono"
                     name="telefono"
+                    data-filter="digits"
+                    data-length="9"
+                    maxlength="9"
                     value="{{ old('telefono', $cambioAceite->cliente->telefono ?? '') }}"
                     placeholder="Teléfono del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('telefono') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"

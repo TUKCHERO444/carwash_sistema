@@ -3,6 +3,7 @@ import './modal';
 import './stock-modal';
 import './image-viewer';
 import './confirmations';
+import './dashboard';
 import { initInputFilters } from './utils/input-filters.js';
 
 

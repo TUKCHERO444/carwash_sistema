@@ -21,10 +21,10 @@ class Vehiculo extends Model
     ];
 
     /**
-     * Relación con Ingreso
+     * Relación con Lavado
      */
-    public function ingresos(): HasMany
+    public function lavados(): HasMany
     {
-        return $this->hasMany(Ingreso::class);
+        return $this->hasMany(Lavado::class);
     }
 }

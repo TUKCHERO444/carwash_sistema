@@ -50,6 +50,7 @@
                     name="placa"
                     required
                     maxlength="7"
+                    data-filter="alphanumeric"
                     value="{{ old('placa') }}"
                     placeholder="Ej: ABC-123"
                     class="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
@@ -69,6 +70,8 @@
                     type="text"
                     id="nombre"
                     name="nombre"
+                    data-filter="letters"
+                    maxlength="100"
                     value="{{ old('nombre') }}"
                     placeholder="Nombre del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
@@ -88,6 +91,9 @@
                     type="text"
                     id="dni"
                     name="dni"
+                    data-filter="digits"
+                    data-length="8"
+                    maxlength="8"
                     value="{{ old('dni') }}"
                     placeholder="DNI del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
@@ -107,6 +113,9 @@
                     type="text"
                     id="telefono"
                     name="telefono"
+                    data-filter="digits"
+                    data-length="9"
+                    maxlength="9"
                     value="{{ old('telefono') }}"
                     placeholder="Teléfono del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors

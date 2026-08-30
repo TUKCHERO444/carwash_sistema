@@ -58,11 +58,11 @@ class Caja extends Model
     }
 
     /**
-     * Relación con Ingreso (Ingresos Vehiculares)
+     * Relación con Lavado (Lavados Vehiculares)
      */
-    public function ingresos(): HasMany
+    public function lavados(): HasMany
     {
-        return $this->hasMany(Ingreso::class);
+        return $this->hasMany(Lavado::class);
     }
 
     /**

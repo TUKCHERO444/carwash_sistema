@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Services\AuditService;
+use App\Services\KardexService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
+    public function __construct(private KardexService $kardexService) {}
+
     /**
      * Regla de validación alfanumérica para la descripción.
      * Admite letras, números y espacios; rechaza símbolos.
@@ -108,7 +112,7 @@ class ProductoController extends Controller
         }
 
         DB::transaction(function () use ($validated, $fotoUrl, $request) {
-            Producto::create([
+            $producto = Producto::create([
                 'nombre' => $validated['nombre'],
                 'descripcion' => $validated['descripcion'] ?? null,
                 'precio_compra' => $validated['precio_compra'],
@@ -120,6 +124,16 @@ class ProductoController extends Controller
                 'categoria_id' => $validated['categoria_id'] ?? null,
                 'marca_id' => $validated['marca_id'] ?? null,
             ]);
+
+            $correlativo = $this->kardexService->siguienteCorrelativoInventario();
+
+            $this->kardexService->registrarEntrada(
+                $producto,
+                (int) $validated['inventario'],
+                0,
+                'inventario',
+                $correlativo
+            );
 
             if (! empty($validated['categoria_id'])) {
                 Categoria::find($validated['categoria_id'])->increment('contador_productos');
@@ -224,12 +238,25 @@ class ProductoController extends Controller
         ]);
 
         try {
+            $stockAntes = $producto->stock;
             $nuevoStock = $producto->stock + $validated['cantidad_adicional'];
 
-            DB::transaction(function () use ($producto, $nuevoStock) {
+            DB::transaction(function () use ($producto, $nuevoStock, $stockAntes, $validated) {
+                $correlativo = $this->kardexService->siguienteCorrelativoInventario();
+
+                app(AuditService::class)->anotarAccion('ajustar stock');
+
                 $producto->stock = $nuevoStock;
                 $producto->inventario = $nuevoStock;
                 $producto->save();
+
+                $this->kardexService->registrarEntrada(
+                    $producto,
+                    (int) $validated['cantidad_adicional'],
+                    $stockAntes,
+                    'inventario',
+                    $correlativo
+                );
             });
 
             return response()->json(['success' => true, 'nuevo_stock' => $nuevoStock]);
@@ -247,6 +274,8 @@ class ProductoController extends Controller
     public function toggleStatus(Producto $producto): JsonResponse
     {
         try {
+            app(AuditService::class)->anotarAccion('toggle estado');
+
             $producto->activo = ! $producto->activo;
             $producto->save();
 

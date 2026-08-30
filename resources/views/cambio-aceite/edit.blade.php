@@ -51,6 +51,7 @@
                     name="placa"
                     required
                     maxlength="7"
+                    data-filter="alphanumeric"
                     value="{{ old('placa', $cambioAceite->automotor->placa ?? '') }}"
                     placeholder="Ej: ABC-123"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -70,6 +71,8 @@
                     type="text"
                     id="nombre"
                     name="nombre"
+                    data-filter="letters"
+                    maxlength="100"
                     value="{{ old('nombre', $cambioAceite->cliente->nombre ?? '') }}"
                     placeholder="Nombre del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -89,6 +92,9 @@
                     type="text"
                     id="dni"
                     name="dni"
+                    data-filter="digits"
+                    data-length="8"
+                    maxlength="8"
                     value="{{ old('dni', $cambioAceite->cliente->dni ?? '') }}"
                     placeholder="DNI del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -108,6 +114,9 @@
                     type="text"
                     id="telefono"
                     name="telefono"
+                    data-filter="digits"
+                    data-length="9"
+                    maxlength="9"
                     value="{{ old('telefono', $cambioAceite->cliente->telefono ?? '') }}"
                     placeholder="Teléfono del cliente"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main

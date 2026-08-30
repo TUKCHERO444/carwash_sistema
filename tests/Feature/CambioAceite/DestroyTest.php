@@ -40,7 +40,7 @@ class DestroyTest extends TestCase
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,
-            'stock' => 8,  // already decremented (2 used)
+            'stock' => 10,
             'inventario' => 10,
             'activo' => true,
         ]);
@@ -81,11 +81,44 @@ class DestroyTest extends TestCase
     }
 
     /**
-     * Req 6.2 — destroy() restores stock of all associated products.
+     * Un ticket pendiente NO descuenta stock (solo se descuenta al confirmar),
+     * por lo que al eliminarlo no se debe restaurar nada: el stock queda igual.
      */
-    public function test_destroy_restores_product_stock(): void
+    public function test_destroy_pendiente_does_not_change_product_stock(): void
     {
         $ticket = $this->createPendienteWithProduct();
+        $stockBefore = $this->producto->fresh()->stock; // 10
+
+        $this->actingAs($this->user)
+            ->delete("/cambio-aceite/{$ticket->id}");
+
+        $this->producto->refresh();
+        $this->assertEquals($stockBefore, $this->producto->stock);
+    }
+
+    /**
+     * destroy() de un ticket CONFIRMADO restaura el stock descontado.
+     */
+    public function test_destroy_confirmado_restores_product_stock(): void
+    {
+        $ticket = CambioAceite::create([
+            'cliente_id' => $this->cliente->id,
+            'trabajador_id' => $this->trabajador->id,
+            'user_id' => $this->user->id,
+            'fecha' => now()->toDateString(),
+            'precio' => 70.00,
+            'total' => 70.00,
+            'estado' => 'confirmado',
+            'metodo_pago' => 'efectivo',
+        ]);
+
+        $ticket->productos()->attach($this->producto->id, [
+            'cantidad' => 2,
+            'precio' => 35.00,
+            'total' => 70.00,
+        ]);
+
+        $this->producto->decrement('stock', 2); // salida efectiva al confirmar
         $stockBefore = $this->producto->fresh()->stock; // 8
 
         $this->actingAs($this->user)

@@ -10,10 +10,10 @@ export default defineConfig({
                 'resources/js/app.js',
                 // Ventas
                 'resources/js/ventas/create.js',
-                // Ingresos
-                'resources/js/ingresos/create.js',
-                'resources/js/ingresos/edit.js',
-                'resources/js/ingresos/confirmar.js',
+                // Lavados
+                'resources/js/lavados/create.js',
+                'resources/js/lavados/edit.js',
+                'resources/js/lavados/confirmar.js',
                 // Cambio de aceite
                 'resources/js/cambio-aceite/create.js',
                 'resources/js/cambio-aceite/edit.js',

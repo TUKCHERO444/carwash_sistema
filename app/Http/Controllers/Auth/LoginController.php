@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,10 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+    ) {}
+
     /**
      * Show the login form.
      * Redirects to /dashboard if the user is already authenticated.
@@ -42,9 +47,12 @@ class LoginController extends Controller
                 Auth::logout();
 
                 return back()->withErrors([
-                    'email' => 'Tu cuenta está inactiva. Contacta al administrador.',
+                    'email' => 'Tu cuenta estǭ inactiva. Contacta al administrador.',
                 ])->withInput($request->except('password'));
             }
+
+            $this->auditService->registrarSesion(Auth::user(), 'inicio de sesión');
+
             $request->session()->regenerate();
 
             return redirect('/dashboard');
@@ -62,6 +70,10 @@ class LoginController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
+        // Capturar el usuario antes de destruir la sesión.
+        $user = Auth::user();
+        $this->auditService->registrarSesion($user, 'cierre de sesión');
+
         Auth::logout();
 
         $request->session()->invalidate();

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\Venta;
+use App\Services\AuditService;
 use App\Services\CajaService;
+use App\Services\KardexService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +16,10 @@ use Illuminate\View\View;
 
 class VentaController extends Controller
 {
-    public function __construct(private CajaService $cajaService) {}
+    public function __construct(
+        private CajaService $cajaService,
+        private KardexService $kardexService,
+    ) {}
 
     /**
      * Display a paginated listing of ventas.
@@ -118,8 +123,19 @@ class VentaController extends Controller
                     'subtotal' => $item['subtotal'],
                 ]);
 
+                $producto = Producto::find($item['producto_id']);
+                $stockAntes = $producto->stock;
+
                 Producto::where('id', $item['producto_id'])
                     ->decrement('stock', $item['cantidad']);
+
+                $this->kardexService->registrarSalida(
+                    $producto,
+                    $item['cantidad'],
+                    $stockAntes,
+                    'venta',
+                    $venta->correlativo
+                );
             }
         });
 
@@ -154,11 +170,28 @@ class VentaController extends Controller
     public function destroy(Venta $venta): RedirectResponse
     {
         try {
-            DB::transaction(function () use ($venta) {
+            $correlativo = $venta->correlativo;
+
+            DB::transaction(function () use ($venta, $correlativo) {
                 foreach ($venta->detalles as $detalle) {
+                    $producto = Producto::find($detalle->producto_id);
+                    $stockAntes = $producto->stock;
+
                     Producto::where('id', $detalle->producto_id)
                         ->increment('stock', $detalle->cantidad);
+
+                    // Movimiento compensatorio (entrada) por la anulación de la venta
+                    $this->kardexService->registrarEntrada(
+                        $producto,
+                        $detalle->cantidad,
+                        $stockAntes,
+                        'venta',
+                        $correlativo
+                    );
                 }
+
+                app(AuditService::class)->anotarAccion('anular venta');
+
                 $venta->delete();
             });
 

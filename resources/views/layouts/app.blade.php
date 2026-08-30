@@ -15,11 +15,13 @@
     $productManagementActive = request()->routeIs('productos.*', 'categorias.*', 'marcas.*');
     $categoriasActive        = request()->routeIs('categorias.*');
     $ventasActive            = request()->routeIs('ventas.*');
-    $ingresosActive          = request()->routeIs('ingresos.*');
+    $lavadosActive           = request()->routeIs('lavados.*');
     $cambioAceiteActive      = request()->routeIs('cambio-aceite.*');
-    $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $ingresosActive;
+    $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $lavadosActive;
     $cajaActive              = request()->routeIs('caja.*');
     $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*');
+    $kardexActive            = request()->routeIs('kardex.*');
+    $auditoriaActive         = request()->routeIs('kardex.*', 'auditoria.*');
 @endphp
 
     {{-- Sidebar: visible en desktop (≥1024px), oculto en móvil --}}
@@ -83,10 +85,10 @@
                               {{ $ventasActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Ventas
                     </a>
-                    <a href="{{ route('ingresos.index') }}"
+                    <a href="{{ route('lavados.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ $ingresosActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Ingresos
+                              {{ $lavadosActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Lavados
                     </a>
                     <a href="{{ route('cambio-aceite.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -226,6 +228,37 @@
                 </div>
             </div>
             @endcanany
+
+            @can('acceso-auditoria')
+            <div data-dropdown="auditoria">
+                <button data-dropdown-toggle="auditoria"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $auditoriaActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <span class="flex-1 text-left">Auditoría</span>
+                    <svg data-chevron
+                         class="w-4 h-4 transition-transform {{ $auditoriaActive ? 'rotate-180' : '' }}"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div data-dropdown-menu="auditoria"
+                     class="{{ $auditoriaActive ? '' : 'hidden' }} ml-4 mt-1 space-y-1">
+                    <a href="{{ route('kardex.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ $kardexActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Kardex
+                    </a>
+                    <a href="{{ route('auditoria.acciones.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('auditoria.acciones.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Acciones
+                    </a>
+                </div>
+            </div>
+            @endcan
         </nav>
 
         {{-- Logout button at the bottom of the sidebar --}}
@@ -301,10 +334,10 @@
                           {{ $ventasActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Ventas
                 </a>
-                <a href="{{ route('ingresos.index') }}"
+                <a href="{{ route('lavados.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
-                          {{ $ingresosActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    Ingresos
+                          {{ $lavadosActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Lavados
                 </a>
                 <a href="{{ route('cambio-aceite.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
@@ -446,10 +479,43 @@
                           {{ request()->routeIs('automotores.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Automotores
                 </a>
-                @endcan
+                 @endcan
             </div>
         </div>
         @endcanany
+
+        @can('acceso-auditoria')
+        <div data-dropdown="auditoria-mobile" class="flex-1 relative">
+            <button data-dropdown-toggle="auditoria-mobile"
+                    class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
+                           {{ $auditoriaActive ? 'text-blue-400' : 'text-gray-400 hover:text-white' }}">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                Auditoría
+                <svg data-chevron
+                     class="w-3 h-3 transition-transform {{ $auditoriaActive ? 'rotate-180' : '' }}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div data-dropdown-menu="auditoria-mobile"
+                 {{ $auditoriaActive ? 'data-persistent' : '' }}
+                 class="absolute bottom-[77px] left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl min-w-max
+                        {{ $auditoriaActive ? '' : 'hidden' }}">
+                <a href="{{ route('kardex.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ $kardexActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Kardex
+                </a>
+                <a href="{{ route('auditoria.acciones.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('auditoria.acciones.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Acciones
+                </a>
+            </div>
+        </div>
+        @endcan
 
         {{-- Botón cambio de tema (móvil) --}}
         <button data-theme-toggle

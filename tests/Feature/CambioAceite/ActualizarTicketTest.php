@@ -61,9 +61,6 @@ class ActualizarTicketTest extends TestCase
             'precio' => 35.00,
             'total' => 70.00,
         ]);
-
-        // Simulate stock already decremented by store()
-        $this->producto->decrement('stock', 2); // stock = 8
     }
 
     private function updatePayload(array $overrides = []): array
@@ -115,18 +112,18 @@ class ActualizarTicketTest extends TestCase
     }
 
     /**
-     * Req 5.8 — actualizarTicket() restores old stock and decrements new stock.
+     * actualizarTicket() edita un ticket pendiente y NO debe tocar el stock:
+     * este solo se descuenta al confirmar.
      */
-    public function test_actualizar_ticket_restores_old_stock_and_decrements_new(): void
+    public function test_actualizar_ticket_does_not_change_product_stock(): void
     {
-        $stockBefore = $this->producto->fresh()->stock; // 8 (after setUp decrement)
+        $stockBefore = $this->producto->fresh()->stock; // 10
 
         $this->actingAs($this->user)
             ->put("/cambio-aceite/{$this->pendiente->id}/actualizar-ticket", $this->updatePayload());
 
-        // Old: +2 restored, New: -3 decremented → net: 8 + 2 - 3 = 7
         $this->producto->refresh();
-        $this->assertEquals($stockBefore + 2 - 3, $this->producto->stock);
+        $this->assertEquals($stockBefore, $this->producto->stock);
     }
 
     /**

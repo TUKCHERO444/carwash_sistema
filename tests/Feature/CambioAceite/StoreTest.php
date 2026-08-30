@@ -122,9 +122,10 @@ class StoreTest extends TestCase
     }
 
     /**
-     * Req 1.9 — store() decrements product stock within a transaction.
+     * store() NO descuenta stock: el stock se descuenta recién al confirmar
+     * el ticket (estado = 'confirmado').
      */
-    public function test_store_decrements_product_stock(): void
+    public function test_store_does_not_decrement_product_stock(): void
     {
         $stockBefore = $this->producto->stock; // 10
 
@@ -132,7 +133,7 @@ class StoreTest extends TestCase
             ->post('/cambio-aceite', $this->validPayload());
 
         $this->producto->refresh();
-        $this->assertEquals($stockBefore - 2, $this->producto->stock);
+        $this->assertEquals($stockBefore, $this->producto->stock);
     }
 
     /**

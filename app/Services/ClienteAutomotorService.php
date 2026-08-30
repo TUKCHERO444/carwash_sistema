@@ -7,11 +7,11 @@ use App\Models\Cliente;
 use Illuminate\Http\Request;
 
 /**
- * Lógica compartida del flujo de tickets (ingreso / cambio de aceite):
+ * Lógica compartida del flujo de tickets (lavado / cambio de aceite):
  * creación del cliente "solo con nombre" y gestión/upsert del automotor.
  *
  * Centraliza el código que antes duplicaba Cliente::updateOrCreate(['placa' => ...])
- * en IngresoController y CambioAceiteController.
+ * en LavadoController y CambioAceiteController.
  */
 class ClienteAutomotorService
 {
