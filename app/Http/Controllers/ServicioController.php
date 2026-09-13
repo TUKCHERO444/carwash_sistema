@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicio;
+use App\Services\AuditService;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ServicioController extends Controller
 {
@@ -32,6 +37,27 @@ class ServicioController extends Controller
     ];
 
     /**
+     * Íconos disponibles para la tarjeta pública del servicio.
+     */
+    private const ICONOS = ['sparkles', 'shield', 'oil', 'layers', 'paint', 'wrench', 'droplets', 'car'];
+
+    /**
+     * Reglas de validación compartidas por store() y update().
+     */
+    private function reglas(): array
+    {
+        return [
+            'nombre' => self::NOMBRE_RULES,
+            'descripcion' => self::DESCRIPCION_RULES,
+            'precio' => ['required', 'numeric', 'gt:0'],
+            'activo' => ['sometimes', 'boolean'],
+            'orden' => ['nullable', 'integer', 'min:0'],
+            'icono' => ['nullable', 'string', Rule::in(self::ICONOS)],
+            'imagen' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ];
+    }
+
+    /**
      * Muestra la lista paginada de servicios.
      */
     public function index(): View
@@ -46,7 +72,7 @@ class ServicioController extends Controller
      */
     public function create(): View
     {
-        return view('servicios.create');
+        return view('servicios.create', ['iconos' => self::ICONOS]);
     }
 
     /**
@@ -54,13 +80,19 @@ class ServicioController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'nombre' => self::NOMBRE_RULES,
-            'descripcion' => self::DESCRIPCION_RULES,
-            'precio' => ['required', 'numeric', 'gt:0'],
-        ]);
+        $validated = $request->validate($this->reglas());
 
-        Servicio::create($request->only('nombre', 'descripcion', 'precio'));
+        $data = $request->only('nombre', 'descripcion', 'precio');
+        $data['activo'] = $request->boolean('activo', true);
+        $data['orden'] = (int) ($validated['orden'] ?? 0);
+        $data['icono'] = $validated['icono'] ?? 'sparkles';
+
+        if ($request->hasFile('imagen')) {
+            $result = Cloudinary::uploadApi()->upload($request->file('imagen')->getRealPath());
+            $data['imagen'] = $result['secure_url'];
+        }
+
+        Servicio::create($data);
 
         return redirect()->route('servicios.index')
             ->with('success', 'Servicio creado correctamente.');
@@ -72,7 +104,7 @@ class ServicioController extends Controller
      */
     public function edit(Servicio $servicio): View
     {
-        return view('servicios.edit', compact('servicio'));
+        return view('servicios.edit', ['servicio' => $servicio, 'iconos' => self::ICONOS]);
     }
 
     /**
@@ -80,26 +112,62 @@ class ServicioController extends Controller
      */
     public function update(Request $request, Servicio $servicio): RedirectResponse
     {
-        $request->validate([
-            'nombre' => self::NOMBRE_RULES,
-            'descripcion' => self::DESCRIPCION_RULES,
-            'precio' => ['required', 'numeric', 'gt:0'],
-        ]);
+        $validated = $request->validate($this->reglas());
 
-        $servicio->update($request->only('nombre', 'descripcion', 'precio'));
+        $data = $request->only('nombre', 'descripcion', 'precio');
+        $data['activo'] = $request->boolean('activo', (bool) $servicio->activo);
+        $data['orden'] = (int) ($validated['orden'] ?? 0);
+        $data['icono'] = $validated['icono'] ?? $servicio->icono;
+
+        if ($request->hasFile('imagen')) {
+            if ($servicio->imagen) {
+                $this->destruirImagen($servicio->imagen);
+            }
+
+            $result = Cloudinary::uploadApi()->upload($request->file('imagen')->getRealPath());
+            $data['imagen'] = $result['secure_url'];
+        }
+
+        $servicio->update($data);
 
         return redirect()->route('servicios.index')
             ->with('success', 'Servicio actualizado correctamente.');
     }
 
     /**
+     * Alterna el estado activo de un servicio vía AJAX.
+     */
+    public function toggleStatus(Servicio $servicio): JsonResponse
+    {
+        try {
+            app(AuditService::class)->anotarAccion('toggle estado');
+
+            $servicio->activo = ! $servicio->activo;
+            $servicio->save();
+
+            return response()->json([
+                'success' => true,
+                'activo' => (bool) $servicio->activo,
+                'message' => 'Estado actualizado correctamente.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el estado.',
+            ], 500);
+        }
+    }
+
+    /**
      * Elimina un servicio si no tiene lavados asociados.
-     *
-     * Si $servicio->lavados()->exists() → redirect + flash 'error'
-     * Si no tiene lavados               → delete() + redirect + flash 'success'
+     * La imagen se destruye en Cloudinary fuera de la transacción.
      */
     public function destroy(Servicio $servicio): RedirectResponse
     {
+        if ($servicio->imagen) {
+            $this->destruirImagen($servicio->imagen);
+        }
+
         if ($servicio->lavados()->exists()) {
             return redirect()->route('servicios.index')
                 ->with('error', 'No se puede eliminar el servicio porque tiene lavados asociados.');
@@ -109,5 +177,24 @@ class ServicioController extends Controller
 
         return redirect()->route('servicios.index')
             ->with('success', 'Servicio eliminado correctamente.');
+    }
+
+    /**
+     * Elimina la imagen del servicio, ya sea en Cloudinary o en disco público.
+     */
+    private function destruirImagen(string $imagen): void
+    {
+        if (str_starts_with($imagen, 'http')) {
+            $parts = explode('/', $imagen);
+            $filename = end($parts);
+            $publicId = pathinfo($filename, PATHINFO_FILENAME);
+            try {
+                Cloudinary::uploadApi()->destroy($publicId);
+            } catch (\Exception $e) {
+                // Silencioso: no bloquea el CRUD si el archivo no existe.
+            }
+        } elseif (Storage::disk('public')->exists($imagen)) {
+            Storage::disk('public')->delete($imagen);
+        }
     }
 }

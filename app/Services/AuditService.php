@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Asistencia;
 use App\Models\Automotor;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\CambioProducto;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\ContenidoWeb;
 use App\Models\DetalleServicio;
 use App\Models\DetalleVenta;
 use App\Models\EgresoCaja;
@@ -35,8 +37,10 @@ class AuditService
         User::class,
         Role::class,
         Trabajador::class,
+        Asistencia::class,
         Producto::class,
         Categoria::class,
+        ContenidoWeb::class,
         Marca::class,
         Servicio::class,
         Vehiculo::class,
@@ -81,8 +85,10 @@ class AuditService
         User::class => 'usuarios',
         Role::class => 'roles',
         Trabajador::class => 'trabajadores',
+        Asistencia::class => 'asistencias',
         Producto::class => 'productos',
         Categoria::class => 'categorias',
+        ContenidoWeb::class => 'contenido_web',
         Marca::class => 'marcas',
         Servicio::class => 'servicios',
         Vehiculo::class => 'vehiculos',

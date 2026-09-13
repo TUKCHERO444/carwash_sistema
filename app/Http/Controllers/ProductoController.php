@@ -67,6 +67,8 @@ class ProductoController extends Controller
                 'precio_compra' => number_format($p->precio_compra, 2),
                 'precio_venta' => number_format($p->precio_venta, 2),
                 'stock' => $p->stock,
+                'inventario' => $p->inventario,
+                'stock_bajo' => $p->esta_en_alerta,
                 'activo' => (bool) $p->activo,
                 'foto' => $p->foto_url,
                 'edit_url' => route('productos.edit', $p),
@@ -97,12 +99,14 @@ class ProductoController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => self::DESCRIPCION_RULES,
             'precio_compra' => ['required', 'numeric', 'gt:0'],
-            'precio_venta' => ['required', 'numeric', 'gt:0'],
+            'precio_venta' => ['required', 'numeric', 'gt:0', 'gte:precio_compra'],
             'inventario' => ['required', 'integer', 'min:0'],
             'activo' => ['nullable', 'boolean'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
             'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+        ], [
+            'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
         ]);
 
         $fotoUrl = null;
@@ -164,13 +168,15 @@ class ProductoController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => self::DESCRIPCION_RULES,
             'precio_compra' => ['required', 'numeric', 'gt:0'],
-            'precio_venta' => ['required', 'numeric', 'gt:0'],
+            'precio_venta' => ['required', 'numeric', 'gt:0', 'gte:precio_compra'],
             'stock' => ['required', 'integer', 'min:0'],
             'inventario' => ['required', 'integer', 'min:0'],
             'activo' => ['nullable', 'boolean'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
             'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+        ], [
+            'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
         ]);
 
         $data = [
@@ -259,7 +265,11 @@ class ProductoController extends Controller
                 );
             });
 
-            return response()->json(['success' => true, 'nuevo_stock' => $nuevoStock]);
+            return response()->json([
+                'success' => true,
+                'nuevo_stock' => $nuevoStock,
+                'nuevo_inventario' => $producto->inventario,
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

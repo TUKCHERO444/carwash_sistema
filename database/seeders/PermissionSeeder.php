@@ -19,10 +19,12 @@ class PermissionSeeder extends Seeder
 
             // Personal
             'acceso-trabajadores',
+            'acceso-asistencia',
 
             // Inventario y Servicios
             'acceso-inventario',
             'acceso-servicios',
+            'acceso-contenido-web',
 
             // Operaciones Clientes
             'acceso-vehiculos',
@@ -38,6 +40,9 @@ class PermissionSeeder extends Seeder
 
             // Auditoría
             'acceso-auditoria',
+
+            // Reportes
+            'acceso-reportes',
         ];
 
         foreach ($permissions as $permission) {

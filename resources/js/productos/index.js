@@ -1,103 +1,11 @@
 /**
  * Módulo: productos/index.js
  * Responsabilidad: Manejo de la UI en el listado de productos.
- * - Toggle de estado activo/inactivo via AJAX.
+ * - Toggle de estado activo/inactivo via AJAX (módulo compartido toggle-status.js).
  * - Búsqueda dinámica por nombre via AJAX con debounce.
  */
 
-// ─── Toggle de estado ──────────────────────────────────────────────────────────
-
-/**
- * Actualiza el badge de estado de un producto en el DOM.
- * @param {Element} badge - Elemento span con el badge de estado.
- * @param {boolean} activo - Nuevo estado del producto.
- */
-export function updateBadge(badge, activo) {
-    if (!badge) return;
-
-    badge.classList.remove(
-        'bg-green-100', 'dark:bg-green-900/30', 'text-green-800', 'dark:text-green-400',
-        'bg-red-100',   'dark:bg-red-900/30',   'text-red-700',  'dark:text-red-400'
-    );
-
-    if (activo) {
-        badge.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-800', 'dark:text-green-400');
-        badge.textContent = 'Activo';
-    } else {
-        badge.classList.add('bg-red-100', 'dark:bg-red-900/30', 'text-red-700', 'dark:text-red-400');
-        badge.textContent = 'Inactivo';
-    }
-}
-
-/**
- * Actualiza el botón de toggle de un producto en el DOM.
- * @param {Element} button - Elemento button del toggle.
- * @param {boolean} activo - Nuevo estado del producto.
- * @param {string}  nombre - Nombre del producto para el aria-label.
- */
-export function updateButton(button, activo, nombre) {
-    if (!button) return;
-
-    button.classList.remove(
-        'bg-yellow-100', 'text-yellow-800', 'hover:bg-yellow-200',
-        'bg-green-100',  'text-green-800',  'hover:bg-green-200'
-    );
-
-    if (activo) {
-        button.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'text-yellow-800', 'dark:text-yellow-400', 'hover:bg-yellow-200', 'dark:hover:bg-yellow-900/50');
-        button.textContent = 'Inactivar';
-        button.setAttribute('aria-label', `Inactivar producto ${nombre ?? ''}`.trim());
-    } else {
-        button.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-800', 'dark:text-green-400', 'hover:bg-green-200', 'dark:hover:bg-green-900/50');
-        button.textContent = 'Activar';
-        button.setAttribute('aria-label', `Activar producto ${nombre ?? ''}`.trim());
-    }
-}
-
-/**
- * Inicializa el listener de toggle de estado mediante delegación en el document.
- */
-export function initToggleStatus() {
-    document.addEventListener('click', async (event) => {
-        const button = event.target.closest('[data-toggle-status]');
-        if (!button) return;
-
-        const url        = button.getAttribute('data-url');
-        const productoId = button.getAttribute('data-producto-id');
-        const nombre     = button.getAttribute('data-producto-nombre');
-        const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.content;
-
-        if (!url || !productoId) return;
-
-        button.disabled = true;
-
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                const badge = document.querySelector(`span[data-producto-id="${productoId}"]`);
-                updateBadge(badge, result.activo);
-                updateButton(button, result.activo, nombre);
-            } else {
-                alert(result.message || 'Error al actualizar el estado');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Ocurrió un error inesperado al intentar cambiar el estado.');
-        } finally {
-            button.disabled = false;
-        }
-    });
-}
+import { initToggleStatus } from '../toggle-status';
 
 // ─── Búsqueda dinámica AJAX ────────────────────────────────────────────────────
 
@@ -154,13 +62,19 @@ function buildRow(p) {
                 S/ ${p.precio_venta}
             </td>
 
-            <td class="px-6 py-8 whitespace-nowrap text-sm text-gray-700 dark:text-text-secondary-dark"
-                data-stock-value="${p.id}">
-                ${p.stock}
+            <td class="px-6 py-8 whitespace-nowrap text-sm" data-stock-value="${p.id}">
+                <span data-stock-display
+                      class="${p.stock_bajo ? 'text-red-700 dark:text-red-400 font-medium' : 'text-gray-700 dark:text-text-secondary-dark'}">
+                    ${p.stock}
+                </span>
+                ${p.stock_bajo
+                    ? '<span data-stock-badge class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Stock bajo</span>'
+                    : ''}
             </td>
 
             <td class="px-6 py-8 whitespace-nowrap text-sm">
-                <span data-producto-id="${p.id}"
+                <span data-badge
+                      data-producto-id="${p.id}"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
                     ${p.activo ? 'Activo' : 'Inactivo'}
                 </span>
@@ -180,8 +94,8 @@ function buildRow(p) {
                 <button type="button"
                         data-toggle-status
                         data-url="${p.toggle_url}"
-                        data-producto-id="${p.id}"
-                        data-producto-nombre="${escHtml(p.nombre)}"
+                        data-nombre="${escHtml(p.nombre)}"
+                        data-tipo="producto"
                         aria-label="${toggleLabel} producto ${escHtml(p.nombre)}"
                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${toggleClass}">
                     ${toggleLabel}
@@ -192,6 +106,7 @@ function buildRow(p) {
                         data-producto-id="${p.id}"
                         data-producto-nombre="${escHtml(p.nombre)}"
                         data-producto-stock="${p.stock}"
+                        data-producto-inventario="${p.inventario}"
                         data-update-url="${p.stock_url}"
                         aria-label="Actualizar stock de ${escHtml(p.nombre)}"
                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-xs font-medium rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors">

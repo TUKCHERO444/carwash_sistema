@@ -48,6 +48,9 @@
                             Precio
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Estado
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -64,6 +67,15 @@
                              <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 S/ {{ number_format($servicio->precio, 2) }}
                             </td>
+
+                            {{-- Estado --}}
+                             <td class="px-6 py-8 whitespace-nowrap text-sm">
+                                <span data-badge
+                                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $servicio->activo ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' }}">
+                                    {{ $servicio->activo ? 'Activo' : 'Inactivo' }}
+                                </span>
+                            </td>
+
                              <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 <a href="{{ route('servicios.edit', $servicio) }}"
                                    aria-label="Editar servicio {{ $servicio->nombre }}"
@@ -74,6 +86,19 @@
                                     </svg>
                                     Editar
                                 </a>
+
+                                <button type="button"
+                                        data-toggle-status
+                                        data-url="{{ route('servicios.toggleStatus', $servicio) }}"
+                                        data-nombre="{{ $servicio->nombre }}"
+                                        data-tipo="servicio"
+                                        aria-label="{{ $servicio->activo ? 'Inactivar' : 'Activar' }} servicio {{ $servicio->nombre }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
+                                               {{ $servicio->activo
+                                                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                                                    : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50' }}">
+                                    {{ $servicio->activo ? 'Inactivar' : 'Activar' }}
+                                </button>
 
                                 <form method="POST" action="{{ route('servicios.destroy', $servicio) }}" class="inline">
                                     @csrf
@@ -103,4 +128,5 @@
     @endif
 
 </div>
+@vite(['resources/js/servicios/index.js'])
 @endsection

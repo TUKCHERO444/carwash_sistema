@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Asistencia;
 use App\Models\Automotor;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\ContenidoWeb;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
 use App\Models\Marca;
@@ -40,6 +42,7 @@ class AuditServiceProvider extends ServiceProvider
             User::class,
             Role::class,
             Trabajador::class,
+            Asistencia::class,
             Producto::class,
             Categoria::class,
             Marca::class,
@@ -52,6 +55,7 @@ class AuditServiceProvider extends ServiceProvider
             Lavado::class,
             Caja::class,
             EgresoCaja::class,
+            ContenidoWeb::class,
         ];
 
         foreach ($modelos as $modelo) {

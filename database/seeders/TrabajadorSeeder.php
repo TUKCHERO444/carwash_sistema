@@ -38,6 +38,7 @@ class TrabajadorSeeder extends Seeder
                 'apellido_paterno' => $normalizer->normalizarNombre($faker->lastName()),
                 'apellido_materno' => $normalizer->normalizarNombre($faker->lastName()),
                 'estado' => $i < 8,
+                'pago_diario' => 50,
             ]);
         }
     }

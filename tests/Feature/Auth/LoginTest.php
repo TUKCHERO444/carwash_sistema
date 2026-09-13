@@ -15,23 +15,23 @@ class LoginTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * 1.5 WHEN el usuario accede a la ruta / (login),
+     * 1.5 WHEN el usuario accede a la ruta /login,
      * THE Sistema SHALL mostrar el Panel_Login (HTTP 200).
      */
     public function test_login_page_returns_http_200(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         $response->assertStatus(200);
     }
 
     /**
-     * 1.5 WHEN el usuario accede a la ruta / (login),
+     * 1.5 WHEN el usuario accede a la ruta /login,
      * THE Sistema SHALL renderizar la vista auth.login.
      */
     public function test_login_page_renders_auth_login_view(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         $response->assertViewIs('auth.login');
     }
@@ -42,7 +42,7 @@ class LoginTest extends TestCase
      */
     public function test_login_page_contains_email_field_with_label(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         // Email input field
         $response->assertSee('name="email"', false);
@@ -56,7 +56,7 @@ class LoginTest extends TestCase
      */
     public function test_login_page_contains_password_field_with_label(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         // Password input field
         $response->assertSee('name="password"', false);
@@ -70,20 +70,20 @@ class LoginTest extends TestCase
      */
     public function test_login_page_contains_submit_button_with_correct_text(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/login');
 
         $response->assertSee('Iniciar sesión');
     }
 
     /**
-     * 1.6 WHEN el usuario ya está autenticado y accede a la ruta / (login),
+     * 1.6 WHEN el usuario ya está autenticado y accede a la ruta /login,
      * THE Sistema SHALL redirigirlo al dashboard.
      */
     public function test_authenticated_user_is_redirected_from_login_to_dashboard(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/');
+        $response = $this->actingAs($user)->get('/login');
 
         $response->assertRedirect('/dashboard');
     }
@@ -103,7 +103,7 @@ class LoginTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => 'usuario@example.com',
             'password' => 'password123',
         ]);
@@ -118,7 +118,7 @@ class LoginTest extends TestCase
      */
     public function test_post_login_with_nonexistent_email_returns_to_login_with_email_error(): void
     {
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => 'noexiste@example.com',
             'password' => 'cualquierpassword',
         ]);
@@ -138,7 +138,7 @@ class LoginTest extends TestCase
             'password' => bcrypt('passwordcorrecto'),
         ]);
 
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => 'usuario@example.com',
             'password' => 'passwordincorrecto',
         ]);
@@ -155,7 +155,7 @@ class LoginTest extends TestCase
      */
     public function test_post_login_with_empty_email_returns_required_validation_error(): void
     {
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => '',
             'password' => 'password123',
         ]);
@@ -170,7 +170,7 @@ class LoginTest extends TestCase
      */
     public function test_post_login_with_empty_password_returns_required_validation_error(): void
     {
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => 'usuario@example.com',
             'password' => '',
         ]);
@@ -185,7 +185,7 @@ class LoginTest extends TestCase
      */
     public function test_post_login_with_invalid_email_format_returns_format_validation_error(): void
     {
-        $response = $this->post('/', [
+        $response = $this->post('/login', [
             'email' => 'esto-no-es-un-email',
             'password' => 'password123',
         ]);
@@ -202,7 +202,7 @@ class LoginTest extends TestCase
     /**
      * 3.1, 3.2, 3.3 WHEN el usuario autenticado envía POST a /logout,
      * THE Sistema SHALL invalidar la sesión, regenerar el token CSRF
-     * y redirigir a / (login).
+     * y redirigir a /login.
      */
     public function test_post_logout_invalidates_session_and_redirects_to_login(): void
     {
@@ -210,19 +210,19 @@ class LoginTest extends TestCase
 
         $response = $this->actingAs($user)->post('/logout');
 
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
         $this->assertGuest();
     }
 
     /**
      * 3.4, 5.1, 5.2 WHILE el usuario no está autenticado,
-     * THE Sistema SHALL denegar el acceso a /dashboard y redirigirlo a / (login).
+     * THE Sistema SHALL denegar el acceso a /dashboard y redirigirlo a /login.
      */
     public function test_get_dashboard_without_authentication_redirects_to_login(): void
     {
         $response = $this->get('/dashboard');
 
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
     }
 
     /**

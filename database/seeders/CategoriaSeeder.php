@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Categoria;
 use App\Models\Producto;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategoriaSeeder extends Seeder
 {
@@ -28,10 +29,24 @@ class CategoriaSeeder extends Seeder
         ];
 
         foreach ($categoriasData as $data) {
-            $categorias[$data['nombre']] = Categoria::firstOrCreate(
+            $categorias[$data['nombre']] = Categoria::updateOrCreate(
                 ['nombre' => $data['nombre']],
-                ['descripcion' => $data['descripcion'], 'contador_productos' => 0]
+                [
+                    // El slug se asigna de forma explícita: DatabaseSeeder corre
+                    // sin eventos de modelo (WithoutModelEvents) y el hook
+                    // `saving` del modelo Categoria no dispara la generación.
+                    'slug' => Str::slug($data['nombre']),
+                    'descripcion' => $data['descripcion'],
+                    'contador_productos' => 0,
+                ]
             );
+        }
+
+        // Respaldo idempotente: categorías de una BD legacy que quedaron sin
+        // slug (por ejemplo sembradas antes de la migración de slugs).
+        foreach (Categoria::whereNull('slug')->get() as $categoria) {
+            $categoria->slug = Str::slug($categoria->nombre);
+            $categoria->save();
         }
 
         // 2. Mapa de categoría => palabras clave (orden importa: Aceites antes que Líquidos)
@@ -43,7 +58,7 @@ class CategoriaSeeder extends Seeder
             'Neumáticos' => ['neumático', 'llanta', 'rueda', 'cubierta'],
             'Batería y Eléctrico' => ['batería', 'bujía', 'alternador', 'arranque', 'eléctrico', 'fusible'],
             'Correas y Cadenas' => ['correa', 'cadena', 'banda'],
-            'Líquidos' => ['líquido', 'refrigerante', 'anticongelante', 'coolant'],
+            'Líquidos' => ['líquido', 'refrigerante', 'anticongelante', 'coolant', 'aditivo'],
         ];
 
         // Palabras que excluyen de "Líquidos" (van a Aceites y Lubricantes)

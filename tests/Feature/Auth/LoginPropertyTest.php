@@ -73,7 +73,7 @@ class LoginPropertyTest extends TestCase
 
     /**
      * Property 2: For any combination of unregistered email or incorrect password,
-     * POST / must return to the form with the correct error message on the
+     * POST /login must return to the form with the correct error message on the
      * 'email' field.
      *
      * Validates: Requirements 2.4, 2.5
@@ -111,7 +111,7 @@ class LoginPropertyTest extends TestCase
                 ];
             }
 
-            $response = $this->post('/', $credentials);
+            $response = $this->post('/login', $credentials);
 
             $response->assertSessionHasErrors([
                 'email' => $expectedError,
@@ -184,7 +184,7 @@ class LoginPropertyTest extends TestCase
                     break;
             }
 
-            $response = $this->post('/', $payload);
+            $response = $this->post('/login', $payload);
 
             $response->assertSessionHasErrors($expectedField);
 
@@ -196,13 +196,13 @@ class LoginPropertyTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Property 4: Acceso no autenticado a rutas protegidas redirige a / (login)
+    // Property 4: Acceso no autenticado a rutas protegidas redirige a /login
     // Validates: Requirements 3.4, 5.1, 5.4
     // -------------------------------------------------------------------------
 
     /**
      * Property 4: For any protected route, an unauthenticated request must
-     * receive an HTTP 302 redirect to / (login).
+     * receive an HTTP 302 redirect to /login.
      *
      * Validates: Requirements 3.4, 5.1, 5.4
      */
@@ -224,8 +224,8 @@ class LoginPropertyTest extends TestCase
 
             $response->assertStatus(302, "Property 4 failed at iteration {$i}: expected HTTP 302 but got {$response->status()}");
             $response->assertRedirect(
-                '/',
-                "Property 4 failed at iteration {$i}: expected redirect to /"
+                '/login',
+                "Property 4 failed at iteration {$i}: expected redirect to /login"
             );
 
             // Confirm the user is still a guest

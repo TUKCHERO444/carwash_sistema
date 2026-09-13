@@ -4,12 +4,55 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Colores Anti-Fatiga */
+    /* Tipografía del sitio público (Barlow). Sinónimos semánticos de las
+       variables --cw-* de publica.css; disponibles como utilidades
+       font-main / font-heading solo en la página pública (docs/design.md §11). */
+    --font-main:    var(--cw-font-main, 'Barlow', ui-sans-serif, system-ui, sans-serif);
+    --font-heading: var(--cw-font-heading, 'Barlow', ui-sans-serif, system-ui, sans-serif);
+
+    /* Colores Anti-Fatiga (panel admin) */
     --color-background-dark: #020617; /* slate-950 */
     --color-surface-dark: #0f172a;    /* slate-900 */
     --color-border-dark: #1e293b;     /* slate-800 */
     --color-text-primary-dark: #e2e8f0; /* slate-200 */
     --color-text-secondary-dark: #94a3b8; /* slate-400 */
+
+    /* Identidad de marca — Carwash El Chinito (docs/design.md) */
+    /* Estas primitivas son referenciadas por variables CSS configurables
+       en resources/css/publica/publica.css (:root): cambia el --color-*
+       allí para que el sitio público pueda re-brandearse desde un panel. */
+    --color-navy-950: var(--cw-navy-950);
+    --color-navy-900: var(--cw-navy-900);
+    --color-navy-800: var(--cw-navy-800);
+    --color-navy-700: var(--cw-navy-700);
+    --color-navy-600: var(--cw-navy-600);
+    --color-navy-100: var(--cw-navy-100);
+    --color-navy-50:  var(--cw-navy-50);
+
+    --color-white-cold: var(--cw-white-cold);
+
+    /* Nota: los colores de marca usan el prefijo "brand-" para NO
+       sobreescribir la paleta azul/cyan por defecto de Tailwind,
+       que el panel admin utiliza intensamente (blue-600/700, etc.). */
+    --color-brand-blue-800: var(--cw-blue-800);
+    --color-brand-blue-700: var(--cw-blue-700);
+    --color-brand-blue-600: var(--cw-blue-600);
+    --color-brand-blue-100: var(--cw-blue-100);
+    --color-brand-blue-50:  var(--cw-blue-50);
+
+    --color-brand-cyan-600: var(--cw-cyan-600);
+    --color-brand-cyan-500: var(--cw-cyan-500);
+    --color-brand-cyan-400: var(--cw-cyan-400);
+    --color-brand-cyan-100: var(--cw-cyan-100);
+    --color-brand-cyan-50:  var(--cw-cyan-50);
+
+    --color-steel-900: var(--cw-steel-900);
+    --color-steel-700: var(--cw-steel-700);
+    --color-steel-600: var(--cw-steel-600);
+    --color-steel-500: var(--cw-steel-500);
+    --color-steel-400: var(--cw-steel-400);
+    --color-steel-200: var(--cw-steel-200);
+    --color-steel-100: var(--cw-steel-100);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -20,6 +63,7 @@
 @source '../**/*.js';
 
 @layer components {
+    /* === Panel admin (dark mode) === */
     .bg-surface {
         @apply bg-white dark:bg-surface-dark;
     }
@@ -46,6 +90,38 @@
     }
     .error-message {
         @apply mt-1 text-xs text-red-600 dark:text-red-400;
+    }
+
+    /* === Sitio público (identidad de marca) === */
+    .cw-surface-brand    { background-color: var(--cw-navy-900); }
+    .cw-surface-soft     { background-color: var(--cw-white-cold); }
+    .cw-surface-raised   { background-color: #ffffff; }
+    .cw-surface-navy-800 { background-color: var(--cw-navy-800); }
+
+    .cw-text-on-brand    { color: var(--cw-white-cold); }
+    .cw-text-on-soft     { color: var(--cw-navy-900); }
+    .cw-text-secondary   { color: var(--cw-steel-700); }
+    .cw-text-muted       { color: var(--cw-steel-400); }
+
+    .cw-border-soft      { border-color: var(--cw-steel-200); }
+    .cw-border-brand     { border-color: var(--cw-blue-700); }
+
+    .cw-btn-primary {
+        @apply font-semibold uppercase rounded-lg px-6 py-3 transition-colors duration-200;
+        background-color: var(--cw-cyan-500);
+        color: var(--cw-navy-900);
+    }
+    .cw-btn-primary:hover {
+        background-color: var(--cw-cyan-400);
+    }
+
+    .cw-btn-secondary {
+        @apply font-semibold uppercase rounded-lg px-6 py-3 transition-colors duration-200;
+        background-color: var(--cw-navy-900);
+        color: var(--cw-white-cold);
+    }
+    .cw-btn-secondary:hover {
+        background-color: var(--cw-navy-700);
     }
 }
 

@@ -18,7 +18,7 @@ class SesionesTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
-        $this->post('/', [
+        $this->post('/login', [
             'email' => 'usuario@example.com',
             'password' => 'password123',
         ])->assertRedirect('/dashboard');
@@ -35,7 +35,7 @@ class SesionesTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post('/logout')->assertRedirect('/');
+        $this->actingAs($user)->post('/logout')->assertRedirect('/login');
 
         $this->assertDatabaseHas('registros_auditoria', [
             'modulo' => 'sesiones',
@@ -52,7 +52,7 @@ class SesionesTest extends TestCase
             'password' => bcrypt('password123'),
         ]);
 
-        $this->post('/', [
+        $this->post('/login', [
             'email' => 'usuario@example.com',
             'password' => 'incorrecta',
         ]);

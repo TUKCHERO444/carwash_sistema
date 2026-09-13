@@ -62,6 +62,7 @@ class TrabajadorController extends Controller
             'apellido_materno' => $validated['apellido_materno'],
             'foto' => $fotoUrl,
             'estado' => $request->boolean('estado'),
+            'pago_diario' => $validated['pago_diario'] ?? null,
         ]);
 
         return redirect()->route('trabajadores.index')
@@ -88,6 +89,7 @@ class TrabajadorController extends Controller
             'nombre' => $validated['nombre'],
             'apellido_paterno' => $validated['apellido_paterno'],
             'apellido_materno' => $validated['apellido_materno'],
+            'pago_diario' => $validated['pago_diario'] ?? null,
         ];
 
         if ($request->hasFile('foto')) {
@@ -198,6 +200,7 @@ class TrabajadorController extends Controller
             'apellido_materno' => ['required', 'string', 'max:50', self::SOLO_LETRAS_RULE],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'estado' => ['required', 'boolean'],
+            'pago_diario' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
         ]);
     }
 

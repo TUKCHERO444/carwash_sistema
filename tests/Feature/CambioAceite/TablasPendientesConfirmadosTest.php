@@ -216,7 +216,7 @@ class TablasPendientesConfirmadosTest extends TestCase
      */
     public function test_unauthenticated_user_is_redirected_to_login(): void
     {
-        $this->get('/cambio-aceite')->assertRedirect('/');
-        $this->get('/cambio-aceite/confirmados')->assertRedirect('/');
+        $this->get('/cambio-aceite')->assertRedirect('/login');
+        $this->get('/cambio-aceite/confirmados')->assertRedirect('/login');
     }
 }

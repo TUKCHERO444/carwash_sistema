@@ -14,11 +14,28 @@ class Servicio extends Model
         'nombre',
         'descripcion',
         'precio',
+        'activo',
+        'orden',
+        'icono',
+        'imagen',
     ];
 
     protected $casts = [
         'precio' => 'decimal:2',
+        'activo' => 'boolean',
+        'orden' => 'integer',
     ];
+
+    /**
+     * Scope para la página pública: solo servicios activos,
+     * ordenados por posición manual y luego por nombre.
+     */
+    public function scopeWeb($query)
+    {
+        return $query->where('activo', true)
+            ->orderBy('orden')
+            ->orderBy('nombre');
+    }
 
     /**
      * Relación con Lavado a través de detalle_servicios

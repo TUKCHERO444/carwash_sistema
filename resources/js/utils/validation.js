@@ -62,6 +62,31 @@ export const Validation = {
             }
         });
 
+        // 1.3 Validar comparación numérica entre campos (data-validate-gte="<id de campo>")
+        // Rechaza el registro si el valor es MENOR al del campo de referencia
+        // (ej: precio_venta no puede ser inferior a precio_compra).
+        // Solo aplica a campos no vacíos (para permitir opcionales).
+        const gteInputs = form.querySelectorAll('[data-validate-gte]');
+        gteInputs.forEach(input => {
+            const refEl = document.getElementById(input.dataset.validateGte);
+            if (!refEl) return;
+            const valor = parseFloat(input.value);
+            const minimo = parseFloat(refEl.value);
+            if (!Number.isFinite(valor) || !Number.isFinite(minimo)) return;
+            if (valor < minimo) {
+                const message = input.dataset.validateGteMessage || `Debe ser mayor o igual a ${minimo.toFixed(2)}.`;
+                this.showError(input, message);
+                // Limpiar el error también cuando se corrija el campo de referencia
+                refEl.addEventListener('input', () => {
+                    input.classList.remove('input-error');
+                    const errorMsg = input.parentElement.querySelector('.error-message');
+                    if (errorMsg) errorMsg.classList.add('hidden');
+                }, { once: true });
+                isValid = false;
+                if (!firstError) firstError = input;
+            }
+        });
+
         // 2. Validar checkboxes (ej: trabajadores)
         // Buscamos grupos que tengan al menos un checkbox con data-validate-min="1"
         const checkboxGroups = form.querySelectorAll('[data-validate-group]');        const groupsChecked = {};

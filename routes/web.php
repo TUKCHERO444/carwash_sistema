@@ -1,17 +1,21 @@
 <?php
 
 use App\Http\Controllers\AccionesAuditoriaController;
+use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\AutomotorController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CambioAceiteController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\ContenidoWebController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KardexController;
 use App\Http\Controllers\LavadoController;
 use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\PaginaInicioController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServicioController;
 use App\Http\Controllers\TrabajadorController;
@@ -37,10 +41,51 @@ Route::get('/test-cloudinary', function () {
     return $result['secure_url'];
 });
 
+// Página pública de inicio
+Route::get('/', [PaginaInicioController::class, 'index'])->name('inicio');
+
+// Página pública de servicios.
+// NOTA: NO se usa '/servicios' porque ese URI lo ocupa el resource del panel
+// (servicios.index); en Laravel 12 una misma URI+método reemplaza a la ruta
+// previa. Por eso la pública usa '/nuestros-servicios'.
+Route::get('/nuestros-servicios', [PaginaInicioController::class, 'servicios'])->name('publica.servicios');
+
+// Página pública de productos.
+// NOTA: igual que '/servicios', '/productos' lo ocupa el resource del panel
+// (productos.index); en Laravel 12 una misma URI+método reemplaza a la ruta
+// previa. Por eso la pública usa '/nuestros-productos'.
+Route::get('/nuestros-productos', [PaginaInicioController::class, 'productos'])->name('publica.productos');
+
+// Vista filtrada de productos por categoría (dropdown del navbar).
+// NOTA ruta estática primero: se declara tras '/nuestros-productos' y usa
+// binding por slug ({categoria:slug}), así que no colisiona con el resource
+// del panel ni con la página estática. Ruta no encontrada => 404 automático.
+Route::get('/nuestros-productos/{categoria:slug}', [PaginaInicioController::class, 'productosCategoria'])->name('publica.productos.categoria');
+
+// Detalle de producto (visto desde una categoría).
+// Se declara después de la de categoría: binding por slug de la categoría
+// y por id del producto ({producto}); un producto de otra categoría, inactivo
+// o inexistente responde 404 desde el propio controlador.
+Route::get('/nuestros-productos/{categoria:slug}/{producto}', [PaginaInicioController::class, 'productoDetalle'])->name('publica.productos.detalle');
+
+// Página pública de marcas.
+// NOTA: igual que '/productos', '/marcas' lo ocupa el resource del panel
+// (marcas.index); en Laravel 12 una misma URI+método reemplaza a la ruta
+// previa. Por eso la pública usa '/nuestras-marcas'.
+Route::get('/nuestras-marcas', [PaginaInicioController::class, 'marcas'])->name('publica.marcas');
+
+// Página pública "Cotiza con nosotros" (formulario de contacto).
+// No colisiona con ninguna ruta del panel, pero se mantiene en la zona
+// de rutas públicas junto a las demás páginas del sitio.
+Route::get('/cotiza', [PaginaInicioController::class, 'cotiza'])->name('publica.cotiza');
+
+// Página pública "¿Quiénes somos?" (misión, visión y valores).
+Route::get('/quienes-somos', [PaginaInicioController::class, 'quienesSomos'])->name('publica.quienes-somos');
+
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
-    Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/', [LoginController::class, 'login']);
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
 });
 
 // Logout (requires auth)
@@ -73,6 +118,15 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('trabajadores', TrabajadorController::class)->except(['show'])->parameters(['trabajadores' => 'trabajador']);
     });
 
+    Route::middleware('permission:acceso-asistencia')->group(function () {
+        // Ajax routes — must be registered BEFORE other routes to avoid conflicts
+        Route::get('/asistencia/por-fecha', [AsistenciaController::class, 'porFecha'])->name('asistencia.porFecha');
+        Route::get('/asistencia/por-mes', [AsistenciaController::class, 'porMes'])->name('asistencia.porMes');
+        Route::post('/asistencia/marcar', [AsistenciaController::class, 'marcar'])->name('asistencia.marcar');
+
+        Route::get('/asistencia', [AsistenciaController::class, 'index'])->name('asistencia.index');
+    });
+
     Route::middleware('permission:acceso-inventario')->group(function () {
         Route::get('productos/buscar', [ProductoController::class, 'buscar'])->name('productos.buscar');
         Route::patch('productos/{producto}/stock', [ProductoController::class, 'updateStock'])->name('productos.updateStock');
@@ -83,9 +137,19 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware('permission:acceso-servicios')->group(function () {
+        // AJAX route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
+        Route::patch('servicios/{servicio}/toggle-status', [ServicioController::class, 'toggleStatus'])
+            ->name('servicios.toggleStatus');
+
         Route::resource('servicios', ServicioController::class)
             ->except(['show'])
             ->parameters(['servicios' => 'servicio']);
+    });
+
+    Route::middleware('permission:acceso-contenido-web')->group(function () {
+        // Pantalla única de contenidos de la web (GET / PUT)
+        Route::get('contenido-web', [ContenidoWebController::class, 'edit'])->name('contenido-web.edit');
+        Route::put('contenido-web', [ContenidoWebController::class, 'update'])->name('contenido-web.update');
     });
 
     Route::middleware('permission:acceso-vehiculos')->group(function () {
@@ -198,4 +262,18 @@ Route::middleware(['auth', 'permission:acceso-auditoria'])->prefix('auditoria')-
 Route::middleware(['auth', 'permission:acceso-auditoria'])->prefix('auditoria')->name('auditoria.')->group(function () {
     Route::get('/acciones', [AccionesAuditoriaController::class, 'index'])->name('acciones.index');
     Route::get('/acciones/{registroAuditoria}', [AccionesAuditoriaController::class, 'show'])->name('acciones.show');
+});
+
+// Reportes (Protected by 'acceso-reportes') — solo lectura, todas las rutas estáticas
+Route::middleware(['auth', 'permission:acceso-reportes'])->prefix('reportes')->name('reportes.')->group(function () {
+    Route::get('/', [ReporteController::class, 'index'])->name('index');
+    Route::get('/ingresos', [ReporteController::class, 'ingresos'])->name('ingresos');
+    Route::get('/ventas', [ReporteController::class, 'ventas'])->name('ventas');
+    Route::get('/lavados', [ReporteController::class, 'lavados'])->name('lavados');
+    Route::get('/cambio-aceite', [ReporteController::class, 'cambioAceite'])->name('cambioAceite');
+    Route::get('/inventario', [ReporteController::class, 'inventario'])->name('inventario');
+    Route::get('/clientes', [ReporteController::class, 'clientes'])->name('clientes');
+    Route::get('/caja', [ReporteController::class, 'caja'])->name('caja');
+    Route::get('/personal', [ReporteController::class, 'personal'])->name('personal');
+    Route::get('/kardex', [ReporteController::class, 'kardex'])->name('kardex');
 });

@@ -50,10 +50,12 @@ class Trabajador extends Model
         'apellido_materno',
         'foto',
         'estado',
+        'pago_diario',
     ];
 
     protected $casts = [
         'estado' => 'boolean',
+        'pago_diario' => 'decimal:2',
     ];
 
     /**

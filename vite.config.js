@@ -8,6 +8,9 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                // Sitio público
+                'resources/css/publica/publica.css',
+                'resources/js/publica/app.js',
                 // Ventas
                 'resources/js/ventas/create.js',
                 // Lavados
@@ -22,6 +25,10 @@ export default defineConfig({
                 'resources/js/productos/index.js',
                 'resources/js/productos/create.js',
                 'resources/js/productos/edit.js',
+                // Servicios
+                'resources/js/servicios/index.js',
+                // Contenido web (panel)
+                'resources/js/contenido-web/edit.js',
                 // Vehiculos
                 'resources/js/vehiculos/create.js',
                 // Clientes
@@ -41,6 +48,11 @@ export default defineConfig({
                 'resources/js/trabajadores/index.js',
                 'resources/js/trabajadores/create.js',
                 'resources/js/trabajadores/edit.js',
+                // Asistencia
+                'resources/js/asistencia/index.js',
+                // Reportes
+                'resources/js/reportes/ingresos.js',
+                'resources/js/reportes/print.js',
             ],
             refresh: true,
         }),

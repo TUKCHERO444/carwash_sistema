@@ -1,0 +1,159 @@
+/* ============================================================
+   Sitio público — Carwash El Chinito
+   Identidad cromática centralizada (docs/design.md).
+
+   Estas variables CSS son la FUENTE ÚNICA de los colores de la
+   página pública. Los tokens @theme de app.css apuntan a ellas
+   (--color-navy-900: var(--cw-navy-900), etc.), por lo que un
+   futuro panel de personalización solo debe reescribir estas
+   variables (o inyectarlas desde Blade) para re-brandear el
+   sitio sin tocar el marcado ni los estilos de los componentes.
+   ============================================================ */
+
+:root {
+    /* --- Navy (estructura, 40%) --- */
+    --cw-navy-950: #060F1A;
+    --cw-navy-900: #0B2638;
+    --cw-navy-800: #113349;
+    --cw-navy-700: #17415C;
+    --cw-navy-600: #1D5070;
+    --cw-navy-100: #D8E4EC;
+    --cw-navy-50:  #EEF4F8;
+
+    /* --- Blanco frío (estructura, 30%) --- */
+    --cw-white-cold: #F5F7F8;
+
+    /* --- Azul corporativo (identidad, 15%) --- */
+    --cw-blue-800: #05496F;
+    --cw-blue-700: #075B8A;
+    --cw-blue-600: #096FA6;
+    --cw-blue-100: #D2E8F4;
+    --cw-blue-50:  #EEF7FB;
+
+    /* --- Cyan eléctrico (acción, 10%) --- */
+    --cw-cyan-600: #0F8FC6;
+    --cw-cyan-500: #19A9E5;
+    --cw-cyan-400: #3DBBEC;
+    --cw-cyan-100: #D9F2FC;
+    --cw-cyan-50:  #F0FAFE;
+
+    /* --- Gris metálico (soporte, 5%) --- */
+    --cw-steel-900: #232B30;
+    --cw-steel-700: #556169;
+    --cw-steel-600: #6E7A82;
+    --cw-steel-500: #8B969C;
+    --cw-steel-400: #A5AEB3;
+    --cw-steel-200: #D7DDE1;
+    --cw-steel-100: #EDF0F2;
+
+    /* --- Tipografía (extraída de docs/pagina/inicio.txt, see 11.3) --- */
+    --cw-font-main:    'Barlow', ui-sans-serif, system-ui, sans-serif;
+    --cw-font-heading: 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    --cw-font-weight-text:    500; /* --text-font-weight del tema */
+    --cw-font-weight-strong:  600; /* --text-font-bolder-weight del tema */
+    --cw-font-weight-heading: 600; /* --heading-font-weight del tema */
+    --cw-font-weight-display: 700;
+    --cw-text-base-size:    16px; /* --base-text-font-size del tema */
+    --cw-text-default-size: 15px; /* --default-text-font-size del tema */
+}
+
+/* El sitio público siempre usa el tema claro (nunca dark).
+   Evita que el toggle de tema del panel afecte la página pública. */
+html {
+    color-scheme: light;
+}
+
+/* Tipografía base del sitio público (Barlow, ver docs/design.md §11).
+   Peso 500 heredado por todo el cuerpo; los títulos lo sobreescriben
+   con font-semibold (600). */
+.cw-body {
+    font-family: var(--cw-font-main);
+    font-weight: var(--cw-font-weight-text);
+    background-color: var(--cw-white-cold);
+    color: var(--cw-navy-900);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Hero / slideshow --- */
+.cw-hero {
+    position: relative;
+    min-height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: var(--cw-navy-900);
+}
+
+.cw-hero__bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.cw-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        rgba(6, 15, 26, 0.82) 0%,
+        rgba(11, 38, 56, 0.55) 45%,
+        rgba(6, 15, 26, 0.25) 100%
+    );
+}
+
+/* --- Barra de anuncios --- */
+.cw-announce {
+    background-color: var(--cw-blue-700);
+    color: var(--cw-white-cold);
+}
+
+/* --- Scroller horizontal de productos --- */
+.cw-scroller {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    /* ocultar scrollbar pero mantener scroll */
+    scrollbar-width: none;
+}
+.cw-scroller::-webkit-scrollbar {
+    display: none;
+}
+.cw-scroller > * {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+}
+
+/* --- Video / play --- */
+.cw-play-btn {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--cw-cyan-500);
+    color: var(--cw-navy-900);
+    box-shadow: 0 10px 25px rgba(6, 15, 26, 0.35);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.cw-play-btn:hover {
+    transform: scale(1.08);
+    background-color: var(--cw-cyan-400);
+}
+
+/* --- Aparición suave del menú móvil --- */
+.cw-mobile-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease-out;
+}
+.cw-mobile-menu.is-open {
+    max-height: 100vh;
+}

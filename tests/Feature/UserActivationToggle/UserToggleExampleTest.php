@@ -128,7 +128,7 @@ class UserToggleExampleTest extends TestCase
         $response = $this->patch("/users/{$user->id}/toggle");
 
         $response->assertStatus(302);
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
     }
 
     // -------------------------------------------------------------------------

@@ -20,6 +20,7 @@ class TrabajadorFactory extends Factory
         return [
             'nombre' => $this->faker->name(),
             'estado' => true,
+            'pago_diario' => 50,
         ];
     }
 }

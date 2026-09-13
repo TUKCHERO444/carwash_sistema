@@ -8,10 +8,10 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-script')
 </head>
-<body class="flex h-screen bg-gray-50 dark:bg-background-dark text-gray-900 dark:text-text-primary-dark overflow-hidden transition-colors duration-300">
+<body class="flex h-screen bg-gray-50 dark:bg-background-dark text-gray-900 dark:text-text-primary-dark overflow-hidden transition-colors duration-300 print:overflow-visible print:h-auto">
 
 @php
-    $userManagementActive    = request()->routeIs('users.*', 'roles.*', 'trabajadores.*');
+    $userManagementActive    = request()->routeIs('users.*', 'roles.*', 'trabajadores.*', 'asistencia.*');
     $productManagementActive = request()->routeIs('productos.*', 'categorias.*', 'marcas.*');
     $categoriasActive        = request()->routeIs('categorias.*');
     $ventasActive            = request()->routeIs('ventas.*');
@@ -19,13 +19,14 @@
     $cambioAceiteActive      = request()->routeIs('cambio-aceite.*');
     $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $lavadosActive;
     $cajaActive              = request()->routeIs('caja.*');
-    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*');
+    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*', 'reportes.*');
+    $sitioWebActive = request()->routeIs('contenido-web.*');
     $kardexActive            = request()->routeIs('kardex.*');
     $auditoriaActive         = request()->routeIs('kardex.*', 'auditoria.*');
 @endphp
 
-    {{-- Sidebar: visible en desktop (≥1024px), oculto en móvil --}}
-    <aside class="hidden lg:flex flex-col w-64 bg-gray-900 border-r border-gray-800 shrink-0">
+    {{-- Sidebar: visible en desktop (≥1024px), oculto en móvil. Oculto al imprimir. --}}
+    <aside class="hidden lg:flex flex-col w-64 bg-gray-900 border-r border-gray-800 shrink-0 print:hidden">
         <div class="flex items-center justify-between h-16 px-6 border-b border-gray-800">
             <span class="text-lg font-semibold text-white">{{ config('app.name', 'Laravel') }}</span>
             <button data-theme-toggle id="theme-toggle" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg" aria-label="Cambiar tema">
@@ -99,7 +100,7 @@
             </div>
             @endcan
 
-            @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores'])
+            @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores', 'acceso-asistencia'])
             <div data-dropdown="user-management">
                 <button data-dropdown-toggle="user-management"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -136,6 +137,13 @@
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('trabajadores.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Trabajadores
+                    </a>
+                    @endcan
+                    @can('acceso-asistencia')
+                     <a href="{{ route('asistencia.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('asistencia.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Asistencia
                     </a>
                     @endcan
                 </div>
@@ -179,7 +187,7 @@
             </div>
             @endcan
 
-            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores'])
+            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-reportes'])
             <div data-dropdown="gestion-administrativa">
                 <button data-dropdown-toggle="gestion-administrativa"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -225,9 +233,90 @@
                         Automotores
                     </a>
                     @endcan
+                    @can('acceso-reportes')
+                    <div class="my-2 border-t border-gray-800"></div>
+                    <p class="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>
+                    <a href="{{ route('reportes.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.index') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Resumen de reportes
+                    </a>
+                    <a href="{{ route('reportes.ingresos') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.ingresos') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Ingresos
+                    </a>
+                    <a href="{{ route('reportes.ventas') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.ventas') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Ventas
+                    </a>
+                    <a href="{{ route('reportes.lavados') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.lavados') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Lavados
+                    </a>
+                    <a href="{{ route('reportes.cambioAceite') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.cambioAceite') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Cambio de Aceite
+                    </a>
+                    <a href="{{ route('reportes.inventario') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.inventario') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Inventario
+                    </a>
+                    <a href="{{ route('reportes.clientes') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.clientes') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Clientes
+                    </a>
+                    <a href="{{ route('reportes.caja') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.caja') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Caja
+                    </a>
+                    <a href="{{ route('reportes.personal') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.personal') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Personal
+                    </a>
+                    <a href="{{ route('reportes.kardex') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.kardex') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Kardex
+                    </a>
+                    @endcan
                 </div>
             </div>
             @endcanany
+
+            @can('acceso-contenido-web')
+            <div data-dropdown="sitio-web">
+                <button data-dropdown-toggle="sitio-web"
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $sitioWebActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                    </svg>
+                    <span class="flex-1 text-left">Sitio web</span>
+                    <svg data-chevron
+                         class="w-4 h-4 transition-transform {{ $sitioWebActive ? 'rotate-180' : '' }}"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div data-dropdown-menu="sitio-web"
+                     class="{{ $sitioWebActive ? '' : 'hidden' }} ml-4 mt-1 space-y-1">
+                    <a href="{{ route('contenido-web.edit') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('contenido-web.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Contenido de la web
+                    </a>
+                </div>
+            </div>
+            @endcan
 
             @can('acceso-auditoria')
             <div data-dropdown="auditoria">
@@ -278,13 +367,13 @@
     </aside>
 
     {{-- Content Area: ocupa el espacio restante --}}
-    <main class="flex-1 overflow-y-auto pb-[77px] lg:pb-0">
+    <main class="flex-1 overflow-y-auto pb-[77px] lg:pb-0 print:overflow-visible print:pb-0">
         @yield('content')
     </main>
 
-    {{-- Bottom Nav: visible en móvil (<1024px), oculto en desktop --}}
+    {{-- Bottom Nav: visible en móvil (<1024px), oculto en desktop y al imprimir --}}
     <nav aria-label="Navegación móvil"
-         class="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex justify-around items-center h-[77px] z-50">
+         class="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex justify-around items-center h-[77px] z-50 print:hidden">
         <a href="{{ route('dashboard') }}"
            class="flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
                   {{ request()->routeIs('dashboard') ? 'text-blue-400' : 'text-gray-400 hover:text-white' }}">
@@ -348,7 +437,7 @@
         </div>
         @endcan
 
-        @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores'])
+        @canany(['acceso-usuarios', 'acceso-roles', 'acceso-trabajadores', 'acceso-asistencia'])
         <div data-dropdown="user-management-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="user-management-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -387,6 +476,13 @@
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ request()->routeIs('trabajadores.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Trabajadores
+                </a>
+                @endcan
+                @can('acceso-asistencia')
+                <a href="{{ route('asistencia.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('asistencia.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Asistencia
                 </a>
                 @endcan
             </div>
@@ -432,7 +528,7 @@
         </div>
         @endcan
 
-        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores'])
+        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-reportes'])
         <div data-dropdown="gestion-administrativa-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-administrativa-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -480,9 +576,47 @@
                     Automotores
                 </a>
                  @endcan
+                @can('acceso-reportes')
+                <div class="my-2 border-t border-gray-700"></div>
+                <p class="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>
+                <a href="{{ route('reportes.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('reportes.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Resumen de reportes
+                </a>
+                @endcan
             </div>
         </div>
         @endcanany
+
+        @can('acceso-contenido-web')
+        <div data-dropdown="sitio-web-mobile" class="flex-1 relative">
+            <button data-dropdown-toggle="sitio-web-mobile"
+                    class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
+                           {{ $sitioWebActive ? 'text-blue-400' : 'text-gray-400 hover:text-white' }}">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                </svg>
+                Sitio web
+                <svg data-chevron
+                     class="w-3 h-3 transition-transform {{ $sitioWebActive ? 'rotate-180' : '' }}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div data-dropdown-menu="sitio-web-mobile"
+                 {{ $sitioWebActive ? 'data-persistent' : '' }}
+                 class="absolute bottom-[77px] left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl min-w-max
+                        {{ $sitioWebActive ? '' : 'hidden' }}">
+                <a href="{{ route('contenido-web.edit') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('contenido-web.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Contenido de la web
+                </a>
+            </div>
+        </div>
+        @endcan
 
         @can('acceso-auditoria')
         <div data-dropdown="auditoria-mobile" class="flex-1 relative">

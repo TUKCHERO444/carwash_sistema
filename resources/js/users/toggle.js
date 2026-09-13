@@ -100,6 +100,8 @@ export function initToggleStatus() {
 }
 
 // Inicialización automática
-document.addEventListener('DOMContentLoaded', () => {
-    initToggleStatus();
-});
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initToggleStatus();
+    });
+}

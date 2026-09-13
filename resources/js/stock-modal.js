@@ -140,7 +140,39 @@ export function initStockModal() {
                 // Actualizar la celda de stock en la tabla usando data-stock-value
                 const stockCell = document.querySelector(`[data-stock-value="${productoId}"]`);
                 if (stockCell) {
-                    stockCell.textContent = data.nuevo_stock;
+                    const display = stockCell.querySelector('[data-stock-display]');
+
+                    if (display) {
+                        display.textContent = data.nuevo_stock;
+                    }
+
+                    // Recalcular alerta de stock bajo (se activa al consumir el 75% del inventario)
+                    const nuevoInventario = Number(data.nuevo_inventario ?? 0);
+                    const nuevoStock      = Number(data.nuevo_stock);
+                    const consumido       = nuevoInventario - nuevoStock;
+                    const enAlerta        = nuevoInventario > 0 && consumido >= Math.ceil(nuevoInventario * 0.75);
+
+                    if (display) {
+                        display.classList.toggle('text-red-700', enAlerta);
+                        display.classList.toggle('dark:text-red-400', enAlerta);
+                        display.classList.toggle('font-medium', enAlerta);
+                        display.classList.toggle('text-gray-700', !enAlerta);
+                        display.classList.toggle('dark:text-text-secondary-dark', !enAlerta);
+                    }
+
+                    // Mostrar el badge solo cuando hay alerta (no depender de "hidden" vs "inline-flex")
+                    const existingBadge = stockCell.querySelector('[data-stock-badge]');
+                    if (enAlerta) {
+                        if (!existingBadge) {
+                            const newBadge = document.createElement('span');
+                            newBadge.setAttribute('data-stock-badge', '');
+                            newBadge.className = 'ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+                            newBadge.textContent = 'Stock bajo';
+                            stockCell.appendChild(newBadge);
+                        }
+                    } else if (existingBadge) {
+                        existingBadge.remove();
+                    }
                 }
 
                 // Mostrar flash de confirmación

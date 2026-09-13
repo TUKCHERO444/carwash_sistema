@@ -15,7 +15,7 @@ class PermisoTest extends TestCase
 
     public function test_visitante_sin_autenticar_es_redirigido_a_login(): void
     {
-        $this->get(route('auditoria.acciones.index'))->assertRedirect('/');
+        $this->get(route('auditoria.acciones.index'))->assertRedirect('/login');
     }
 
     public function test_usuario_sin_permiso_es_redirigido_al_dashboard(): void

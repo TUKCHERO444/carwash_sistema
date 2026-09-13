@@ -153,14 +153,24 @@
                             </td>
 
                             {{-- Stock --}}
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-gray-700 dark:text-text-secondary-dark"
+                            <td class="px-6 py-8 whitespace-nowrap text-sm"
                                 data-stock-value="{{ $producto->id }}">
-                                {{ $producto->stock }}
+                                <span data-stock-display
+                                      class="{{ $producto->esta_en_alerta ? 'text-red-700 dark:text-red-400 font-medium' : 'text-gray-700 dark:text-text-secondary-dark' }}">
+                                    {{ $producto->stock }}
+                                </span>
+                                @if($producto->esta_en_alerta)
+                                    <span data-stock-badge
+                                          class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                        Stock bajo
+                                    </span>
+                                @endif
                             </td>
 
                             {{-- Activo badge --}}
                             <td class="px-6 py-8 whitespace-nowrap text-sm">
-                                <span data-producto-id="{{ $producto->id }}"
+                                <span data-badge
+                                      data-producto-id="{{ $producto->id }}"
                                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $producto->activo ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' }}">
                                     {{ $producto->activo ? 'Activo' : 'Inactivo' }}
                                 </span>
@@ -181,8 +191,8 @@
                                 <button type="button"
                                         data-toggle-status
                                         data-url="{{ route('productos.toggleStatus', $producto) }}"
-                                        data-producto-id="{{ $producto->id }}"
-                                        data-producto-nombre="{{ $producto->nombre }}"
+                                        data-nombre="{{ $producto->nombre }}"
+                                        data-tipo="producto"
                                         aria-label="{{ $producto->activo ? 'Inactivar' : 'Activar' }} producto {{ $producto->nombre }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors
                                                {{ $producto->activo
@@ -197,6 +207,7 @@
                                     data-producto-id="{{ $producto->id }}"
                                     data-producto-nombre="{{ $producto->nombre }}"
                                     data-producto-stock="{{ $producto->stock }}"
+                                    data-producto-inventario="{{ $producto->inventario }}"
                                     data-update-url="{{ route('productos.updateStock', $producto) }}"
                                     aria-label="Actualizar stock de {{ $producto->nombre }}"
                                     class="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 text-xs font-medium rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors">

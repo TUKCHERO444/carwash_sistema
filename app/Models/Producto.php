@@ -29,6 +29,23 @@ class Producto extends Model
         return asset('storage/'.$this->foto);
     }
 
+    /**
+     * Accesor que indica si el producto tiene stock bajo respecto al
+     * inventario del ciclo vigente. La alerta se activa cuando ya se ha
+     * consumido el 75% del inventario (queda 25% o menos).
+     * Con inventario 0 no hay ciclo de referencia, por lo que nunca alerta.
+     */
+    public function getEstaEnAlertaAttribute(): bool
+    {
+        if ($this->inventario <= 0) {
+            return false;
+        }
+
+        $consumido = $this->inventario - $this->stock;
+
+        return $consumido >= (int) ceil($this->inventario * 0.75);
+    }
+
     protected $fillable = [
         'nombre',
         'descripcion',

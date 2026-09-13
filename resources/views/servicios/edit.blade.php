@@ -29,7 +29,7 @@
 
     {{-- Form --}}
     <div class="bg-surface rounded-lg border border-main p-6 max-w-lg">
-        <form action="{{ route('servicios.update', $servicio) }}" method="POST" novalidate>
+        <form action="{{ route('servicios.update', $servicio) }}" method="POST" enctype="multipart/form-data" novalidate>
             @csrf
             @method('PUT')
 
@@ -96,6 +96,95 @@
                     placeholder="0.00"
                 >
                 @error('precio')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Orden --}}
+            <div class="mb-5">
+                <label for="orden" class="label-main mb-1">
+                    Orden en la página pública
+                </label>
+                <input
+                    type="number"
+                    id="orden"
+                    name="orden"
+                    value="{{ old('orden', $servicio->orden) }}"
+                    min="0"
+                    step="1"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('orden') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="0"
+                >
+                <p class="mt-1 text-xs text-secondary">Menor número se muestra primero.</p>
+                @error('orden')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Icono --}}
+            <div class="mb-5">
+                <label for="icono" class="label-main mb-1">
+                    Ícono
+                </label>
+                <select
+                    id="icono"
+                    name="icono"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('icono') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                >
+                    <option value="sparkles" @selected(old('icono', $servicio->icono ?? 'sparkles') === 'sparkles')>Sparkles</option>
+                    @foreach($iconos as $opcion)
+                        @if($opcion !== 'sparkles')
+                            <option value="{{ $opcion }}" @selected(old('icono', $servicio->icono) === $opcion)>{{ ucfirst($opcion) }}</option>
+                        @endif
+                    @endforeach
+                </select>
+                @error('icono')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Imagen --}}
+            <div class="mb-5">
+                <label for="imagen" class="label-main mb-1">
+                    Imagen
+                </label>
+                @if($servicio->imagen)
+                    <div class="mb-3">
+                        <img src="{{ $servicio->imagen }}" alt="Imagen actual de {{ $servicio->nombre }}"
+                             class="w-32 h-24 object-cover rounded-lg border border-main">
+                    </div>
+                @endif
+                <input
+                    type="file"
+                    id="imagen"
+                    name="imagen"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="w-full text-sm text-secondary file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400 dark:hover:file:bg-blue-900/50 transition-colors
+                           {{ $errors->has('imagen') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                >
+                <p class="mt-1 text-xs text-secondary">JPG, PNG o WEBP. Máximo 2 MB. Si no eliges una, se conserva la actual.</p>
+                @error('imagen')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Activo --}}
+            <div class="mb-6">
+                <label for="activo" class="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        id="activo"
+                        name="activo"
+                        value="1"
+                        @checked(old('activo', $servicio->activo))
+                        class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    >
+                    <span class="text-sm text-primary">Publicado en la web</span>
+                </label>
+                <p class="mt-1 text-xs text-secondary">Si está marcado, aparece en la página pública.</p>
+                @error('activo')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </div>
