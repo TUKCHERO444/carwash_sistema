@@ -21,7 +21,7 @@ import { Validation } from '../utils/validation.js';
 
 /**
  * Renders the HTML for the detail table body.
- * @param {Array<{nombre: string, cantidad: number, precio_unitario: number, subtotal: number}>} items
+ * @param {Array<{nombre: string, cantidad: number, precio_unitario: number, subtotal: number, stock_bajo?: boolean}>} items
  * @returns {string} HTML string
  */
 export function renderTablaHTML(items) {
@@ -32,9 +32,14 @@ export function renderTablaHTML(items) {
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
             <td class="px-4 py-6 text-sm text-primary">${item.nombre}</td>
             <td class="px-4 py-6">
-                <input type="number" min="1" max="${item.stock}" value="${item.cantidad}"
-                    class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
-                    onchange="actualizarCantidad(${idx}, this.value)">
+                <div class="flex items-center gap-2">
+                    ${item.stock_bajo
+                        ? '<span data-stock-badge class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Stock bajo</span>'
+                        : ''}
+                    <input type="number" min="1" max="${item.stock}" value="${item.cantidad}"
+                        class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
+                        onchange="actualizarCantidad(${idx}, this.value)">
+                </div>
             </td>
             <td class="px-4 py-6 text-sm text-secondary">S/ ${item.precio_unitario.toFixed(2)}</td>
             <td class="px-4 py-6 text-sm text-secondary">S/ ${item.subtotal.toFixed(2)}</td>
@@ -69,7 +74,10 @@ export function sincronizarHiddens(items, form, className, fields) {
 
 // ── Module initialisation ──
 
-document.addEventListener('DOMContentLoaded', () => {
+// Guard para entornos sin DOM (tests de Node importan este módulo para
+// ejercitar las funciones puras): en el navegador siempre está definido.
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
     let items = [];
 
     // DOM references
@@ -155,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 precio_unitario: +parseFloat(producto.precio_venta).toFixed(2),
                 subtotal:        +parseFloat(producto.precio_venta).toFixed(2),
                 stock:           stock,
+                stock_bajo:      Boolean(producto.stock_bajo),
             });
         }
         renderTabla();
@@ -412,4 +421,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+    });
+}

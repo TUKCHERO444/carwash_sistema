@@ -11,6 +11,7 @@ export default defineConfig({
                 // Sitio público
                 'resources/css/publica/publica.css',
                 'resources/js/publica/app.js',
+                'resources/js/publica/productos-filtros.js',
                 // Ventas
                 'resources/js/ventas/create.js',
                 // Lavados

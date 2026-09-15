@@ -50,9 +50,16 @@ class VentaController extends Controller
         $productos = Producto::where('activo', true)
             ->where('nombre', 'like', '%'.$q.'%')
             ->where('stock', '>', 0)
-            ->select('id', 'nombre', 'precio_venta', 'stock')
+            ->select('id', 'nombre', 'precio_venta', 'stock', 'inventario')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'nombre' => $p->nombre,
+                'precio_venta' => $p->precio_venta,
+                'stock' => $p->stock,
+                'stock_bajo' => $p->esta_en_alerta,
+            ]);
 
         return response()->json($productos);
     }

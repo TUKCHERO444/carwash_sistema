@@ -5,8 +5,15 @@
  */
 
 import { Validation } from '../utils/validation.js';
+import { initFotoPreview } from '../productos/shared.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('bloque-preview')) {
+        initFotoPreview('foto', 'preview-foto', 'bloque-preview');
+    } else if (document.getElementById('bloque-nueva')) {
+        initFotoPreview('foto', 'preview-nueva', 'bloque-nueva');
+    }
+
     const form = document.getElementById('form-marca');
     if (form) {
         form.addEventListener('submit', (e) => {

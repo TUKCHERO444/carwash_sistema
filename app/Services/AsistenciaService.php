@@ -27,7 +27,7 @@ class AsistenciaService
      *     total_activos: int,
      *     asistieron: int,
      *     no_asistieron: int,
-     *     asistentes: array<int, array{trabajador_id:int, nombre_completo:string, hora_entrada:string, foto_url:?string}>,
+     *     asistentes: array<int, array{trabajador_id:int, nombre_completo:string, hora_entrada:string(H:i), foto_url:?string}>,
      *     no_asistentes: array<int, array{trabajador_id:int, nombre_completo:string, foto_url:?string}>,
      * }
      */
@@ -46,7 +46,7 @@ class AsistenciaService
                 $asistentes[] = [
                     'trabajador_id' => $trabajador->id,
                     'nombre_completo' => $trabajador->nombre_completo,
-                    'hora_entrada' => $marca->hora_entrada,
+                    'hora_entrada' => Carbon::parse($marca->hora_entrada)->format('H:i'),
                     'foto_url' => $trabajador->foto_url,
                 ];
             } else {

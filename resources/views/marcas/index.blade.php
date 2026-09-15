@@ -39,6 +39,9 @@
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Foto
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
@@ -55,6 +58,22 @@
                 <tbody class="bg-surface divide-y divide-main">
                     @foreach($marcas as $marca)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            {{-- Foto / miniatura --}}
+                            <td class="px-4 py-8 whitespace-nowrap">
+                                @if($marca->foto)
+                                    <img src="{{ $marca->foto_url }}"
+                                         alt="Foto de {{ $marca->nombre }}"
+                                         class="w-10 h-10 object-cover rounded border border-gray-200 dark:border-border-dark">
+                                @else
+                                    <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                @endif
+                            </td>
+
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium">
                                 {{ $marca->nombre }}
                             </td>

@@ -27,24 +27,14 @@
     </section>
 
     {{-- ============================================================
-        2. LISTADO DE MARCAS (sección logo-list del tema de referencia)
-        Grid de logos: hoy wordmark de texto; el panel permite curar cuáles
-        marcas y en qué orden se muestran.
+        2. LISTADO DE MARCAS (tabla junta)
+        Tabla junta de logos de las marcas seleccionadas en el panel de
+        contenidos web (curaduría). Carga solo la foto de cada marca en
+        tamaño y resolución estable; crece con la cantidad seleccionada.
     ============================================================ --}}
     <section class="bg-white-cold py-16 sm:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <div class="mt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
-                @forelse ($marcas as $marca)
-                    <div class="flex items-center justify-center rounded-2xl border border-steel-200 bg-white px-4 h-24 sm:h-28 shadow-sm hover:border-brand-blue-700 hover:shadow-md transition-all">
-                        {{-- FUTURO: <img src="{{ $marca->logo }}" alt="{{ $marca->nombre }}" class="max-h-12"> --}}
-                        <span class="text-lg sm:text-xl font-bold tracking-wide text-navy-900">{{ $marca->nombre }}</span>
-                    </div>
-                @empty
-                    <p class="col-span-full text-center text-sm text-steel-500">
-                        Aún no tenemos marcas registradas.
-                    </p>
-                @endforelse
-            </div>
+            @include('publica.partials.grilla-marcas', ['marcas' => $marcas])
         </div>
     </section>
 

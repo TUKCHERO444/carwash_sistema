@@ -249,6 +249,47 @@ class AsistenciaTest extends TestCase
         ]);
     }
 
+    public function test_marcar_round_trip_uses_h_i_format(): void
+    {
+        $t1 = $this->crearTrabajador();
+        $t2 = $this->crearTrabajador();
+
+        $this->actingAs($this->user)
+            ->postJson(route('asistencia.marcar'), [
+                'fecha' => $this->hoy(),
+                'marcas' => [$t1->id => '08:00'],
+            ])
+            ->assertOk()
+            ->assertJsonPath('asistentes.0.hora_entrada', '08:00');
+
+        $resumen = $this->actingAs($this->user)
+            ->getJson(route('asistencia.porFecha', ['fecha' => $this->hoy()]))
+            ->assertOk()
+            ->json();
+
+        $horasLeidas = [];
+        foreach ($resumen['asistentes'] as $asistente) {
+            $this->assertMatchesRegularExpression(
+                '/^(2[0-3]|[01][0-9]):[0-5][0-9]$/',
+                $asistente['hora_entrada'],
+                'la hora devuelta por el servidor debe estar en formato H:i'
+            );
+            $horasLeidas[$asistente['trabajador_id']] = $asistente['hora_entrada'];
+        }
+
+        $horasLeidas[$t2->id] = '08:45';
+
+        $this->actingAs($this->user)
+            ->postJson(route('asistencia.marcar'), [
+                'fecha' => $this->hoy(),
+                'marcas' => $horasLeidas,
+            ])
+            ->assertOk()
+            ->assertJson(['asistieron' => 2]);
+
+        $this->assertDatabaseCount('asistencias', 2);
+    }
+
     public function test_marcar_removes_omitted_workers(): void
     {
         $t1 = $this->crearTrabajador();

@@ -152,7 +152,7 @@ class PublicaProductosTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('FILTROS');
         $response->assertSee(mayusculas($visible->nombre));
-        $response->assertSeeInOrder(['Mostrando', '1', 'producto'], false);
+        $response->assertSeeInOrder(['1', 'producto', '—', 'mostrando', '1'], false);
         $response->assertDontSee('Filtro sin vigencia');
         $response->assertDontSee($foraneo->nombre);
     }
@@ -176,6 +176,45 @@ class PublicaProductosTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Agotado');
         $response->assertSee('Sin stock disponible');
+    }
+
+    /**
+     * La sección "Te recomendamos" de la home muestra hasta 6 productos en
+     * cards pequeñas con la misma información (marca, nombre, precio, stock)
+     * y cada una enlaza al detalle público de su producto.
+     */
+    public function test_inicio_renders_six_product_cards_enlazando_al_detalle(): void
+    {
+        $categoria = Categoria::create(['nombre' => 'Lubricantes']);
+
+        foreach (range(1, 6) as $i) {
+            Producto::factory()->create([
+                'categoria_id' => $categoria->id,
+                'activo' => true,
+                'stock' => 5,
+                'precio_venta' => $i * 10,
+                'nombre' => "Producto destacado {$i}",
+            ]);
+        }
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee('Te recomendamos');
+
+        $productos = $categoria->productos()->get();
+        $this->assertCount(6, $productos);
+
+        foreach ($productos as $producto) {
+            $response->assertSee(mayusculas($producto->nombre));
+            $response->assertSee('S/ '.number_format((float) $producto->precio_venta, 2, '.', ''));
+            $response->assertSee('Disponible');
+            $response->assertSee('VER DETALLE');
+            $response->assertSee(
+                route('publica.productos.detalle', ['categoria' => $categoria, 'producto' => $producto]),
+                false
+            );
+        }
     }
 
     /**

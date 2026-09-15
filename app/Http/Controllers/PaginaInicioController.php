@@ -8,6 +8,7 @@ use App\Models\Servicio;
 use App\Services\ContenidoWebService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PaginaInicioController extends Controller
@@ -183,18 +184,48 @@ class PaginaInicioController extends Controller
      * navbar. Esta vista replica el "collection" del tema de referencia
      * (breadcrumb, h1, contador y grid de cards de producto con estado de
      * stock).
+     *
+     * Soporta filtros que actúan en conjunto o por separado:
+     *   - letra=asc|desc      : orden alfabético A→Z / Z→A
+     *   - stock=mayor|menor   : orden por cantidad disponible en stock
+     *   - q=texto              : búsqueda dinámica por nombre, categoría o marca
+     * La paginación es de 20 productos y conserva los filtros activos.
      */
-    public function productosCategoria(Categoria $categoria): View
+    public function productosCategoria(Categoria $categoria, Request $request): View
     {
+        $letra = $request->query('letra', '');
+        $stock = $request->query('stock', '');
+        $q = trim((string) $request->query('q', ''));
+
+        if (! in_array($letra, ['asc', 'desc'], true)) {
+            $letra = '';
+        }
+        if (! in_array($stock, ['mayor', 'menor'], true)) {
+            $stock = '';
+        }
+
         $productos = $categoria->productos()
             ->where('activo', true)
             ->with('marca')
-            ->orderBy('nombre')
-            ->paginate(12);
+            ->when($q !== '', function (Builder $query) use ($q) {
+                $query->where(function (Builder $sub) use ($q) {
+                    $sub->where('productos.nombre', 'like', "%{$q}%")
+                        ->orWhereHas('marca', fn (Builder $b) => $b->where('nombre', 'like', "%{$q}%"))
+                        ->orWhereHas('categoria', fn (Builder $b) => $b->where('nombre', 'like', "%{$q}%"));
+                });
+            })
+            ->when($letra !== '', fn (Builder $query) => $query->orderBy('productos.nombre', $letra))
+            ->when($stock === 'mayor', fn (Builder $query) => $query->orderBy('productos.stock', 'desc'))
+            ->when($stock === 'menor', fn (Builder $query) => $query->orderBy('productos.stock', 'asc'))
+            ->when($letra === '' && $stock === '', fn (Builder $query) => $query->orderBy('productos.nombre', 'asc'))
+            ->paginate(20)
+            ->withQueryString();
+
+        $totalCategoria = $categoria->productos()->where('activo', true)->count();
 
         $empresa = config('carwash');
 
-        return view('publica.productos-categoria', compact('categoria', 'productos', 'empresa'));
+        return view('publica.productos-categoria', compact('categoria', 'productos', 'totalCategoria', 'letra', 'stock', 'q', 'empresa'));
     }
 
     /**

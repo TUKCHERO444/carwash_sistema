@@ -52,17 +52,7 @@
             <h2 class="text-center text-sm sm:text-base font-semibold uppercase tracking-widest text-steel-700">
                 {{ $contenido->text('marcas_titulo') }}
             </h2>
-            <div class="mt-8 grid grid-cols-3 sm:grid-cols-6 gap-6 items-center">
-                @forelse ($marcas as $marca)
-                    <div class="flex h-16 items-center justify-center rounded-xl border border-steel-200 bg-white px-4 transition-transform duration-200 hover:-translate-y-1 hover:border-brand-cyan-500">
-                        <span class="text-sm sm:text-base font-bold tracking-widest text-steel-700">{{ $marca->nombre }}</span>
-                    </div>
-                @empty
-                    <p class="col-span-full text-center text-sm text-steel-500">
-                        Aún no tenemos marcas registradas.
-                    </p>
-                @endforelse
-            </div>
+            @include('publica.partials.grilla-marcas', ['marcas' => $marcas])
         </div>
     </section>
     @endif
@@ -173,35 +163,10 @@
                 </a>
             </div>
 
-            {{-- Scroller horizontal en móvil, grid en escritorio --}}
-            <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {{-- Fila única de 6 cards compactas (grid hasta 6 columnas) --}}
+            <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
                 @forelse ($productos as $producto)
-                    @php
-                        $rutaDetalle = $producto->categoria
-                            ? route('publica.productos.detalle', ['categoria' => $producto->categoria, 'producto' => $producto])
-                            : route('publica.productos');
-                    @endphp
-                    <article class="group bg-white rounded-2xl border border-steel-200 overflow-hidden shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-                        {{-- Imagen del producto --}}
-                        <a href="{{ $rutaDetalle }}" class="relative block aspect-[4/3] bg-navy-50 flex items-center justify-center overflow-hidden">
-                            @if ($producto->fotoUrl)
-                                <img src="{{ $producto->fotoUrl }}" alt="{{ $producto->nombre }}" class="h-full w-full object-cover">
-                            @else
-                                <svg class="h-16 w-16 text-steel-500/60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            @endif
-                        </a>
-                        <div class="p-5">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-brand-blue-700">{{ $producto->marca?->nombre ?? '—' }}</span>
-                            <h3 class="mt-1.5 text-xl font-semibold text-navy-900 line-clamp-2">
-                                <a href="{{ $rutaDetalle }}" class="transition-colors hover:text-brand-blue-700">{{ mayusculas($producto->nombre) }}</a>
-                            </h3>
-                            <div class="mt-3 flex items-baseline gap-2">
-                                <span class="text-lg font-semibold text-navy-900">S/ {{ number_format($producto->precio_venta, 2) }}</span>
-                            </div>
-                        </div>
-                    </article>
+                    @include('publica.partials.card-producto-pequena', ['producto' => $producto])
                 @empty
                     <div class="col-span-full rounded-2xl border border-dashed border-steel-300 bg-white p-10 text-center text-steel-500">
                         Próximamente: productos disponibles para tu auto.

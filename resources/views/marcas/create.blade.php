@@ -29,7 +29,7 @@
 
     {{-- Form --}}
     <div class="bg-surface rounded-lg border border-main p-6 max-w-lg">
-        <form id="form-marca" action="{{ route('marcas.store') }}" method="POST" novalidate>
+        <form id="form-marca" action="{{ route('marcas.store') }}" method="POST" enctype="multipart/form-data" novalidate>
             @csrf
 
             {{-- Nombre --}}
@@ -74,6 +74,31 @@
                 @error('descripcion')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- Foto --}}
+            <div class="mb-6">
+                <label for="foto" class="label-main mb-1">
+                    Foto de la marca
+                </label>
+                <input
+                    type="file"
+                    id="foto"
+                    name="foto"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    class="w-full text-sm text-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 dark:file:bg-slate-800 file:text-primary dark:file:text-text-primary-dark hover:file:bg-gray-200 dark:hover:file:bg-slate-700 transition-colors
+                           {{ $errors->has('foto') ? 'border border-red-400 rounded-lg bg-red-50 dark:bg-red-900/20 p-1' : '' }}"
+                >
+                <p class="mt-1 text-xs text-secondary">JPG, PNG o WebP. Máximo 2 MB.</p>
+                @error('foto')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+
+                {{-- Preview --}}
+                <div id="bloque-preview" class="hidden mt-3 p-2 border border-main rounded-lg bg-gray-50 dark:bg-slate-800/50 inline-block">
+                    <p class="text-[10px] uppercase font-bold text-secondary mb-1">Vista previa</p>
+                    <img id="preview-foto" src="#" alt="Vista previa" class="w-32 h-32 object-cover rounded shadow-sm border border-main">
+                </div>
             </div>
 
             {{-- Submit --}}
