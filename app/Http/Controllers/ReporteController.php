@@ -18,19 +18,21 @@ use App\Services\Reportes\ReporteIngresosService;
 use App\Services\Reportes\ReporteInventarioService;
 use App\Services\Reportes\ReporteKardexService;
 use App\Services\Reportes\ReporteLavadosService;
+use App\Services\Reportes\ReportePdfService;
 use App\Services\Reportes\ReportePersonalService;
 use App\Services\Reportes\ReporteVentasService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Reportes de solo lectura (Administrador). Todos los filtros vía GET.
- * Si `export=csv` la misma ruta devuelve la descarga correspondiente.
+ * Si `export=csv` o `export=pdf`, la misma ruta devuelve la descarga correspondiente.
  */
 class ReporteController extends Controller
 {
@@ -50,6 +52,7 @@ class ReporteController extends Controller
         private readonly ReportePersonalService $personalService,
         private readonly ReporteKardexService $kardexService,
         private readonly ReporteCsvService $csvService,
+        private readonly ReportePdfService $pdfService,
     ) {}
 
     public function index(): View
@@ -57,7 +60,7 @@ class ReporteController extends Controller
         return view('reportes.index');
     }
 
-    public function ingresos(Request $request): View|StreamedResponse|JsonResponse
+    public function ingresos(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $reglas = self::REGLAS_DESDE_HASTA;
         $datos = $this->validar($request, $reglas);
@@ -81,6 +84,20 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.ingresos',
+                $this->nombreArchivo('reporte-ingresos', 'pdf'),
+                [
+                    'consolidado' => $this->ingresosService->consolidado($desde, $hasta),
+                    'serie' => $this->ingresosService->serieDiaria($desde, $hasta),
+                    'metodoPago' => $this->ingresosService->metodoPago($desde, $hasta),
+                    'diasTop' => $this->ingresosService->diasTop($desde, $hasta),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.ingresos', [
             'consolidado' => $this->ingresosService->consolidado($desde, $hasta),
             'serie' => $this->ingresosService->serieDiaria($desde, $hasta),
@@ -92,7 +109,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function ventas(Request $request): View|StreamedResponse|JsonResponse
+    public function ventas(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -118,6 +135,20 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.ventas',
+                $this->nombreArchivo('reporte-ventas', 'pdf'),
+                [
+                    'kpis' => $this->ventasService->kpis($desde, $hasta, $filtros),
+                    'porUsuario' => $this->ventasService->porUsuario($desde, $hasta, $filtros),
+                    'porMetodo' => $this->ventasService->porMetodo($desde, $hasta, $filtros),
+                    'detalle' => $this->ventasService->detalleColeccion($desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.ventas', [
             'kpis' => $this->ventasService->kpis($desde, $hasta, $filtros),
             'porUsuario' => $this->ventasService->porUsuario($desde, $hasta, $filtros),
@@ -130,7 +161,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function lavados(Request $request): View|StreamedResponse|JsonResponse
+    public function lavados(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'vehiculo_id' => ['nullable', 'integer', 'exists:vehiculos,id'],
@@ -158,6 +189,21 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.lavados',
+                $this->nombreArchivo('reporte-lavados', 'pdf'),
+                [
+                    'kpis' => $this->lavadosService->kpis($desde, $hasta, $filtros),
+                    'porVehiculo' => $this->lavadosService->porVehiculo($desde, $hasta, $filtros),
+                    'porServicio' => $this->lavadosService->porServicio($desde, $hasta, $filtros),
+                    'porTrabajador' => $this->lavadosService->porTrabajador($desde, $hasta, $filtros),
+                    'detalle' => $this->lavadosService->detalleColeccion($desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.lavados', [
             'kpis' => $this->lavadosService->kpis($desde, $hasta, $filtros),
             'porVehiculo' => $this->lavadosService->porVehiculo($desde, $hasta, $filtros),
@@ -173,7 +219,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function cambioAceite(Request $request): View|StreamedResponse|JsonResponse
+    public function cambioAceite(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'trabajador_id' => ['nullable', 'integer', 'exists:trabajadores,id'],
@@ -200,6 +246,20 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.cambio-aceite',
+                $this->nombreArchivo('reporte-cambio-aceite', 'pdf'),
+                [
+                    'kpis' => $this->cambioAceiteService->kpis($desde, $hasta, $filtros),
+                    'porProducto' => $this->cambioAceiteService->porProducto($desde, $hasta, $filtros),
+                    'porTrabajador' => $this->cambioAceiteService->porTrabajador($desde, $hasta, $filtros),
+                    'detalle' => $this->cambioAceiteService->detalleColeccion($desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.cambio-aceite', [
             'kpis' => $this->cambioAceiteService->kpis($desde, $hasta, $filtros),
             'porProducto' => $this->cambioAceiteService->porProducto($desde, $hasta, $filtros),
@@ -213,7 +273,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function inventario(Request $request): View|StreamedResponse|JsonResponse
+    public function inventario(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
@@ -232,6 +292,20 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.inventario',
+                $this->nombreArchivo('reporte-inventario', 'pdf'),
+                [
+                    'top' => $top,
+                    'stockActual' => $this->inventarioService->stockActual($filtros),
+                    'resumenCategorias' => $this->inventarioService->resumenCategorias($desde, $hasta, $filtros),
+                    'resumenMarcas' => $this->inventarioService->resumenMarcas($desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.inventario', [
             'top' => $top,
             'stockActual' => $this->inventarioService->stockActual($filtros),
@@ -245,7 +319,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function clientes(Request $request): View|StreamedResponse|JsonResponse
+    public function clientes(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, self::REGLAS_DESDE_HASTA);
 
@@ -254,10 +328,23 @@ class ReporteController extends Controller
         if ($request->query('export') === 'csv') {
             return $this->csvService->descargar(
                 $this->nombreArchivo('reporte-clientes'),
-                ['cliente', 'gasto', 'visitas', 'automotores', 'visitas_por_mes'],
+                ['cliente', 'gasto', 'visitas', 'automotores', 'lavados', 'cambio_aceite', 'visitas_por_mes'],
                 $this->clientesService->topClientes($desde, $hasta)->map(fn ($c) => [
-                    $c['nombre'], $c['gasto'], $c['visitas'], $c['automotores'], $c['visitas_por_mes'],
+                    $c['nombre'], $c['gasto'], $c['visitas'], $c['automotores'], $c['lavados'], $c['cambio_aceite'], $c['visitas_por_mes'],
                 ])
+            );
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.clientes',
+                $this->nombreArchivo('reporte-clientes', 'pdf'),
+                [
+                    'topClientes' => $this->clientesService->topClientes($desde, $hasta),
+                    'topAutomotores' => $this->clientesService->topAutomotores($desde, $hasta),
+                    'frecuencia' => $this->clientesService->detalle($desde, $hasta),
+                    'etiqueta' => $etiqueta,
+                ]
             );
         }
 
@@ -271,7 +358,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function caja(Request $request): View|StreamedResponse|JsonResponse
+    public function caja(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, self::REGLAS_DESDE_HASTA);
 
@@ -288,6 +375,20 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.caja',
+                $this->nombreArchivo('reporte-caja', 'pdf'),
+                [
+                    'kpis' => $this->cajaService->kpis($desde, $hasta),
+                    'detalle' => $this->cajaService->detalle($desde, $hasta, 100000)->getCollection(),
+                    'egresos' => $this->cajaService->egresos($desde, $hasta),
+                    'egresosPorDescripcion' => $this->cajaService->egresosPorDescripcion($desde, $hasta),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.caja', [
             'kpis' => $this->cajaService->kpis($desde, $hasta),
             'detalle' => $this->cajaService->detalle($desde, $hasta),
@@ -299,7 +400,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function personal(Request $request): View|StreamedResponse|JsonResponse
+    public function personal(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, [
             'mes' => ['nullable', 'date_format:Y-m'],
@@ -322,6 +423,16 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.personal',
+                $this->nombreArchivo('reporte-personal-'.str_replace('-', '', $mes), 'pdf'),
+                [
+                    'resumen' => $resumen,
+                ]
+            );
+        }
+
         return view('reportes.personal', [
             'resumen' => $resumen,
             'trabajadores' => $this->personalService->trabajadoresDisponibles(),
@@ -329,7 +440,7 @@ class ReporteController extends Controller
         ]);
     }
 
-    public function kardex(Request $request): View|StreamedResponse|JsonResponse
+    public function kardex(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'producto_id' => ['nullable', 'integer', 'exists:productos,id'],
@@ -357,6 +468,18 @@ class ReporteController extends Controller
             );
         }
 
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.kardex',
+                $this->nombreArchivo('reporte-kardex', 'pdf'),
+                [
+                    'agregado' => $this->kardexService->agregado($desde, $hasta, $filtros),
+                    'detalle' => $this->kardexService->detalleColeccion($desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
         return view('reportes.kardex', [
             'agregado' => $this->kardexService->agregado($desde, $hasta, $filtros),
             'detalle' => $this->kardexService->detalle($desde, $hasta, $filtros),
@@ -368,8 +491,8 @@ class ReporteController extends Controller
     }
 
     /**
-     * Valida con reglas inline; si falla y se pidió export=csv responde
-     * 422 JSON (para no colgar la descarga).
+     * Valida con reglas inline; si falla y se pidió export=csv o export=pdf
+     * responde 422 JSON (para no colgar la descarga).
      *
      * @param  array<int, mixed>  $reglas
      * @return array<string, mixed>
@@ -397,7 +520,7 @@ class ReporteController extends Controller
         });
 
         if ($validator->fails()) {
-            if ($request->query('export') === 'csv') {
+            if (in_array($request->query('export'), ['csv', 'pdf'], true)) {
                 $response = response()->json(['errors' => $validator->errors()], 422);
                 throw new HttpResponseException($response);
             }
@@ -420,8 +543,8 @@ class ReporteController extends Controller
             ->all();
     }
 
-    private function nombreArchivo(string $base): string
+    private function nombreArchivo(string $base, string $ext = 'csv'): string
     {
-        return $base.'-'.now()->format('Ymd-His').'.csv';
+        return $base.'-'.now()->format('Ymd-His').'.'.$ext;
     }
 }

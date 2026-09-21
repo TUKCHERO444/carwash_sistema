@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Reportes;
 
+use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\Servicio;
@@ -54,10 +55,15 @@ class ReporteLavadosTest extends TestCase
         $vehiculo = Vehiculo::factory()->create();
         $servicio = Servicio::factory()->create();
         $trabajador = Trabajador::factory()->create();
+        $automotor = Automotor::create([
+            'placa' => 'ABC-123',
+            'cliente_id' => $cliente->id,
+        ]);
 
         $lavado = $this->lavadoEn([
             'cliente_id' => $cliente->id,
             'vehiculo_id' => $vehiculo->id,
+            'automotor_id' => $automotor->placa,
             'user_id' => $usuario->id,
             'total' => 120,
         ]);
@@ -68,6 +74,7 @@ class ReporteLavadosTest extends TestCase
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
             'vehiculo_id' => $vehiculo->id,
+            'automotor_id' => $automotor->placa,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'pendiente',
@@ -82,7 +89,7 @@ class ReporteLavadosTest extends TestCase
         $this->assertEqualsWithDelta(120, $kpis['total'], 0.01);
 
         $porVehiculo = $this->service->porVehiculo($desde, $hasta);
-        $this->assertSame($vehiculo->nombre, $porVehiculo[0]['nombre']);
+        $this->assertSame($automotor->placa, $porVehiculo[0]['placa']);
 
         $porServicio = $this->service->porServicio($desde, $hasta);
         $this->assertSame($servicio->nombre, $porServicio[0]['nombre']);

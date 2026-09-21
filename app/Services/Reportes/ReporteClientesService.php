@@ -50,7 +50,64 @@ class ReporteClientesService
     }
 
     /**
-     * @return Collection<int, array{ cliente_id:int, nombre:string, gasto:float, visitas:int, automotores:int, visitas_por_mes:float }>
+     * Automotores distintos atendidos por cliente en el rango (lavados
+     * confirmados + cambios confirmados), con desglose por fuente.
+     *
+     * @return array<int, array{ lavados:int, cambio_aceite:int, atendidos:int }> keyed por cliente_id.
+     */
+    private function automotoresPorCliente(CarbonImmutable $desde, CarbonImmutable $hasta): array
+    {
+        $mapa = [];
+
+        foreach (Lavado::where('estado', 'confirmado')
+            ->whereDate('fecha', '>=', $desde->toDateString())
+            ->whereDate('fecha', '<=', $hasta->toDateString())
+            ->whereNotNull('cliente_id')
+            ->whereNotNull('automotor_id')
+            ->selectRaw('cliente_id as id, COUNT(DISTINCT automotor_id) as automotores')
+            ->groupBy('cliente_id')
+            ->get() as $fila) {
+            $mapa[(int) $fila->id]['lavados'] = (int) $fila->automotores;
+        }
+
+        foreach (CambioAceite::where('estado', 'confirmado')
+            ->whereBetween('created_at', [$desde, $hasta])
+            ->whereNotNull('cliente_id')
+            ->whereNotNull('automotor_id')
+            ->selectRaw('cliente_id as id, COUNT(DISTINCT automotor_id) as automotores')
+            ->groupBy('cliente_id')
+            ->get() as $fila) {
+            $mapa[(int) $fila->id]['cambio_aceite'] = (int) $fila->automotores;
+        }
+
+        foreach (DB::table(function ($query) use ($desde, $hasta) {
+            $query->selectRaw('cliente_id as id, automotor_id as placa')
+                ->from('lavados')
+                ->where('estado', 'confirmado')
+                ->whereDate('fecha', '>=', $desde->toDateString())
+                ->whereDate('fecha', '<=', $hasta->toDateString())
+                ->whereNotNull('cliente_id')
+                ->whereNotNull('automotor_id');
+            $query->union(
+                DB::table('cambio_aceites')
+                    ->selectRaw('cliente_id as id, automotor_id as placa')
+                    ->where('estado', 'confirmado')
+                    ->whereBetween('created_at', [$desde, $hasta])
+                    ->whereNotNull('cliente_id')
+                    ->whereNotNull('automotor_id')
+            );
+        }, 'operaciones')
+            ->selectRaw('id, COUNT(*) as automotores')
+            ->groupBy('id')
+            ->get() as $fila) {
+            $mapa[(int) $fila->id]['atendidos'] = (int) $fila->automotores;
+        }
+
+        return $mapa;
+    }
+
+    /**
+     * @return Collection<int, array{ cliente_id:int, nombre:string, gasto:float, visitas:int, automotores:int, lavados:int, cambio_aceite:int, visitas_por_mes:float }>
      */
     public function topClientes(CarbonImmutable $desde, CarbonImmutable $hasta, int $limite = 20): Collection
     {
@@ -60,15 +117,15 @@ class ReporteClientesService
             return collect();
         }
 
-        $clientes = Cliente::whereIn('id', array_keys($porCliente))
-            ->withCount('automotores')
-            ->get();
+        $automotores = $this->automotoresPorCliente($desde, $hasta);
+        $clientes = Cliente::whereIn('id', array_keys($porCliente))->get();
 
         $meses = $this->mesesEnRango($desde, $hasta);
 
         return $clientes
-            ->map(function (Cliente $cliente) use ($porCliente, $meses) {
+            ->map(function (Cliente $cliente) use ($porCliente, $automotores, $meses) {
                 $datos = $porCliente[$cliente->id];
+                $datosAuto = $automotores[$cliente->id] ?? ['lavados' => 0, 'cambio_aceite' => 0, 'atendidos' => 0];
                 $visitas = $datos['visitas'];
 
                 return [
@@ -76,7 +133,9 @@ class ReporteClientesService
                     'nombre' => $cliente->nombre_completo ?: ('Cliente #'.$cliente->id),
                     'gasto' => round($datos['gasto'], 2),
                     'visitas' => $visitas,
-                    'automotores' => (int) $cliente->automotores_count,
+                    'automotores' => $datosAuto['atendidos'] ?? 0,
+                    'lavados' => $datosAuto['lavados'] ?? 0,
+                    'cambio_aceite' => $datosAuto['cambio_aceite'] ?? 0,
                     'visitas_por_mes' => round($visitas / $meses, 2),
                 ];
             })

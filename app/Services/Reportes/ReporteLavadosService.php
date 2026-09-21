@@ -56,19 +56,18 @@ class ReporteLavadosService
     }
 
     /**
-     * @return array<int, array{ vehiculo_id:int, nombre:string, total:float, operaciones:int }>
+     * @return array<int, array{ placa:string, total:float, operaciones:int }>
      */
     public function porVehiculo(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): array
     {
         return $this->base($desde, $hasta, $filtros)
-            ->selectRaw('lavados.vehiculo_id, vehiculos.nombre as vehiculo, SUM(lavados.total) as total, COUNT(*) as operaciones')
-            ->join('vehiculos', 'vehiculos.id', '=', 'lavados.vehiculo_id')
-            ->groupBy('lavados.vehiculo_id', 'vehiculos.nombre')
+            ->selectRaw('automotores.placa as placa, SUM(lavados.total) as total, COUNT(*) as operaciones')
+            ->leftJoin('automotores', 'automotores.placa', '=', 'lavados.automotor_id')
+            ->groupBy('automotores.placa')
             ->orderByDesc('total')
             ->get()
             ->map(fn ($fila) => [
-                'vehiculo_id' => (int) $fila->vehiculo_id,
-                'nombre' => (string) $fila->vehiculo,
+                'placa' => $fila->placa ?: 'Sin placa',
                 'total' => round((float) $fila->total, 2),
                 'operaciones' => (int) $fila->operaciones,
             ])

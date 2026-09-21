@@ -10,7 +10,7 @@ El sistema acumula operaciones de los tres procesos centrales del negocio de lav
 
 A esto se suman entidades complementarias (productos, categorías, marcas, clientes, automotores, vehículos, servicios, trabajadores, asistencias, caja y egresos, movimientos de kardex) que hoy solo tienen CRUD o paneles puntuales (dashboard, historial de caja). **No existe un módulo de reportes consolidado** que permita al administrador tomar decisiones: el dashboard solo muestra un resumen fijo de 7/30 días/este mes.
 
-Este módulo agrega un **bloque de reportes de solo lectura** con filtros variados por rango de fechas y selects contextuales, exportación CSV e impresión. Las decisiones:
+Este módulo agrega un **bloque de reportes de solo lectura** con filtros variados por rango de fechas y selects contextuales, exportación CSV, exportación PDF e impresión. Las decisiones:
 
 - **Consolidación de ingresos**: se sigue el mismo criterio ya probado en `CajaService::calcularResumen()` y `DashboardService`: ventas y cambio_aceites por `DATE(created_at)`, lavados **confirmados** por `DATE(fecha)`. Los cálculos de reporte **nunca** incluyen lavados/cambios en estado `pendiente`.
 - **Solo lectura**: el módulo no registra transacciones de dinero, no usa `error_caja` (no abre/cierra caja) y no audita (no escribe en `registros_auditoria`).
@@ -27,6 +27,7 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 - **`pago_diario`**: jornal diario del trabajador en soles (decimal, default 50), nuevo campo.
 - **Acceso-reportes**: permiso RBAC nuevo (`acceso-reportes`) que protege todas las rutas del módulo; solo lo recibe el Administrador (vía `AuthSeeder::syncPermissions(Permission::all())`). El rol Vendedor **no** lo recibe.
 - **Exportación CSV**: respuesta `text/csv` (BOM UTF-8, separador `;` compatible Excel es-PE) generada con los mismos servicios de agregación que la vista.
+- **Exportación PDF**: descarga A4 vertical generada con `barryvdh/laravel-dompdf` desde las vistas `resources/views/reportes/pdf/*`, que replica KPIs, agregados y el detalle completo del reporte con los filtros aplicados (sin gráficos).
 
 ---
 
@@ -89,7 +90,7 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 1. THE Sistema SHALL aceptar en todo reporte con rango los parámetros `desde` y `hasta` con formato `Y-m-d`.
 2. IF no se envían `desde`/`hasta`, THEN THE Sistema SHALL usar por defecto los últimos 30 días (incluyendo hoy), calculados con `now()` de la app.
 3. IF `desde` o `hasta` se omiten parcialmente, THEN THE Sistema SHALL completar con el mismo rango de 30 días terminando hoy.
-4. THE validación SHALL rechazar `desde`/`hasta` con formato inválido y `desde > hasta` (HTTP 422 en CSV, `withErrors` en vista) y `hasta` posterior a hoy.
+4. THE validación SHALL rechazar `desde`/`hasta` con formato inválido y `desde > hasta` (HTTP 422 JSON en exportación CSV/PDF, `withErrors` en vista) y `hasta` posterior a hoy.
 5. THE etiqueta del rango aplicado SHALL mostrarse en la cabecera del reporte (p. ej. "01/08/2026 – 30/08/2026").
 
 **Valida:** Propiedad 1 (normalización del rango).
@@ -153,7 +154,7 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 
 1. THE reporte SHALL admitir filtros: rango, tipo de vehículo (`vehiculo_id`), servicio (`servicio_id`), trabajador (`trabajador_id`). El universo de datos son los lavados **confirmados**.
 2. THE vista SHALL mostrar KPIs: operaciones, ingresos y ticket promedio del filtro aplicado.
-3. THE vista SHALL mostrar agregados: operaciones e ingresos **por tipo de vehículo**, **por servicio** y **por trabajador** (un trabajador cuenta la operación una vez por lavado en que participó).
+3. THE vista SHALL mostrar agregados: operaciones e ingresos **por vehículo (placa)**, **por servicio** y **por trabajador** (un trabajador cuenta la operación una vez por lavado en que participó).
 4. THE detalle SHALL ser una tabla paginada `paginate(10)`: fecha, placa/automotor, tipo de vehículo, servicios, trabajadores, método de pago y total.
 5. WHEN se solicita `?export=csv`, THE Sistema SHALL devolver el detalle completo con los filtros aplicados.
 
@@ -201,7 +202,7 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 
 1. THE reporte SHALL admitir filtros: rango (por defecto últimos 30 días).
 2. THE vista SHALL mostrar el **top de clientes por gasto** (suma de lavados + cambios confirmados del rango) y **por visitas** (número de operaciones) de cada cliente.
-3. THE vista SHALL mostrar un indicador de recurrencia (visitas por mes en el rango) y el número de automotores por cliente.
+3. THE vista SHALL mostrar un indicador de recurrencia (visitas por mes en el rango) y el número de **automotores atendidos** por cliente en el rango, con desglose por **lavados** y **cambios de aceite**.
 4. THE vista SHALL mostrar el **top de automotores atendidos**: placa, marca/modelo, cliente, visitas e ingresos (lavados + cambios).
 5. THE tabla de detalle SHALL ser paginada `paginate(10)`.
 6. WHEN se solicita `?export=csv`, THE Sistema SHALL devolver el detalle de clientes con los filtros aplicados.
@@ -323,10 +324,27 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 
 ---
 
+### Requisito 19: Exportación PDF
+
+**User Story:** Como Administrador, quiero descargar cada reporte en PDF con tablas y estadísticas, para enviarlo o archivarlo sin depender del navegador.
+
+#### Criterios de Aceptación
+
+1. EVERY ruta de reporte SHALL aceptar el query param `export=pdf` y responder `Content-Type: application/pdf` como descarga con nombre descriptivo.
+2. THE exportación SHALL reutilizar los mismos servicios de agregación que la vista, aplicando los mismos filtros, y SHALL incluir KPIs, agregados y el detalle **completo** (sin paginación).
+3. THE vistas PDF SHALL vivir en `resources/views/reportes/pdf/` y extenderse de `reportes.pdf.base` (A4 vertical, familia DejaVu Sans, cabeceras de tabla repetidas por página, `page-break-inside: avoid` en filas).
+4. THE PDF SHALL **no** incluir gráficos: solo tablas y estadísticas.
+5. WHEN la validación de filtros falla con `export=pdf`, THE Sistema SHALL responder HTTP 422 JSON.
+6. THE botón "Exportar PDF" SHALL aparecer junto a "Imprimir" y "Exportar CSV" en todas las vistas de reporte.
+
+**Valida:** Descarga PDF legible y consistente con la vista y el CSV.
+
+---
+
 ## Convenciones que la implementación debe respetar
 
 - Todo el código (controlador, servicios, vistas, JS, mensajes, commit messages) en español.
-- Sin librerías nuevas: Chart.js ya es dependencia del proyecto (solo se importa en `reportes/ingresos.js`); CSV e impresión usan utilidades del propio Laravel (StreamedResponse) y Tailwind.
+- Frontend sin librerías nuevas: Chart.js ya es dependencia del proyecto (solo se importa en `reportes/ingresos.js`); CSV e impresión usan utilidades del propio Laravel (StreamedResponse) y Tailwind. La exportación PDF añade la dependencia backend `barryvdh/laravel-dompdf` (vistas propias sin estilos del layout, sin librerías de gráficos).
 - Sin Form Requests: validación inline en el controlador con `$request->validate([...])`.
 - Sin guardar datos: el módulo es de solo lectura; no abre caja, no aplica `error_caja` y no escribe auditoría.
 - La guía de listados (`reajuste-listados.md`) aplica: `paginate(10)` en detalle, cabeceras `py-6`, celdas `py-8`, `overflow-x-auto`.

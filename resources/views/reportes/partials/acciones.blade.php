@@ -14,4 +14,11 @@
         </svg>
         Exportar CSV
     </a>
+    <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2zM14 3v4a1 1 0 001 1h4m-4 7v4m0 0l-2-2m2 2l2-2"/>
+        </svg>
+        Exportar PDF
+    </a>
 </div>

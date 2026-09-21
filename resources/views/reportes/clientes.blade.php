@@ -23,7 +23,7 @@
     <div class="bg-surface rounded-lg border border-main overflow-x-auto mb-6">
         <div class="px-6 py-4 border-b border-main">
             <h2 class="text-sm font-semibold text-primary">Top clientes por gasto</h2>
-            <p class="text-xs text-secondary">Ventas, lavados confirmados y cambios de aceite confirmados del rango. Total: S/ {{ number_format($totalGastoTop, 2) }}</p>
+            <p class="text-xs text-secondary">Lavados confirmados y cambios de aceite confirmados del rango. Automotores: distintos atendidos. Total: S/ {{ number_format($totalGastoTop, 2) }}</p>
         </div>
         <table class="min-w-full divide-y divide-main">
             <thead class="bg-gray-50 dark:bg-slate-800/50">
@@ -32,6 +32,8 @@
                     <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Gasto</th>
                     <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Visitas</th>
                     <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Automotores</th>
+                    <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Lavados</th>
+                    <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Cambio de aceite</th>
                     <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Visitas / mes</th>
                 </tr>
             </thead>
@@ -42,10 +44,12 @@
                         <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($fila['gasto'], 2) }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['visitas'] }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['automotores'] }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['lavados'] }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['cambio_aceite'] }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ number_format($fila['visitas_por_mes'], 2) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-secondary">Sin datos en el período.</td></tr>
+                    <tr><td colspan="7" class="px-6 py-8 text-center text-sm text-secondary">Sin datos en el período.</td></tr>
                 @endforelse
             </tbody>
         </table>

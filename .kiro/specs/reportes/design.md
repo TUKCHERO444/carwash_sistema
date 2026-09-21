@@ -11,6 +11,7 @@ Decisiones de diseño clave:
 - **Un controlador, servicios por dominio**: `ReporteController` delega en servicios bajo `app/Services/Reportes/`. Cada servicio es una función pura de agregación (sin efectos), lo que permite property testing de invariantes (sumas y particiones).
 - **Filtros GET estándar**: `desde`, `hasta`, más selects contextuales según el reporte; validación inline; rango por defecto de 30 días con `now()` (`America/Lima`).
 - **Exportación CSV sin dependencias**: `?export=csv` en la misma ruta → `StreamedResponse` con BOM UTF-8 y separador `;` (Excel es-PE). Reutiliza los mismos servicios.
+- **Exportación PDF con dompdf**: `?export=pdf` en la misma ruta → `Illuminate\Http\Response` con `Content-Type: application/pdf` descargable. `ReportePdfService` renderiza vistas `reportes/pdf/*` (A4 vertical, DejaVu Sans, tablas con cabecera repetida), sin gráficos, con KPIs, agregados y el detalle completo del reporte filtrado.
 - **Impresión con `print:` de Tailwind**: botón que llama a `window.print()`; sidebar, nav móvil y botones se ocultan con la variante `print:hidden`.
 - **Nuevo campo `pago_diario`** en `trabajadores` (default 50 en BD y seeder) para alimentar el resumen de pago.
 - **Nuevo permiso `acceso-reportes`**: independiente de los demás; solo lo recibe el Administrador.
@@ -25,7 +26,7 @@ HTTP Request
     ▼
 routes/web.php  (grupo middleware: auth, permission:acceso-reportes, prefix reportes, name reportes.*)
   GET  /reportes                → index
-  GET  /reportes/ingresos       → ingresos        (?desde&hasta | ?export=csv)
+  GET  /reportes/ingresos       → ingresos        (?desde&hasta | ?export=csv|pdf)
   GET  /reportes/ventas         → ventas          (+ ?user_id&metodo_pago&correlativo)
   GET  /reportes/lavados        → lavados         (+ ?vehiculo_id&servicio_id&trabajador_id)
   GET  /reportes/cambio-aceite  → cambioAceite    (+ ?trabajador_id&producto_id)
@@ -38,29 +39,32 @@ routes/web.php  (grupo middleware: auth, permission:acceso-reportes, prefix repo
     ▼
 ReporteController
   index()      → vista reportes.index (tarjetas)
-  ingresos()   → ReporteIngresosService → vista + Chart.js | CSV
-  ventas()     → ReporteVentasService   → vista            | CSV
-  lavados()    → ReporteLavadosService  → vista            | CSV
-  cambioAceite()→ ReporteCambioAceiteService → vista       | CSV
-  inventario() → ReporteInventarioService → vista          | CSV
-  clientes()   → ReporteClientesService → vista            | CSV
-  caja()       → ReporteCajaService    → vista             | CSV
-  personal()   → ReportePersonalService → vista            | CSV
-  kardex()     → ReporteKardexService  → vista             | CSV
+  ingresos()   → ReporteIngresosService → vista + Chart.js | CSV | PDF
+  ventas()     → ReporteVentasService   → vista            | CSV | PDF
+  lavados()    → ReporteLavadosService  → vista            | CSV | PDF
+  cambioAceite()→ ReporteCambioAceiteService → vista       | CSV | PDF
+  inventario() → ReporteInventarioService → vista          | CSV | PDF
+  clientes()   → ReporteClientesService → vista            | CSV | PDF
+  caja()       → ReporteCajaService    → vista             | CSV | PDF
+  personal()   → ReportePersonalService → vista            | CSV | PDF
+  kardex()     → ReporteKardexService  → vista             | CSV | PDF
     │
     ▼
 Servicios de agregación (app/Services/Reportes/)
   ReporteIngresosService, ReporteVentasService, ReporteLavadosService,
   ReporteCambioAceiteService, ReporteInventarioService, ReporteClientesService,
   ReporteCajaService, ReportePersonalService, ReporteKardexService,
-  ReporteCsvService (export), ReporteFiltersSoporte (helper de rango)
+  ReporteCsvService (export), ReportePdfService (export),
+  ReporteFiltersSoporte (helper de rango)
     │
     ▼
 Blade Views (extienden layouts.app)
   resources/views/reportes/{index, ingresos, ventas, lavados, cambio-aceite,
     inventario, clientes, caja, personal, kardex}.blade.php
+  resources/views/reportes/pdf/{base, ingresos, ventas, lavados,
+    cambio-aceite, inventario, clientes, caja, personal, kardex}.blade.php
   resources/views/reportes/partials/filtros.blade.php   (barra de filtros reutilizable)
-  resources/views/reportes/partials/acciones.blade.php  (botones Imprimir / Exportar CSV)
+  resources/views/reportes/partials/acciones.blade.php  (botones Imprimir / CSV / PDF)
     │
     ▼
 resources/js
@@ -125,7 +129,7 @@ $data = $request->validate([
 ]);
 ```
 
-Cuando `$request->query('export') === 'csv'` y la validación falla el controlador SHALL responder `422` con JSON de errores (para que la descarga no cuelgue como HTML).
+Cuando `$request->query('export') === 'csv'` o `'pdf'` y la validación falla el controlador SHALL responder `422` con JSON de errores (para que la descarga no cuelgue como HTML).
 
 ### Helper de rango — `app/Services/Reportes/DateRangeFiltro.php`
 
@@ -305,6 +309,21 @@ class ReporteCsvService
 
 **Formato de celda:** los valores decimales se escriben con punto decimal y se citan con comillas cuando el contenido incluye `;`, `"` o saltos de línea. `Content-Disposition: attachment`.
 
+#### `ReportePdfService`
+
+```php
+class ReportePdfService
+{
+    // Renderiza la vista PDF y devuelve la descarga (A4 vertical).
+    // $datos: array con lo que espera la vista reportes.pdf.<modulo>.
+    public function descargar(string $vista, string $nombreArchivo, array $datos = []): Illuminate\Http\Response;
+}
+```
+
+Opciones de dompdf aplicadas: `setPaper('a4', 'portrait')`, `isHtml5ParserEnabled: true`, `isRemoteEnabled: false`, `isFontSubsettingEnabled: true`, `defaultFont: 'DejaVu Sans'` (soporte de acentos y `S/`). Las vistas PDF extienden `reportes.pdf.base`, un layout autónomo (sin `layouts.app`) con CSS seguro para dompdf: `thead { display: table-header-group; }`, `tr { page-break-inside: avoid; }`, tablas colapsadas y celdas de cabecera con fondo claro. Las fechas de "Generado el" usan `now()` de la app (`America/Lima`).
+
+**Detalle completo en PDF:** los métodos de la vista usan `detalleColeccion()` o `detalle(..., 100000)` y devuelven la colección completa (sin `paginate(10)`). En `caja` se usa `detalle(..., 100000)->getCollection()` con el mismo fin.
+
 ### Rutas
 
 En `routes/web.php`, en un grupo propio al final de las rutas autenticadas:
@@ -399,7 +418,7 @@ Barra de filtros reutilizable: inputs `desde`/`hasta` (`type="date"`) + contened
 
 ### `resources/views/reportes/partials/acciones.blade.php`
 
-Botones: **Imprimir** (`data-imprimir-reporte`, JS `reportes/print.js`) y **Exportar CSV** (`<a href="?{{ request()->query->all()|merge(['export' => 'csv']) }}">`). `print:hidden` en el envoltorio.
+Botones: **Imprimir** (`data-imprimir-reporte`, JS `reportes/print.js`), **Exportar CSV** y **Exportar PDF** (`<a href="{{ request()->fullUrlWithQuery(['export' => 'csv'|'pdf']) }}">`). `print:hidden` en el envoltorio.
 
 ### `resources/views/reportes/ingresos.blade.php`
 
@@ -564,7 +583,7 @@ El feature tiene lógica de agregación pura y comprobable con PBT en el backend
 
 | Escenario | Comportamiento |
 |-----------|----------------|
-| `desde`/`hasta` mal formateados, `desde > hasta`, o `hasta` futuro | Vista: `withErrors`. CSV: HTTP 422 JSON. El rango por defecto NO se aplica sobre parámetros inválidos (mejor fallar claro que filtrar mal). |
+| `desde`/`hasta` mal formateados, `desde > hasta`, o `hasta` futuro | Vista: `withErrors`. CSV/PDF: HTTP 422 JSON. El rango por defecto NO se aplica sobre parámetros inválidos (mejor fallar claro que filtrar mal). |
 | `mes` inválido en `personal` | HTTP 422/`withErrors` (mes no aplica para CSV porque personal no exporta por mes salvo resumen). |
 | Selects con id inexistente | HTTP 422 por `exists:` en la validación (no se silencia). |
 | Sin datos en el rango | Vistas con estado vacío ("No hay registros en el período."); KPIs en 0; CSV con solo cabeceras. |
@@ -597,6 +616,7 @@ PHPUnit (Laravel Feature Tests + property tests server-side en loop de 100 itera
 | `ReporteCajaTest.php` | Solo cajas cerradas por rango; balance cuadra con `CajaService`; egresos por descripción; CSV. |
 | `ReportePersonalTest.php` | Asistencias y %; resumen de pago con/ sin jornal; acotación a trabajador; CSV. |
 | `ReporteKardexTest.php` | Agregados entrada/salida; saldo neto; filtro tipo; CSV. |
+| `ReportePdfExportTest.php` | `export=pdf` en los 9 reportes → 200, `application/pdf`, contenido `%PDF` y tamaño > 1000; 422 JSON con fecha inválida + `export=pdf`; CSV respeta el rango y mantiene su formato (as-is). |
 | `TrabajadorPagoDiarioTest.php` | Crear/editar trabajador con `pago_diario`; validación; default del seeder/factory. |
 
 ### Property tests (PHPUnit) — `tests/Feature/Reportes/` `*PropertyTest.php` (100 iteraciones)
@@ -632,7 +652,7 @@ PHPUnit (Laravel Feature Tests + property tests server-side en loop de 100 itera
 
 ## Notas de alcance
 
-- **Fuera de alcance (fases futuras)**: gráficos para los demás reportes (hoy solo ingresos usa Chart.js), alertas programadas por correo, dashboards por rol, exportación PDF/Excel nativa, comparativo interanual, presupuestos. El esquema y los servicios de agregación dejan espacio para añadir estos sin romper nada.
+- **Fuera de alcance (fases futuras)**: gráficos para los demás reportes (hoy solo ingresos usa Chart.js), alertas programadas por correo, dashboards por rol, exportación Excel nativa, comparativo interanual, presupuestos. El esquema y los servicios de agregación dejan espacio para añadir estos sin romper nada.
 - El módulo es estrictamente de solo lectura; no se añade observador de auditoría.
 - La exportación CSV cubre todos los reportes (incluida la serie de ingresos); `personal` exporta el resumen por trabajador (no la matriz día a día).
 - La decisión de semana/mes para `personal` se hace con `mes` (input `month`); sin matriz visual día a día por trabajador en esta fase (solo agregados y porcentajes).

@@ -8,7 +8,7 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
 
 ## Requisitos cubiertos (mapa rápido)
 
-- R1: acceso desde Gestión Administrativa · R2: permiso `acceso-reportes` · R3: índice · R4: filtros de rango · R5–R14: los 9 reportes · R15: `pago_diario` · R16: CSV · R17: impresión · R18: fechas/zona horaria.
+- R1: acceso desde Gestión Administrativa · R2: permiso `acceso-reportes` · R3: índice · R4: filtros de rango · R5–R14: los 9 reportes · R15: `pago_diario` · R16: CSV · R17: impresión · R18: fechas/zona horaria · R19: exportación PDF.
 
 ## Tareas
 
@@ -238,7 +238,33 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
   - `composer run test` (suite completa, sin tocar redes).
   - `npm run test` (tests JS).
   - `npm run build` (Vite compila).
-  - _Requirements: 1–18_
+  - _Requirements: 1–19_
+
+- [ ] 10. Exportación PDF (Requirement 19)
+  - [ ] 10.1 Instalar `barryvdh/laravel-dompdf` (`composer require barryvdh/laravel-dompdf`) y crear `app/Services/Reportes/ReportePdfService.php`
+    - `descargar(string $vista, string $nombreArchivo, array $datos = []): Response` con `Pdf::loadView(...)->setPaper('a4','portrait')`, `isHtml5ParserEnabled`, `isRemoteEnabled: false`, `isFontSubsettingEnabled`, `defaultFont: 'DejaVu Sans'` y `->download($nombreArchivo)`.
+    - _Requirements: 19.1, 19.3_
+  - [ ] 10.2 Crear las vistas `resources/views/reportes/pdf/base.blade.php` y una por módulo (`ingresos`, `ventas`, `lavados`, `cambio-aceite`, `inventario`, `clientes`, `caja`, `personal`, `kardex`)
+    - Layout autónomo con `@page`, tablas colapsadas, `thead { display: table-header-group; }`, `tr { page-break-inside: avoid; }`, DejaVu Sans y fecha "Generado el" con `now()`.
+    - Sin gráficos: solo KPIs (tabla de métricas), agregados y detalle completo.
+    - _Requirements: 19.3, 19.4_
+  - [ ] 10.3 Añadir ramas `export === 'pdf'` en `ReporteController` (los 9 métodos)
+    - Pasar KPIs + agregados + colección completa (`detalleColeccion` o `detalle(..., 100000)->getCollection()`), `'etiqueta'`/`'resumen'` según el módulo; `nombreArchivo($base, 'pdf')`.
+    - Extender el tipo de retorno con `Illuminate\Http\Response`.
+    - _Requirements: 19.1, 19.2_
+  - [ ] 10.4 Actualizar `validar()` del controlador para 422 JSON también cuando `export=pdf`
+    - `in_array($request->query('export'), ['csv', 'pdf'], true)`.
+    - _Requirements: 19.5_
+  - [ ] 10.5 Añadir botón "Exportar PDF" en `resources/views/reportes/partials/acciones.blade.php`
+    - `request()->fullUrlWithQuery(['export' => 'pdf'])` junto a Imprimir/CSV.
+    - _Requirements: 19.6_
+  - [ ] 10.6 Crear `tests/Feature/Reportes/ReportePdfExportTest.php`
+    - `export=pdf` en los 9 reportes → 200 + `Content-Type: application/pdf` + contenido `%PDF` + tamaño > 1000.
+    - 422 JSON con fecha inválida y `export=pdf`.
+    - CSV respeta el rango y mantiene el formato actual (as-is).
+    - _Requirements: 19.1, 19.5, 16.1_
+  - [ ] 10.7 Actualizar `docs/modulo-reportes-informacion.md` (acciones comunes y notas) y las specs `design.md`/`requirements.md`.
+    - `vendor/bin/pint`; suite de reportes verde.
 
 ## Checkpoints
 

@@ -79,6 +79,94 @@ class ReporteClientesTest extends TestCase
         $this->assertSame($cliente->nombre_completo, $top->first()['nombre']);
         $this->assertEqualsWithDelta(250, $top->first()['gasto'], 0.01);
         $this->assertSame(2, $top->first()['visitas']);
+        $this->assertSame(0, $top->first()['automotores']);
+    }
+
+    public function test_automotores_atendidos_se_desglosa_por_fuentes(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->create();
+
+        Automotor::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
+        Automotor::create(['placa' => 'BBB002', 'cliente_id' => $cliente->id]);
+        Automotor::create(['placa' => 'CCC003', 'cliente_id' => $cliente->id]);
+        Automotor::create(['placa' => 'DDD004', 'cliente_id' => $cliente->id]);
+
+        Lavado::factory()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => 'AAA001',
+            'user_id' => $usuario->id,
+            'fecha' => now()->toDateString(),
+            'estado' => 'confirmado',
+            'total' => 40,
+        ]);
+
+        Lavado::factory()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => 'BBB002',
+            'user_id' => $usuario->id,
+            'fecha' => now()->toDateString(),
+            'estado' => 'confirmado',
+            'total' => 50,
+        ]);
+        CambioAceite::factory()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => 'BBB002',
+            'trabajador_id' => Trabajador::factory()->create()->id,
+            'user_id' => $usuario->id,
+            'estado' => 'confirmado',
+            'total' => 60,
+            'created_at' => now(),
+        ]);
+
+        CambioAceite::factory()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => 'CCC003',
+            'trabajador_id' => Trabajador::factory()->create()->id,
+            'user_id' => $usuario->id,
+            'estado' => 'confirmado',
+            'total' => 70,
+            'created_at' => now(),
+        ]);
+
+        $desde = CarbonImmutable::today()->startOfDay();
+        $hasta = CarbonImmutable::today()->endOfDay();
+
+        $top = $this->service->topClientes($desde, $hasta);
+
+        $this->assertCount(1, $top);
+        $fila = $top->first();
+        $this->assertSame(3, $fila['automotores']);
+        $this->assertSame(2, $fila['lavados']);
+        $this->assertSame(2, $fila['cambio_aceite']);
+    }
+
+    public function test_automotores_solo_lavado_no_desglosa_cambio(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->create();
+
+        Automotor::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
+
+        Lavado::factory()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => 'AAA001',
+            'user_id' => $usuario->id,
+            'fecha' => now()->toDateString(),
+            'estado' => 'confirmado',
+            'total' => 40,
+        ]);
+
+        $desde = CarbonImmutable::today()->startOfDay();
+        $hasta = CarbonImmutable::today()->endOfDay();
+
+        $top = $this->service->topClientes($desde, $hasta);
+
+        $this->assertCount(1, $top);
+        $fila = $top->first();
+        $this->assertSame(1, $fila['automotores']);
+        $this->assertSame(1, $fila['lavados']);
+        $this->assertSame(0, $fila['cambio_aceite']);
     }
 
     public function test_top_automotores_combina_fuentes(): void
@@ -139,7 +227,7 @@ class ReporteClientesTest extends TestCase
 
         $respuesta->assertOk();
         $contenido = $respuesta->streamedContent();
-        $this->assertStringContainsString('cliente;gasto;visitas;automotores;visitas_por_mes', $contenido);
+        $this->assertStringContainsString('cliente;gasto;visitas;automotores;lavados;cambio_aceite;visitas_por_mes', $contenido);
         $this->assertStringContainsString('80', $contenido);
     }
 }

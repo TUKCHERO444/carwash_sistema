@@ -63,9 +63,9 @@
     {{-- Agregados --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         @foreach([
-            ['titulo' => 'Por vehículo', 'filas' => $porVehiculo, 'colores' => ['azul' => true]],
-            ['titulo' => 'Por servicio', 'filas' => $porServicio, 'colores' => ['verde' => true]],
-            ['titulo' => 'Por trabajador', 'filas' => $porTrabajador, 'colores' => ['ambar' => true]],
+            ['titulo' => 'Por vehículo', 'filas' => $porVehiculo, 'columna' => 'Placa', 'campo' => 'placa', 'colores' => ['azul' => true]],
+            ['titulo' => 'Por servicio', 'filas' => $porServicio, 'columna' => 'Nombre', 'campo' => 'nombre', 'colores' => ['verde' => true]],
+            ['titulo' => 'Por trabajador', 'filas' => $porTrabajador, 'columna' => 'Nombre', 'campo' => 'nombre', 'colores' => ['ambar' => true]],
         ] as $bloque)
             <div class="bg-surface rounded-lg border border-main overflow-x-auto">
                 <div class="px-6 py-4 border-b border-main">
@@ -74,7 +74,7 @@
                 <table class="min-w-full divide-y divide-main">
                     <thead class="bg-gray-50 dark:bg-slate-800/50">
                         <tr>
-                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Nombre</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">{{ $bloque['columna'] }}</th>
                             <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Lavados</th>
                             <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Total</th>
                         </tr>
@@ -82,7 +82,7 @@
                     <tbody class="bg-surface divide-y divide-main">
                         @forelse($bloque['filas'] as $fila)
                             <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $fila['nombre'] }}</td>
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $fila[$bloque['campo']] }}</td>
                                 <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['operaciones'] }}</td>
                                 <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($fila['total'], 2) }}</td>
                             </tr>
