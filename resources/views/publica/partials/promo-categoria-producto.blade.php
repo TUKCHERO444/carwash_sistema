@@ -14,7 +14,7 @@
     };
 @endphp
 <a href="{{ route('publica.productos.categoria', ['categoria' => $categoria['slug']]) }}"
-   class="group relative flex flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br {{ $fondo }} p-8 sm:p-10 text-white-cold shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg {{ $dimension ?? '' }}">
+   class="group relative flex flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br {{ $fondo }} p-8 sm:p-10 text-white-cold shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg {{ $dimension ?? '' }}" data-cw-anim="up">
 
     {{-- Brillo decorativo (sustituye al fotográfico del tema). --}}
     <div class="absolute inset-0" aria-hidden="true" style="background:

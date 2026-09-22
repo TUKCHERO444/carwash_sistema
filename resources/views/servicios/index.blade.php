@@ -39,6 +39,9 @@
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Imagen
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
@@ -58,7 +61,19 @@
                 <tbody class="bg-surface divide-y divide-main">
                     @foreach($servicios as $servicio)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
+                            {{-- Imagen / miniatura (placeholder de la vista pública si no hay) --}}
+                            <td class="px-6 py-8 whitespace-nowrap">
+                                @if($servicio->imagen)
+                                    <img src="{{ $servicio->imagen }}"
+                                         alt="Imagen de {{ $servicio->nombre }}"
+                                         class="w-10 h-10 object-cover rounded border border-main">
+                                @else
+                                    <div class="w-10 h-10 rounded border border-main bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-400">
+                                        @include('publica.partials.icono-servicio', ['icono' => $servicio->icono, 'clase' => 'w-5 h-5'])
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
                                 {{ $servicio->nombre }}
                             </td>
                              <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">

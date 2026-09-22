@@ -14,9 +14,9 @@
         : route('publica.productos');
 @endphp
 
-<article class="group flex flex-col overflow-hidden rounded-xl border border-steel-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+<article class="group flex flex-col overflow-hidden rounded-xl border border-steel-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" data-cw-anim="up">
     {{-- Imagen del producto (o placeholder si no tiene foto). --}}
-    <a href="{{ $rutaDetalle }}" class="relative aspect-square overflow-hidden bg-navy-800">
+    <a href="{{ $rutaDetalle }}" class="relative aspect-[4/5] overflow-hidden bg-navy-800">
         @if ($producto->fotoUrl)
             <img src="{{ $producto->fotoUrl }}" alt="{{ $producto->nombre }}"
                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
@@ -37,16 +37,20 @@
     </a>
 
     {{-- Información de la card. --}}
-    <div class="flex flex-1 flex-col gap-1.5 p-3">
-        @if ($producto->marca)
-            <span class="text-[10px] font-semibold uppercase tracking-widest text-brand-blue-700">{{ mb_strtoupper($producto->marca->nombre) }}</span>
-        @endif
-        <a href="{{ $rutaDetalle }}" class="text-sm font-semibold leading-snug text-navy-900 line-clamp-2 transition-colors hover:text-brand-blue-700">{{ mayusculas($producto->nombre) }}</a>
-        <p class="mt-auto pt-1 text-base font-semibold text-navy-900">
+    <div class="flex flex-1 flex-col gap-1.5 p-2.5">
+        <div class="flex items-center justify-between gap-1.5">
+            @if ($producto->marca)
+                <span class="text-[10px] font-semibold uppercase tracking-widest text-brand-blue-700">{{ mb_strtoupper($producto->marca->nombre) }}</span>
+            @else
+                <span class="flex-1"></span>
+            @endif
+            <p class="text-[11px] font-medium {{ $agotado ? 'text-red-600' : 'text-green-600' }}">
+                {{ $agotado ? 'Sin stock disponible' : 'Disponible' }}
+            </p>
+        </div>
+        <a href="{{ $rutaDetalle }}" class="text-xs font-semibold leading-snug text-navy-900 line-clamp-2 transition-colors hover:text-brand-blue-700">{{ mayusculas($producto->nombre) }}</a>
+        <p class="mt-auto pt-1 text-lg font-semibold text-navy-900">
             S/ {{ number_format((float) $producto->precio_venta, 2, '.', '') }}
-        </p>
-        <p class="text-[11px] font-medium {{ $agotado ? 'text-red-600' : 'text-green-600' }}">
-            {{ $agotado ? 'Sin stock disponible' : 'Disponible' }}
         </p>
         <a href="{{ $rutaDetalle }}"
            class="mt-1.5 inline-flex items-center justify-center gap-1 rounded-lg bg-brand-cyan-500 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-navy-900 transition-colors hover:bg-brand-cyan-400">

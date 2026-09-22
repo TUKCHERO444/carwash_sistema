@@ -10,18 +10,18 @@
         1. CABECERA DE PÁGINA (breadcrumb + título de la colección)
     ============================================================ --}}
     <section class="bg-navy-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center">
-            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center" data-cw-group>
+            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400" data-cw-anim="up">
                 <a href="{{ route('inicio') }}" class="hover:text-brand-cyan-400 transition-colors">Inicio</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <a href="{{ route('publica.productos') }}" class="hover:text-brand-cyan-400 transition-colors">Productos</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-white-cold" aria-current="page">{{ $categoria->nombre }}</span>
             </nav>
-            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white-cold leading-tight">
+            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white-cold leading-tight" data-cw-anim="up">
                 {{ mb_strtoupper($categoria->nombre) }}
             </h1>
-            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed">
+            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed" data-cw-anim="up">
                 {{ $categoria->descripcion ?? 'Productos de la colección '.$categoria->nombre.' para el cuidado de tu auto.' }}
             </p>
         </div>
@@ -141,7 +141,7 @@
                 @endif
             @else
                 {{-- Tabla junta de cards de producto (hasta 4 columnas). --}}
-                <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-px bg-steel-200 border border-steel-200 rounded-2xl overflow-hidden shadow-sm">
+                <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-px bg-steel-200 border border-steel-200 rounded-2xl overflow-hidden shadow-sm" data-cw-group>
 
                     @foreach ($productos as $producto)
                         @include('publica.partials.card-producto-grande', [

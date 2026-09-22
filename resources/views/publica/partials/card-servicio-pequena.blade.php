@@ -1,7 +1,7 @@
 {{-- Card pequeña de la columna central del mosaico de servicios. Recibe $categoria. --}}
 {{-- FUTURO: route('publica.categoria', $categoria['slug']) --}}
 <a href="#"
-   class="group flex h-full flex-col rounded-2xl border border-steel-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-cyan-500/60 hover:shadow-lg sm:p-6">
+   class="group flex h-full flex-col rounded-2xl border border-steel-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-cyan-500/60 hover:shadow-lg sm:p-6" data-cw-anim="up">
     <div class="flex items-center gap-4">
         <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-700 transition-colors duration-300 group-hover:bg-brand-cyan-500 group-hover:text-navy-900">
             @include('publica.partials.icono-servicio', ['icono' => $categoria['icono'], 'clase' => 'h-6 w-6'])

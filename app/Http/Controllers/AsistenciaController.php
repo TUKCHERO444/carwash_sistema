@@ -30,6 +30,9 @@ class AsistenciaController extends Controller
     {
         $validated = $request->validate([
             'fecha' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+        ], [
+            'fecha.before_or_equal' => 'La fecha no puede ser futura.',
+            'fecha.date_format' => 'El formato de la fecha debe ser YYYY-MM-DD.',
         ]);
 
         return response()->json($this->asistenciaService->resumenDeFecha($validated['fecha']));
@@ -49,13 +52,19 @@ class AsistenciaController extends Controller
 
     /**
      * Sincroniza las marcas de asistencia de una fecha (AJAX, full-sync).
+     * Solo se permite interactuar (modificar) con la fecha de hoy:
+     * las fechas pasadas son de solo consulta y las futuras no existen aún.
      */
     public function marcar(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'fecha' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'fecha' => ['required', 'date_format:Y-m-d', 'date_equals:today'],
             'marcas' => ['nullable', 'array'],
             'marcas.*' => ['required', 'date_format:H:i'],
+        ], [
+            'fecha.date_equals' => 'Solo se puede registrar o modificar la asistencia del día actual.',
+            'fecha.date_format' => 'El formato de la fecha debe ser YYYY-MM-DD.',
+            'marcas.*.date_format' => 'Cada hora de entrada debe tener formato HH:MM.',
         ]);
 
         $resumen = $this->asistenciaService->sincronizarMarca(

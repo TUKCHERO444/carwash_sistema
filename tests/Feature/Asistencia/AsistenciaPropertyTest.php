@@ -250,4 +250,45 @@ class AsistenciaPropertyTest extends TestCase
             $rutas[$i % count($rutas)]()->assertRedirect(route('dashboard'));
         }
     }
+
+    /**
+     * Feature: asistencia, Property 9: marcar solo admite la fecha de hoy
+     *
+     * For any date different from today (past or future), POST /asistencia/marcar
+     * must respond 422 on 'fecha' and must NOT create nor modify any row in
+     * the asistencias table.
+     *
+     * **Valida: Requisito 7.7 (fechas pasadas y futuras prohibidas)**
+     */
+    public function test_property_9_marcar_only_accepts_today(): void
+    {
+        $trabajador = $this->activos[0];
+        $hoy = now()->toDateString();
+
+        $this->user->givePermissionTo('acceso-asistencia');
+
+        for ($i = 0; $i < self::ITERACIONES; $i++) {
+            $fecha = $this->fechaDistintaDeHoy();
+            Asistencia::where('fecha', $fecha)->delete();
+
+            $this->actingAs($this->user)
+                ->postJson(route('asistencia.marcar', ['fecha' => $fecha, 'marcas' => [$trabajador->id => '08:00']]))
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('fecha')
+                ->assertJsonMissing(['success' => true]);
+
+            $this->assertDatabaseMissing('asistencias', ['fecha' => $fecha, 'trabajador_id' => $trabajador->id]);
+            $this->assertNotSame($hoy, $fecha, "Property 9 (iteración {$i}): debe probarse siempre con una fecha distinta de hoy");
+        }
+    }
+
+    private function fechaDistintaDeHoy(): string
+    {
+        do {
+            $dias = mt_rand(-365, 365);
+            $fecha = now()->addDays($dias)->toDateString();
+        } while ($fecha === now()->toDateString());
+
+        return $fecha;
+    }
 }

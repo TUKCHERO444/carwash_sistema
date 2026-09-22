@@ -55,6 +55,13 @@
     --cw-font-weight-display: 700;
     --cw-text-base-size:    16px; /* --base-text-font-size del tema */
     --cw-text-default-size: 15px; /* --default-text-font-size del tema */
+
+    /* --- Animaciones de entrada (docs/design.md §13) --- */
+    --cw-anim-duration:  550ms;              /* duración de la entrada */
+    --cw-anim-ease:      cubic-bezier(0.22, 1, 0.36, 1); /* deceleración suave */
+    --cw-anim-distance:  16px;               /* traslación sutil de up/left/right */
+    --cw-anim-delay-max: 420ms;              /* tope del stagger por grupo */
+    --cw-anim-paso:      70ms;               /* escalón de stagger entre elementos */
 }
 
 /* El sitio público siempre usa el tema claro (nunca dark).
@@ -156,4 +163,110 @@ html {
 }
 .cw-mobile-menu.is-open {
     max-height: 100vh;
+}
+
+/* --- Botón flotante de WhatsApp --- */
+.cw-whatsapp-btn {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 9999px;
+    background-color: #25D366;
+    color: #ffffff;
+    box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4);
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    animation: cw-whatsapp-pop var(--cw-anim-duration) var(--cw-anim-ease) both;
+}
+.cw-whatsapp-btn:hover {
+    transform: scale(1.08);
+    background-color: #1FBD5A;
+    box-shadow: 0 14px 30px rgba(37, 211, 102, 0.5);
+}
+.cw-whatsapp-btn:focus-visible {
+    outline: 2px solid var(--cw-cyan-500);
+    outline-offset: 2px;
+}
+
+@keyframes cw-whatsapp-pop {
+    from { opacity: 0; transform: translateY(16px) scale(0.9); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 640px) {
+    .cw-whatsapp-btn {
+        right: 1rem;
+        bottom: 1rem;
+        width: 54px;
+        height: 54px;
+    }
+}
+
+/* ============================================================
+   Animaciones de entrada (docs/design.md §13)
+   ------------------------------------------------------------
+   Sistema ligero, sin librerías: keyframes CSS + IntersectionObserver
+   (resources/js/publica/animaciones.js). Reglas:
+
+   - Atributos en el marcado:
+       data-cw-anim="up|fade|left|right"  → elemento que se anima al entrar
+                                            en el viewport (una sola vez).
+       data-cw-group                       → contenedor: el JS asigna un
+                                            stagger (--cw-anim-delay) a sus
+                                            hijos [data-cw-anim] por índice.
+   - Gate `html.anim-listo`: lo añade el script de bootstrap en el <head>
+     (resources/views/publica/partials/anim-script.blade.php) SOLO cuando el
+     navegador soporta IntersectionObserver y el usuario no pidió movimiento
+     reducido. Sin el gate todo permanece visible (fallback sin-JS).
+   - `prefers-reduced-motion: reduce` fuerza el estado final sin animación
+     (doble seguridad, además de no añadir el gate).
+   ============================================================ */
+
+html.anim-listo [data-cw-anim] {
+    opacity: 0;
+}
+
+html.anim-listo [data-cw-anim].is-visible {
+    animation: cw-anim-up var(--cw-anim-duration) var(--cw-anim-ease) var(--cw-anim-delay, 0ms) both;
+}
+html.anim-listo [data-cw-anim="fade"].is-visible {
+    animation: cw-anim-fade var(--cw-anim-duration) var(--cw-anim-ease) var(--cw-anim-delay, 0ms) both;
+}
+html.anim-listo [data-cw-anim="left"].is-visible {
+    animation: cw-anim-left var(--cw-anim-duration) var(--cw-anim-ease) var(--cw-anim-delay, 0ms) both;
+}
+html.anim-listo [data-cw-anim="right"].is-visible {
+    animation: cw-anim-right var(--cw-anim-duration) var(--cw-anim-ease) var(--cw-anim-delay, 0ms) both;
+}
+
+@keyframes cw-anim-up {
+    from { opacity: 0; transform: translateY(var(--cw-anim-distance)); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes cw-anim-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes cw-anim-left {
+    from { opacity: 0; transform: translateX(calc(var(--cw-anim-distance) * -1)); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes cw-anim-right {
+    from { opacity: 0; transform: translateX(var(--cw-anim-distance)); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.anim-listo [data-cw-anim] {
+        opacity: 1;
+        animation: none;
+    }
+    .cw-whatsapp-btn {
+        animation: none;
+    }
 }

@@ -238,53 +238,8 @@
                     <p class="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>
                     <a href="{{ route('reportes.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.index') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                              {{ request()->routeIs('reportes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Resumen de reportes
-                    </a>
-                    <a href="{{ route('reportes.ingresos') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.ingresos') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Ingresos
-                    </a>
-                    <a href="{{ route('reportes.ventas') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.ventas') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Ventas
-                    </a>
-                    <a href="{{ route('reportes.lavados') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.lavados') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Lavados
-                    </a>
-                    <a href="{{ route('reportes.cambioAceite') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.cambioAceite') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Cambio de Aceite
-                    </a>
-                    <a href="{{ route('reportes.inventario') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.inventario') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Inventario
-                    </a>
-                    <a href="{{ route('reportes.clientes') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.clientes') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Clientes
-                    </a>
-                    <a href="{{ route('reportes.caja') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.caja') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Caja
-                    </a>
-                    <a href="{{ route('reportes.personal') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.personal') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Personal
-                    </a>
-                    <a href="{{ route('reportes.kardex') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.kardex') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Kardex
                     </a>
                     @endcan
                 </div>

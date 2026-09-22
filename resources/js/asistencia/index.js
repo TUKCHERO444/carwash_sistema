@@ -3,6 +3,10 @@
  * Módulo JavaScript del panel de asistencia: calendario mensual consultable
  * con indicadores de color por día y modal de detalle con registro manual
  * de marcas de entrada (full-sync vía POST /asistencia/marcar).
+ *
+ * Solo se permite MODIFICAR la asistencia del día actual: las fechas pasadas
+ * se muestran en el modal en modo de solo consulta y las futuras están
+ * deshabilitadas (no consultables ni gestionables).
  * Feature: asistencia — Requisitos 2, 3, 4, 5, 6, 7
  *
  * Sin librerías externas: la cuadrícula del calendario se genera con
@@ -68,7 +72,7 @@ export function buildMonthGrid(year, month) {
 }
 
 /**
- * ¿La fecha es hoy o pasada (consultable y gestionable)?
+ * ¿La fecha es hoy o pasada (consultable)?
  * La comparación lexicográfica es válida con claves ISO 'YYYY-MM-DD'.
  * @param {string} key
  * @param {string} hoyKey
@@ -76,6 +80,18 @@ export function buildMonthGrid(year, month) {
  */
 export function esFechaPasadaOActual(key, hoyKey) {
     return key <= hoyKey;
+}
+
+/**
+ * ¿La fecha es editable (modificable)? Solo el día actual se puede
+ * gestionar: las fechas pasadas son de solo consulta y las futuras
+ * están bloqueadas.
+ * @param {string} key
+ * @param {string} hoyKey
+ * @returns {boolean}
+ */
+export function esFechaEditable(key, hoyKey) {
+    return key === hoyKey;
 }
 
 /**
@@ -176,6 +192,7 @@ export function initAsistencia() {
     const gestionEl = document.getElementById('asistencia-gestion');
     const gestionFilasEl = document.getElementById('asistencia-gestion-filas');
     const guardarBtn = document.getElementById('asistencia-guardar');
+    const soloLecturaEl = document.getElementById('asistencia-solo-lectura');
     const mensajeEl = document.getElementById('asistencia-mensaje');
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -374,12 +391,14 @@ export function initAsistencia() {
 
         ocultarMensaje();
 
-        if (esFechaPasadaOActual(fechaModal, hoyKey)) {
+        if (esFechaEditable(fechaModal, hoyKey)) {
+            soloLecturaEl.classList.add('hidden');
             poblarGestion(data);
         } else {
             gestionEl.classList.add('hidden');
             guardarBtn.classList.add('hidden');
             guardarBtn.classList.remove('inline-flex');
+            soloLecturaEl.classList.toggle('hidden', !esFechaPasadaOActual(fechaModal, hoyKey));
         }
     }
 
@@ -394,6 +413,11 @@ export function initAsistencia() {
     }
 
     async function guardarAsistencia() {
+        if (!esFechaEditable(fechaModal, hoyKey)) {
+            mostrarMensaje('Solo se puede modificar la asistencia del día actual.');
+            return;
+        }
+
         const marcas = {};
 
         gestionFilasEl.querySelectorAll('[data-gestion-check]').forEach((check) => {

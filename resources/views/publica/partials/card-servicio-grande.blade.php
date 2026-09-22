@@ -1,7 +1,7 @@
 {{-- Card grande lateral del mosaico de servicios. Recibe $categoria. --}}
 {{-- FUTURO: route('publica.categoria', $categoria['slug']) --}}
 <a href="#"
-   class="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-10 lg:min-h-0">
+   class="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-10 lg:min-h-0" data-cw-anim="up">
     {{-- Fondo: imagen real futura; hoy un degradé de marca. --}}
     <div class="absolute inset-0"
          style="background: linear-gradient(160deg, rgba(7, 91, 138, 0.75) 0%, rgba(11, 38, 56, 0.98) 60%);">

@@ -161,6 +161,9 @@
                 @error('imagen')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
+                <div id="bloque-preview" class="hidden mt-3 p-2 border border-main rounded-lg bg-gray-50 dark:bg-slate-800/50 inline-block">
+                    <img id="preview-foto" src="#" alt="Vista previa" class="w-32 h-24 object-cover rounded shadow-sm border border-main">
+                </div>
             </div>
 
             {{-- Activo --}}
@@ -204,4 +207,5 @@
     </div>
 
 </div>
+@vite(['resources/js/servicios/create.js'])
 @endsection

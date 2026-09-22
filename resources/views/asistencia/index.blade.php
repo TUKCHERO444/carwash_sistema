@@ -95,6 +95,10 @@
                 <p class="text-xs text-secondary mb-3">Marca a los trabajadores presentes y ajusta su hora de entrada.</p>
                 <div id="asistencia-gestion-filas" class="space-y-1 max-h-56 overflow-y-auto pr-1"></div>
             </div>
+
+            <p id="asistencia-solo-lectura" class="hidden mt-5 border-t border-main pt-4 text-xs text-secondary">
+                Las asistencias de fechas pasadas son de solo consulta: solo se puede registrar o modificar la asistencia del día actual.
+            </p>
         </div>
 
         <x-slot:footer>

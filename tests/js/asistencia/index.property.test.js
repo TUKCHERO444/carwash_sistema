@@ -13,8 +13,9 @@
  *   - Property 6: buildMonthGrid cubre exactamente el mes
  *   - Property 7: la celda del día 1 coincide con su día de semana (áncora lunes)
  *   - Property 8: parseFechaKey(fechaKey(...)) es un round-trip reversible
+ *   - Property 10: solo el día actual es editable (fechas pasadas de solo consulta)
  *
- * Valida: Requisitos 2.2, 4
+ * Valida: Requisitos 2.2, 4, 4.6, 7.1
  */
 
 import { describe, it, expect } from 'vitest';
@@ -23,6 +24,7 @@ import {
     INICIO_SEMANA,
     buildMonthGrid,
     claseDia,
+    esFechaEditable,
     esFechaPasadaOActual,
     fechaKey,
     parseFechaKey,
@@ -166,5 +168,45 @@ describe('esFechaPasadaOActual', () => {
         expect(esFechaPasadaOActual('2026-09-12', '2026-09-12')).toBe(true);
         expect(esFechaPasadaOActual('2026-09-11', '2026-09-12')).toBe(true);
         expect(esFechaPasadaOActual('2026-10-01', '2026-09-12')).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Property 10: solo el día de hoy es editable
+// Feature: asistencia, Property 10: La gestión solo es posible en el día actual
+// Valida: Requisitos 4.6, 7.1
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('esFechaEditable — Property 10: solo el día actual es gestionable', () => {
+    it('para cualquier fecha relativa a hoy, es editable si y solo si coincide con hoy', () => {
+        // Feature: asistencia, Property 10: editable únicamente cuando key === hoyKey
+        const hoy = '2026-09-12';
+
+        fc.assert(
+            fc.property(
+                fc.integer({ min: -400, max: 400 }),
+                (offset) => {
+                    const fecha = new Date(`${hoy}T12:00:00Z`);
+                    fecha.setUTCDate(fecha.getUTCDate() + offset);
+                    const key = fecha.toISOString().slice(0, 10);
+
+                    expect(esFechaEditable(key, hoy)).toBe(offset === 0);
+
+                    if (esFechaEditable(key, hoy)) {
+                        expect(esFechaPasadaOActual(key, hoy)).toBe(true);
+                        expect(key > hoy).toBe(false);
+                    }
+                },
+            ),
+            { numRuns: 100 },
+        );
+    });
+
+    it('determinístico: pasado y futuro no son editables, solo hoy', () => {
+        // Feature: asistencia, gestión por día (Requisito 4.6, 7.1)
+        const hoy = '2026-09-12';
+        expect(esFechaEditable(hoy, hoy)).toBe(true);
+        expect(esFechaEditable('2026-09-11', hoy)).toBe(false);
+        expect(esFechaEditable('2026-09-13', hoy)).toBe(false);
     });
 });

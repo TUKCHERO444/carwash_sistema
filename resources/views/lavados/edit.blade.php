@@ -89,6 +89,26 @@
                 @enderror
             </div>
 
+            {{-- Opciones de búsqueda de placa --}}
+            <div id="placa-opciones" class="hidden mb-5">
+                <div id="placa-estado" class="mb-2"></div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="btn-buscar-cliente" disabled
+                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Buscar cliente
+                    </button>
+                    <button type="button" id="btn-consultar-placa-api" disabled
+                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Consultar datos (API)
+                    </button>
+                    <button type="button" id="btn-continuar-registro" disabled
+                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        Continuar registro
+                    </button>
+                </div>
+                <p class="mt-1 text-xs text-secondary">Busque el cliente por placa para autocompletar, o registre los datos manualmente.</p>
+            </div>
+
             {{-- ── Nombre ── --}}
             <div class="mb-5">
                 <label for="nombre" class="label-main mb-1">

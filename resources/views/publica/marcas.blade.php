@@ -11,16 +11,16 @@
         El título y la introducción provienen del panel de contenidos web.
     ============================================================ --}}
     <section class="bg-navy-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center">
-            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center" data-cw-group>
+            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400" data-cw-anim="up">
                 <a href="{{ route('inicio') }}" class="hover:text-brand-cyan-400 transition-colors">Inicio</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-white-cold" aria-current="page">Marcas</span>
             </nav>
-            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white-cold leading-tight">
+            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold uppercase tracking-tight text-white-cold leading-tight" data-cw-anim="up">
                 {{ $contenido->text('marcas_titulo') }}
             </h1>
-            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed">
+            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed" data-cw-anim="up">
                 {{ $contenido->text('marcas_intro') }}
             </p>
         </div>

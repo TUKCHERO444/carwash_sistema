@@ -12,16 +12,16 @@
         --centered) con el título y una descripción centrada.
     ============================================================ --}}
     <section class="bg-navy-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center">
-            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center" data-cw-group>
+            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400" data-cw-anim="up">
                 <a href="{{ route('inicio') }}" class="hover:text-brand-cyan-400 transition-colors">Inicio</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-white-cold" aria-current="page">Cotiza con nosotros</span>
             </nav>
-            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white-cold leading-tight">
+            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold uppercase tracking-tight text-white-cold leading-tight" data-cw-anim="up">
                 Cotiza con nosotros
             </h1>
-            <p class="mx-auto mt-4 max-w-3xl text-base sm:text-lg text-navy-100 leading-relaxed">
+            <p class="mx-auto mt-4 max-w-3xl text-base sm:text-lg text-navy-100 leading-relaxed" data-cw-anim="up">
                 En Carwash El Chinito entendemos que cada vehículo tiene su propia historia y que cada
                 cliente tiene sus propios desafíos. Por eso estamos comprometidos a ofrecerte la mejor
                 atención posible: si tienes alguna necesidad específica para tu auto, no dudes en escribirnos.
@@ -36,8 +36,8 @@
     ============================================================ --}}
     <section class="bg-white-cold py-16 sm:py-20">
         <div class="mx-auto max-w-3xl px-4 sm:px-6">
-            <div class="rounded-2xl border border-steel-200 bg-white p-6 sm:p-10 shadow-sm">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-navy-900">Cuéntanos sobre tu auto</h2>
+            <div class="rounded-2xl border border-steel-200 bg-white p-6 sm:p-10 shadow-sm" data-cw-anim="up">
+                <h2 class="text-2xl sm:text-3xl font-semibold uppercase text-navy-900">Cuéntanos sobre tu auto</h2>
                 <p class="mt-2 text-base leading-relaxed text-steel-700">
                     Completa el formulario y te responderemos a la brevedad con una cotización sin compromiso.
                 </p>

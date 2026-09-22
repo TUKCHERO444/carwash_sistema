@@ -184,6 +184,12 @@ Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
     Route::get('/clientes/buscar-por-placa', [ClienteController::class, 'buscarPorPlaca'])
         ->name('clientes.buscar-por-placa');
 
+    // Consulta de datos del vehículo por placa para los tickets (local → API).
+    // Ruta bajo 'acceso-ventas' porque 'automotores.consultar-placa' exige
+    // 'acceso-automotores' y los operadores de tickets usan 'acceso-ventas'.
+    Route::get('/consulta-placa-api', [AutomotorController::class, 'consultarPlaca'])
+        ->name('tickets.consultarPlacaApi');
+
     Route::get('/ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
         ->name('ventas.buscar-productos');
 

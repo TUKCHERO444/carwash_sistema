@@ -21,6 +21,9 @@ return [
 
     'telefono' => env('CARWASH_TELEFONO', '955 555 555'),
 
+    // Número para el botón flotante de WhatsApp (sin "+", con código de país).
+    'telefono_whatsapp' => env('CARWASH_WHATSAPP', '51932378981'),
+
     'email' => env('CARWASH_EMAIL', 'contacto@carwashelchinito.com'),
 
     'direccion' => env('CARWASH_DIRECCION', 'Av. Ejemplo 123, Lima, Perú'),

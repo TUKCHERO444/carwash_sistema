@@ -12,6 +12,7 @@ Decisiones de diseño clave:
 - **Nuevo permiso `acceso-asistencia`** (decisión confirmada): independiente de `acceso-trabajadores`.
 - **Calendario en JavaScript vanilla**: el proyecto no tiene librerías de calendario y su convención es no introducir dependencias. Se construye una cuadrícula de 42 celdas (6 semanas) con funciones puras probables por property testing.
 - **Guardado full-sync idempotente**: el payload de `marcar` es la fotografía completa del día (trabajador → hora). Reenvíos no duplican, y el estado final de la BD es exactamente lo enviado. Esto elimina la necesidad de rutas individuales de editar/eliminar hora.
+- **Solo el día actual es editable** (decisión de negocio confirmada): las asistencias de fechas pasadas pasan a **solo consulta** (no se pueden corregir una vez terminado el día) y en días futuros no se puede registrar. La validación `date_equals:today` en `marcar` es la fuente de verdad del backend; el frontend replica la regla ocultando el modo de gestión fuera de hoy.
 - **Semana que inicia en lunes** (ISO 8601): decisión UI con expresión única y centralizada en una constante del frontend, fácil de cambiar si el negocio prefiere domingo.
 - **Sin acoplamiento con Caja**: la asistencia no es una transacción de dinero; no aplica el mecanismo `error_caja`.
 
@@ -85,6 +86,9 @@ El modelo `Asistencia` es auditable vía `AuditModelObserver` (añadido a `Audit
 // porFecha
 $data = $request->validate([
     'fecha' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+], [
+    'fecha.before_or_equal' => 'La fecha no puede ser futura.',
+    'fecha.date_format'     => 'El formato de la fecha debe ser YYYY-MM-DD.',
 ]);
 
 // porMes
@@ -94,15 +98,20 @@ $data = $request->validate([
 
 // marcar
 $data = $request->validate([
-    'fecha'  => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+    'fecha'  => ['required', 'date_format:Y-m-d', 'date_equals:today'],
     'marcas' => ['nullable', 'array'],
     'marcas.*' => ['required', 'date_format:H:i'],
+], [
+    'fecha.date_equals'    => 'Solo se puede registrar o modificar la asistencia del día actual.',
+    'fecha.date_format'    => 'El formato de la fecha debe ser YYYY-MM-DD.',
+    'marcas.*.date_format' => 'Cada hora de entrada debe tener formato HH:MM.',
 ]);
 ```
 
 Notas de validación:
 
-- `before_or_equal:today` impide marcar fechas futuras (no se puede registrar una entrada que aún no existe).
+- `before_or_equal:today` en `porFecha` impide consultar fechas futuras (los días futuros del calendario no generan datos).
+- `date_equals:today` en `marcar` es la **regla de integridad del módulo**: solo se permite escribir (crear/actualizar/eliminar marcas) en la fecha actual. Las fechas **pasadas** son de solo consulta y las **futuras** están bloqueadas; cualquier otra fecha responde HTTP 422 con error en `fecha` sin tocar la BD.
 - El formato `H:i` acepta de 00:00 a 23:59; excepcionalmente se permite `24:00` en negocio? **No**: se rechaza, el rango es 00:00–23:59.
 - En `marcar`, tras validar, se filtran los ids que no pertenecen a trabajadores activos (los inactivos se ignoran en silencio, nunca se crean marcas para ellos). Si `marcas` llega vacío/ausente, equivale a "nadie asistió" → se eliminan todas las marcas activas de la fecha.
 
@@ -263,7 +272,7 @@ Extiende `layouts.app`. Contiene, dentro de `@section('content')`:
    - Cabecera de fecha `#asistencia-fecha` (fecha descriptiva).
    - Resumen `#asistencia-resumen`: dos tarjetas con conteos e indicadores de color.
    - Listados `#asistencia-asistentes` y `#asistencia-no-asistentes`.
-   - Modo de gestión `#asistencia-gestion` (oculto para fechas futuras): filas por trabajador activo con checkbox + hora.
+   - Modo de gestión `#asistencia-gestion` (oculto salvo día actual): filas por trabajador activo con checkbox + hora. Nota de solo consulta `#asistencia-solo-lectura` para fechas pasadas.
    - Feedback `#asistencia-mensaje`.
    - Footer: botón "Guardar asistencia" (solo modo gestión) + botón cerrar.
 6. Datos iniciales inline antes del `@vite`:
@@ -315,8 +324,12 @@ export function fechaKey(year, month, day) {}
 export function parseFechaKey(key) {}
 
 // Compara una fechaKey con la fecha de hoy (string 'YYYY-MM-DD' o Date).
-// true si la fecha es hoy o pasada (consultable y gestionable).
+// true si la fecha es hoy o pasada (consultable).
 export function esFechaPasadaOActual(key, hoyKey) {}
+
+// true solo si la fecha coincide con hoy (la UNICA gestionable/modificable).
+// Las pasadas son de solo consulta y las futuras están bloqueadas.
+export function esFechaEditable(key, hoyKey) { return key === hoyKey; }
 
 // Clasifica un día según conteos: 'completo' | 'parcial' | 'nulo' | 'sin-datos'.
 export function claseDia(asistentes, totalActivos) {}
@@ -328,7 +341,7 @@ export function etiquetaFecha(key) {}
 ### Comportamiento
 
 1. **init**: `buildMonthGrid` del mes actual, render de celdas (delegación: cada `<button data-dia="YYYY-MM-DD">`), navegación prev/next recomputando el grid, `fetch('/asistencia/por-mes?mes=YYYY-MM')` para pintar puntos de color.
-2. **Clic en día**: si es futuro → no hace nada. Si es pasado/actual → `fetch('/asistencia/por-fecha?fecha=...')`; con respuesta OK puebla resumen + listas (+ modo gestión si corresponde) y `openModal('modal-asistencia')`; con error 422/500 muestra mensaje y no abre el modal.
+2. **Clic en día**: si es futuro → no hace nada. Si es pasado/actual → `fetch('/asistencia/por-fecha?fecha=...')`; con respuesta OK puebla resumen + listas; y `openModal('modal-asistencia')`. El **modo de gestión** solo se puebla si la fecha es **hoy** (`esFechaEditable`): en fechas **pasadas** se oculta la gestión y se muestra la nota de solo consulta; en el guardado, si por cualquier vía la fecha no es hoy, se bloquea con un mensaje.
 3. **Modo gestión**: al poblarse, cada trabajador activo genera fila `checkbox + nombre + <input type="time">`; el checkbox checcado si existe marca previa. Guardar → `POST /asistencia/marcar` con `{fecha, marcas}` (objeto `{ [id]: "HH:MM" }`), headers `X-CSRF-TOKEN`; con respuesta OK repinta modal y calendario; con 422 muestra los errores dentro del modal.
 4. **fetch**: headers `'Accept': 'application/json'`, `'Content-Type': 'application/json'`, `'X-CSRF-TOKEN'` desde `<meta name="csrf-token">` (patrón `stock-modal.js`).
 
@@ -415,11 +428,28 @@ El feature tiene lógica pura y comprobable con PBT en tres capas: conteos serve
 
 ---
 
+### Propiedad 9: marcar solo admite la fecha de hoy
+
+*Para cualquier* fecha distinta del día actual (pasada o futura) y cualquier payload de marcas, `POST /asistencia/marcar` debe responder HTTP 422 con error en `fecha` y **no** crear ni modificar ninguna fila en `asistencias`. Así, las asistencias pasadas son irreversibles (solo consulta) y las futuras no registrables.
+
+**Valida: Requisito 7.7, 7.8**
+
+---
+
+### Propiedad 10 (JS): Solo el día de hoy es editable
+
+*Para cualquier* par de claves `(key, hoyKey)` en formato `YYYY-MM-DD`, `esFechaEditable(key, hoyKey)` es verdadero si y solo si `key === hoyKey`. Además, toda fecha editable cumple `esFechaPasadaOActual` y no es futura.
+
+**Valida: Requisitos 4.6, 4.7, 7.1**
+
+---
+
 ## Manejo de Errores
 
 | Escenario | Comportamiento |
 |-----------|----------------|
-| Fecha ausente, mal formateada o futura en `porFecha`/`marcar` | HTTP 422 con mensajes de validación (`fecha`). En `marcar` no se toca la BD. |
+| Fecha ausente, mal formateada o **futura** en `porFecha`/`marcar` | HTTP 422 con mensajes de validación (`fecha`). En `marcar` no se toca la BD. |
+| Fecha **pasada** en `marcar` | HTTP 422 con error en `fecha` (`date_equals:today`); las marcas existentes de ese día quedan intactas y no se crean nuevas. Fuente de verdad del backend. |
 | `mes` ausente o mal formateado en `porMes` | HTTP 422 con mensaje de validación (`mes`). |
 | Hora mal formateada (`marcas.*`) | HTTP 422; ningún registro se crea/borra (la validación ocurre antes de la transacción). |
 | Trabajador inactivo en `marcas` | Se ignora en silencio, sin error (decisión: no bloquea el guardado). |
@@ -453,7 +483,8 @@ Patrón: `RefreshDatabase`, `Permission::firstOrCreate(['name' => 'acceso-asiste
 | `marcar` crea marcas nuevas, actualiza horas y elimina las desmarcadas | 7.4 |
 | `marcar` idempotente: mismo payload dos veces → mismos registros | 7.5 |
 | `marcar` ignora trabajadores inactivos en el payload | 7.6 |
-| `marcar` rechaza fecha futura / hora inválida → 422 y sin cambios en BD | validación, 7.7 |
+| `marcar` rechaza fecha futura / hora inválida → 422 y sin cambios en BD | validación, 7.8 |
+| `marcar` rechaza fecha pasada → 422 y las marcas previas de ese día quedan intactas | validación, 7.7 |
 | `marcar` con `marcas` vacío elimina todas las marcas de activos de la fecha | 7.4 |
 
 ### Property tests (PHPUnit) — `tests/Feature/Asistencia/AsistenciaPropertyTest.php`
@@ -465,6 +496,7 @@ Patrón: `RefreshDatabase`, `Permission::firstOrCreate(['name' => 'acceso-asiste
 | Property 3 | Para payloads aleatorios, aplicar dos veces produce el mismo estado que una sola. |
 | Property 4 | Para cada ruta del módulo con parámetros válidos, sin auth → redirect a `/login`. |
 | Property 5 | Para cada ruta del módulo, usuario autenticado sin permiso → 403. |
+| Property 9 | Para fechas aleatorias distintas de hoy (pasadas y futuras), `marcar` → 422 y la BD queda intacta. |
 
 ### Property tests (Vitest) — `tests/js/asistencia/index.property.test.js`
 
@@ -475,6 +507,7 @@ Entorno Node (sin DOM), fast-check con `{ numRuns: 100 }`:
 | Property 6 | `fc.integer({min:2000,max:2035})` + `fc.integer({min:0,max:11})` → `buildMonthGrid` devuelve 42 celdas; días no nulos = 28/29/30/31 según mes, únicos, ordenados; celdas nulas solo al inicio y final. |
 | Property 7 | El índice de la primera celda no nula coincide con la posición ISO del día 1 (áncora = Lunes). |
 | Property 8 | Round-trip `parseFechaKey(fechaKey(y,m,d)) === {y,m,d}` para fechas válidas, con formato canónico. |
+| Property 10 | Para claves arbitrarias relativas a hoy, `esFechaEditable` es verdadera si y solo si coincide con hoy; si es editable, es consultable y no futura. |
 
 ### Edge cases
 
@@ -482,6 +515,7 @@ Entorno Node (sin DOM), fast-check con `{ numRuns: 100 }`:
 - Meses donde el día 1 cae en sábado/domingo (grid con 1–2 filas nulas al inicio).
 - Trabajador activo sin nombre/apellidos (solo `nombre`) en `nombre_completo`.
 - Día actual y día 1 del mes (borde de la celda "hoy").
+- Días adyacentes a hoy (ayer, mañana): ayer consultable pero **no editable**; mañana bloqueado (`key > hoy`).
 - `marcas` enviado como `{}` (nadie asistió) y trabajadores con `estado=false`.
 
 ---

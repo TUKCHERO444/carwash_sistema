@@ -1,5 +1,5 @@
 {{-- Card de servicio real para la página pública. Recibe $servicio (Servicio). --}}
-<article class="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-10">
+<article class="group relative flex h-full min-h-[24rem] flex-col items-center justify-center overflow-hidden rounded-2xl p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-10" data-cw-anim="up">
     {{-- Fondo: imagen real si existe + overlay navy; si no, degradé de marca. --}}
     <div class="absolute inset-0">
         @if ($servicio->imagen)

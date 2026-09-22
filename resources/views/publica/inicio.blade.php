@@ -15,22 +15,22 @@
                  radial-gradient(40rem 24rem at 10% 90%, rgba(7, 91, 138, 0.35), transparent 60%),
                  linear-gradient(180deg, #0B2638 0%, #0E3044 100%);">
         </div>
-        <div class="relative mx-auto max-w-7xl px-4 sm:px-6 py-24 sm:py-32 text-center">
-            <p class="inline-flex items-center gap-2 rounded-full border border-brand-cyan-500/40 bg-navy-800/60 px-4 py-1.5 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">
+        <div class="relative mx-auto max-w-7xl px-4 sm:px-6 py-24 sm:py-32 text-center" data-cw-group>
+            <p class="inline-flex items-center gap-2 rounded-full border border-brand-cyan-500/40 bg-navy-800/60 px-4 py-1.5 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400" data-cw-anim="up">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                 </svg>
                 Brillo y cuidado profesional para tu vehículo
             </p>
-            <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-white-cold leading-tight">
+            <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-semibold uppercase tracking-tight text-white-cold leading-tight" data-cw-anim="up">
                 Tu auto merece el mejor<br class="hidden sm:block">
                 <span class="text-cyan-400">carwash de la ciudad</span>
             </h1>
-            <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed">
+            <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed" data-cw-anim="up">
                 Lavado especializado, detailing, cambio de aceite y productos de primeras marcas.
                 Cuidamos tu vehículo como si fuera nuestro.
             </p>
-            <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3" data-cw-anim="up">
                 <a href="#" class="cw-btn-primary w-full sm:w-auto text-center">
                     Reservar mi lavado
                 </a>
@@ -49,7 +49,7 @@
     @if ($contenido->bool('inicio_mostrar_marcas'))
     <section class="bg-white-cold py-14">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <h2 class="text-center text-sm sm:text-base font-semibold uppercase tracking-widest text-steel-700">
+            <h2 class="text-center text-sm sm:text-base font-semibold uppercase tracking-widest text-steel-700" data-cw-anim="fade">
                 {{ $contenido->text('marcas_titulo') }}
             </h2>
             @include('publica.partials.grilla-marcas', ['marcas' => $marcas])
@@ -64,18 +64,18 @@
     @if ($contenido->bool('inicio_mostrar_servicios'))
     <section id="servicios" class="bg-white-cold pt-4 pb-20 sm:pt-6 sm:pb-24">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <div class="mx-auto max-w-2xl text-center">
-                <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">Nuestros servicios</span>
-                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-navy-900">Cuidado completo para tu vehículo</h2>
-                <p class="mt-4 text-base leading-relaxed text-steel-700">
+            <div class="mx-auto max-w-2xl text-center" data-cw-group>
+                <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700" data-cw-anim="up">Nuestros servicios</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-navy-900" data-cw-anim="up">Cuidado completo para tu vehículo</h2>
+                <p class="mt-4 text-base leading-relaxed text-steel-700" data-cw-anim="up">
                     Elige el servicio que buscas para proteger y resaltar a tu engreído.
                 </p>
             </div>
 
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6" data-cw-group>
                 @forelse ($servicios as $servicio)
                     <a href="{{ route('publica.servicios') }}"
-                       class="group bg-white rounded-2xl border border-steel-200 p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand-cyan-500/60">
+                       class="group bg-white rounded-2xl border border-steel-200 p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand-cyan-500/60" data-cw-anim="up">
                         <span class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-700 transition-colors duration-200 group-hover:bg-brand-cyan-500 group-hover:text-navy-900">
                             @switch($servicio->icono)
                                 @case('sparkles')
@@ -126,11 +126,11 @@
         4. BOLETÍN (franja navy)
     ============================================================ --}}
     <section class="bg-navy-900 py-16 sm:py-20">
-        <div class="mx-auto max-w-2xl px-4 sm:px-6 text-center">
-            <h2 class="text-2xl sm:text-3xl font-semibold text-white-cold">Boletín El Chinito</h2>
-            <p class="mt-3 text-base leading-relaxed text-navy-100">Suscríbete y recibe promociones exclusivas y novedades de nuestros servicios.</p>
+        <div class="mx-auto max-w-2xl px-4 sm:px-6 text-center" data-cw-group>
+            <h2 class="text-2xl sm:text-3xl font-semibold uppercase text-white-cold" data-cw-anim="up">Boletín El Chinito</h2>
+            <p class="mt-3 text-base leading-relaxed text-navy-100" data-cw-anim="up">Suscríbete y recibe promociones exclusivas y novedades de nuestros servicios.</p>
             {{-- FUTURO: POST real al endpoint del boletín. --}}
-            <form action="#" method="post" class="mt-8 flex flex-col sm:flex-row gap-3">
+            <form action="#" method="post" class="mt-8 flex flex-col sm:flex-row gap-3" data-cw-anim="up">
                 @csrf
                 <label for="newsletter-email" class="sr-only">Tu email</label>
                 <input id="newsletter-email" type="email" name="email" required placeholder="Tu email"
@@ -150,10 +150,10 @@
     @if ($contenido->bool('inicio_mostrar_productos'))
     <section class="bg-white-cold py-16 sm:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4" data-cw-anim="up">
                 <div>
                     <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">Tienda</span>
-                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-navy-900">Te recomendamos</h2>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-navy-900">Te recomendamos</h2>
                 </div>
                 <a href="{{ route('publica.productos') }}" class="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue-700 hover:text-brand-cyan-600 transition-colors">
                     VER TODOS LOS PRODUCTOS
@@ -164,7 +164,7 @@
             </div>
 
             {{-- Fila única de 6 cards compactas (grid hasta 6 columnas) --}}
-            <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+            <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5" data-cw-group>
                 @forelse ($productos as $producto)
                     @include('publica.partials.card-producto-pequena', ['producto' => $producto])
                 @empty
@@ -184,12 +184,12 @@
     ============================================================ --}}
     @if ($contenido->bool('inicio_mostrar_proyecto'))
     <section class="bg-white-cold pb-20 sm:pb-24">
-        <div class="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-            <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">Nuestro trabajo</span>
-            <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-navy-900">Dale un vistazo a nuestro último proyecto</h2>
+        <div class="mx-auto max-w-4xl px-4 sm:px-6 text-center" data-cw-group>
+            <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700" data-cw-anim="up">Nuestro trabajo</span>
+            <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-navy-900" data-cw-anim="up">Dale un vistazo a nuestro último proyecto</h2>
 
             {{-- FUTURO: thumbnail real (imagen) + URL de video desde el panel. --}}
-            <div class="relative mt-10 aspect-video rounded-2xl overflow-hidden bg-navy-900 cursor-pointer flex items-center justify-center">
+            <div class="relative mt-10 aspect-video rounded-2xl overflow-hidden bg-navy-900 cursor-pointer flex items-center justify-center" data-cw-anim="up">
                 <svg class="absolute inset-0 h-full w-full opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
                 </svg>

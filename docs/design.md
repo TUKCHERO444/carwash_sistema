@@ -14,6 +14,7 @@
 10. [Aplicación al sistema actual (Laravel + Tailwind v4)](#aplicación-al-sistema-actual-laravel--tailwind-v4)
 11. [Tipografía y formatos de texto (globales del sitio público)](#tipografía-y-formatos-de-texto-globales-del-sitio-público)
 12. [Revisión visual](#revisión-visual)
+13. [Animaciones de entrada](#13-animaciones-de-entrada)
 
 > **Nota sobre ratios:** los valores de contraste de la sección 9 fueron verificados con la fórmula WCAG de luminancia relativa (aplicada sobre los hex oficiales). Si se ajusta un hex, recalcular la tabla.
 
@@ -447,3 +448,76 @@ Checklist para validar cualquier pantalla nueva o modificada:
 - [ ] ¿La página usa solo Barlow (pesos 500/600/700) y la jerarquía se aplica por rol según la tabla §11.4?
 - [ ] ¿Eyebrows, CTAs y títulos de tarjeta/footer van en MAYÚSCULAS con tracking (patrón `VER MÁS`)?
 - [ ] ¿Los enlaces inline están subrayados y los títulos son siempre `font-semibold` redonda?
+
+---
+
+## 13. Animaciones de entrada
+
+Micro-animaciones de **entrada** del sitio público (mensajes en un `@media` con detalle): cuando el visitante navega o hace *scroll*, los textos y componentes aparecen con un movimiento sutil y por tramos, respetando accesibilidad y sin librerías (solo CSS + `IntersectionObserver` nativo).
+
+### 13.1 Principios
+
+- **Ligereza**: sin dependencias ni `gsap`; keyframes CSS + un observador nativo en `resources/js/publica/animaciones.js`.
+- **Progresivo**: cada elemento se anima **una sola vez** al entrar en el viewport (se descubre conforme se hace scroll), nunca al cargar toda la página.
+- **Mesura**: traslaciones de 16px, duración 550ms y `ease-out` decelerado; no se anima todo, se animan cabeceras, tarjetas y bloques de contenido (jamás estados de interacción: header sticky, filtros, formularios, paginación y estados vacíos quedan estáticos).
+- **Nunca oculta contenido**: el estado final siempre es el visible; el scroll no se secuestra ni se bloquea.
+- **Accesible**: `prefers-reduced-motion` desactiva las animaciones (doble seguro: ni el gate ni las keyframes actúan).
+
+### 13.2 Arquitectura y archivos
+
+| Pieza | Archivo | Rol |
+|---|---|---|
+| Gate anti-FOUC | `resources/views/publica/partials/anim-script.blade.php` (incluido en el `<head>` de `layouts/publica.blade.php`) | Añade `html.anim-listo` **antes del primer paint** solo si hay `IntersectionObserver` y no hay `prefers-reduced-motion`; si el bundle JS no arranca en 3 s, retira el gate para que nada quede invisible |
+| Estilos/keyframes | `resources/css/publica/publica.css`, sección "Animaciones de entrada" | Tokens `--cw-anim-*`, estados `opacity/transform`, 4 keyframes y el `@media (prefers-reduced-motion: reduce)` |
+| Observador | `resources/js/publica/animaciones.js` | Asigna `--cw-anim-delay` a grupos, observa `[data-cw-anim]`, revela con `.is-visible`, limpia al terminar (`animationend` + cronómetro de respaldo) |
+| Inicialización | `resources/js/publica/app.js` | `initAnimaciones()` en `DOMContentLoaded` (el módulo es entry indirecto: no requiere entrada propia en `vite.config.js`) |
+
+### 13.3 Marcado (cómo animar un elemento nuevo)
+
+```html
+<!-- Entrada individual: sube desde 16px de distancia -->
+<div data-cw-anim="up">…</div>
+
+<!-- Variantes disponibles -->
+<div data-cw-anim="fade">…</div>   <!-- solo aparecer, sin movimiento -->
+<div data-cw-anim="left">…</div>   <!-- entra desde la izquierda -->
+<div data-cw-anim="right">…</div>  <!-- entra desde la derecha -->
+
+<!-- Stagger: contenedor data-cw-group asigna un retraso escalonado
+     (--cw-anim-delay) a cada hijo [data-cw-anim], en document order -->
+<div data-cw-group>
+    <div data-cw-anim="up">…</div>
+    <div data-cw-anim="up">…</div>
+    <div data-cw-anim="up">…</div>
+</div>
+```
+
+Reglas de uso:
+
+- Un elemento **sin** `data-cw-anim` nunca se anima: para añadir una entrada a cualquier componente basta marcar el atributo (y `data-cw-group` si se quiere cascada).
+- En tablas juntas (`gap-px`, como `grilla-marcas` o el listado de `productos-categoria`) se usa **`fade`**, nunca `up/left/right`, para no romper la retícula con movimiento.
+- Los partials de tarjetas llevan la marca en el partial (`card-*`, `promo-categoria-producto`, `sellos-confianza`), así se animan todas sus instancias: solo hay que añadir `data-cw-group` al grid que las contiene para conseguir el stagger.
+
+### 13.4 Tokens y configuración
+
+Token en `publica.css :root` | Valor | Qué controla
+|---|---|---|
+| `--cw-anim-duration` | `550ms` | Duración de la entrada |
+| `--cw-anim-ease` | `cubic-bezier(0.22,1,0.36,1)` | Curva decelerada (suave, sin rebote) |
+| `--cw-anim-distance` | `16px` | Traslación de `up/left/right` |
+| `--cw-anim-delay-max` | `420ms` | Tope del stagger de grupo |
+| `--cw-anim-paso` | `70ms` | Escalón de delay entre elementos de un grupo |
+
+El JS aplica el stagger con `calcularRetraso(indice) = min(indice × 70, 420)` ms como variable inline `--cw-anim-delay`. Umbrales del observador: `rootMargin: '0px 0px -60px 0px'`, `threshold: 0.05`.
+
+### 13.5 Seguridad y fallbacks
+
+1. Sin gate (`anim-listo` ausente): no hay `opacity: 0` en ningún lado → contenido visible aunque JS falle o el navegador no soporte `IntersectionObserver`.
+2. `prefers-reduced-motion: reduce`: el gate no se añade y, además, el CSS fuerza el estado final (`opacity: 1`, `animation: none`).
+3. Tras revelarse, el elemento se limpia (se quita `data-cw-anim`, `.is-visible` y `--cw-anim-delay`) al terminar la animación, o por cronómetro de respaldo (`--cw-anim-delay-max` + delay + 300 ms), para que **no** quede con `transform/opacity` fijos que pisaran hovers (`hover:-translate-y-1`) ni estados futuros.
+4. El mul de 3 s del partial retira el gate si `animaciones.js` no marcó `data-anim-iniciado` (p. ej. build roto): la web nunca queda invisible.
+
+### 13.6 Verificación (tests)
+
+- Property tests (`tests/js/publica/animaciones.property.test.js`): `calcularRetraso` acotado en `[0, maxMs]` y monótono, `debeAnimar` solo verdadero con observer y sin movimiento reducido, `esVarianteValida` solo para `up|fade|left|right` (etiqueta `// Feature: animaciones-publica, Property N`).
+- Manual: probar con `prefers-reduced-motion: reduce` en DevTools (sin animación) y con JS deshabilitado (todo visible de inmediato).

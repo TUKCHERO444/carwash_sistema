@@ -28,6 +28,8 @@ export default defineConfig({
                 'resources/js/productos/edit.js',
                 // Servicios
                 'resources/js/servicios/index.js',
+                'resources/js/servicios/create.js',
+                'resources/js/servicios/edit.js',
                 // Contenido web (panel)
                 'resources/js/contenido-web/edit.js',
                 // Vehiculos

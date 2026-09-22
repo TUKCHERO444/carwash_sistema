@@ -359,6 +359,32 @@ class AsistenciaTest extends TestCase
         $this->assertDatabaseCount('asistencias', 0);
     }
 
+    public function test_marcar_rejects_past_date_and_leaves_marks_intact(): void
+    {
+        $trabajador = $this->crearTrabajador();
+        $ayer = now()->subDay()->toDateString();
+
+        Asistencia::create([
+            'trabajador_id' => $trabajador->id,
+            'fecha' => $ayer,
+            'hora_entrada' => '08:10',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('asistencia.marcar'), [
+                'fecha' => $ayer,
+                'marcas' => [$trabajador->id => '09:00'],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('fecha');
+
+        $this->assertDatabaseHas('asistencias', [
+            'trabajador_id' => $trabajador->id,
+            'fecha' => $ayer,
+            'hora_entrada' => '08:10',
+        ]);
+    }
+
     public function test_marcar_rejects_invalid_hour(): void
     {
         $trabajador = $this->crearTrabajador();

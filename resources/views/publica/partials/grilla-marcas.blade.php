@@ -9,7 +9,7 @@
     Props:
       - $marcas : Collection de App\Models\Marca con foto (o sin foto).
 --}}
-<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-px bg-steel-200 border border-steel-200 rounded-2xl overflow-hidden shadow-sm">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-px bg-steel-200 border border-steel-200 rounded-2xl overflow-hidden shadow-sm" data-cw-group>
     @forelse ($marcas as $marca)
         @php
             $fotoWeb = $marca->foto_url;
@@ -19,7 +19,7 @@
                 $fotoWeb = str_replace('/image/upload/', '/image/upload/c_scale,w_240,q_auto/', $fotoWeb);
             }
         @endphp
-        <div class="flex items-center justify-center bg-white px-4 py-5 sm:py-6">
+        <div class="flex items-center justify-center bg-white px-4 py-5 sm:py-6" data-cw-anim="fade">
             @if ($fotoWeb)
                 <img src="{{ $fotoWeb }}"
                      alt="Marca {{ $marca->nombre }}"

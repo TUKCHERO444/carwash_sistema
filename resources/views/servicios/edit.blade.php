@@ -156,6 +156,13 @@
                              class="w-32 h-24 object-cover rounded-lg border border-main">
                     </div>
                 @endif
+                <div id="bloque-nueva" class="hidden mb-3">
+                    <div class="flex flex-col items-start gap-1">
+                        <img id="preview-nueva" src="" alt="Vista previa de la nueva imagen"
+                             class="w-32 h-24 object-cover rounded-lg border border-blue-200 dark:border-blue-800">
+                        <span class="text-xs text-secondary">Nueva imagen</span>
+                    </div>
+                </div>
                 <input
                     type="file"
                     id="imagen"
@@ -211,4 +218,5 @@
     </div>
 
 </div>
+@vite(['resources/js/servicios/edit.js'])
 @endsection

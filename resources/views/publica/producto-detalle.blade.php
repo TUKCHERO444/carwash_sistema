@@ -10,8 +10,8 @@
         1. CABECERA DE PÁGINA (breadcrumb completo)
     ============================================================ --}}
     <section class="bg-navy-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-12 text-center">
-            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-12 text-center" data-cw-group>
+            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400" data-cw-anim="up">
                 <a href="{{ route('inicio') }}" class="hover:text-brand-cyan-400 transition-colors">Inicio</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <a href="{{ route('publica.productos') }}" class="hover:text-brand-cyan-400 transition-colors">Productos</a>
@@ -36,10 +36,10 @@
                 $agotado = (int) $producto->stock <= 0;
             @endphp
 
-            <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-14">
+            <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-14" data-cw-group>
 
                 {{-- Galería (imagen del producto o placeholder). --}}
-                <div class="relative aspect-square overflow-hidden rounded-2xl border border-steel-200 bg-navy-800">
+                <div class="relative aspect-square overflow-hidden rounded-2xl border border-steel-200 bg-navy-800" data-cw-anim="left">
                     @if ($producto->foto_url)
                         <img src="{{ $producto->foto_url }}" alt="{{ $producto->nombre }}" class="h-full w-full object-cover" loading="lazy">
                     @else
@@ -57,7 +57,7 @@
                 </div>
 
                 {{-- Información del producto. --}}
-                <div class="flex flex-col">
+                <div class="flex flex-col" data-cw-anim="right">
                     @if ($producto->marca)
                         <span class="text-xs font-semibold uppercase tracking-widest text-brand-blue-700">{{ mb_strtoupper($producto->marca->nombre) }}</span>
                     @endif
@@ -120,10 +120,10 @@
             {{-- Productos relacionados de la misma categoría. --}}
             @if ($relacionados->isNotEmpty())
                 <div class="mt-16">
-                    <div class="flex items-end justify-between gap-4">
+                    <div class="flex items-end justify-between gap-4" data-cw-anim="up">
                         <div>
                             <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">También te puede interesar</span>
-                            <h2 class="mt-2 text-2xl sm:text-3xl font-semibold text-navy-900">Más en {{ $categoria->nombre }}</h2>
+                            <h2 class="mt-2 text-2xl sm:text-3xl font-semibold uppercase text-navy-900">Más en {{ $categoria->nombre }}</h2>
                         </div>
                         <a href="{{ route('publica.productos.categoria', ['categoria' => $categoria]) }}"
                            class="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue-700 hover:text-brand-cyan-600 transition-colors">
@@ -134,13 +134,13 @@
                         </a>
                     </div>
 
-                    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
+                    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6" data-cw-group>
                         @foreach ($relacionados as $relacionado)
                             @php
                                 $relAgotado = (int) $relacionado->stock <= 0;
                                 $rutaRel = route('publica.productos.detalle', ['categoria' => $categoria, 'producto' => $relacionado]);
                             @endphp
-                            <article class="group flex flex-col overflow-hidden rounded-2xl border border-steel-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                            <article class="group flex flex-col overflow-hidden rounded-2xl border border-steel-200 bg-white shadow-sm transition-shadow hover:shadow-md" data-cw-anim="up">
                                 <a href="{{ $rutaRel }}" class="relative aspect-square overflow-hidden bg-navy-800">
                                     @if ($relacionado->foto_url)
                                         <img src="{{ $relacionado->foto_url }}" alt="{{ $relacionado->nombre }}"

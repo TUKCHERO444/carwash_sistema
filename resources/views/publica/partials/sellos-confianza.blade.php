@@ -2,7 +2,7 @@
      Mismo patrón visual que el tema de referencia (text-with-icons__title text--strong). --}}
 <section class="bg-white-cold pb-16 sm:pb-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-cw-group>
             @php
                 $sellos = [
                     ['titulo' => 'Atención al cliente', 'detalle' => 'Resolvemos todas tus dudas', 'icono' => 'chat'],
@@ -12,7 +12,7 @@
                 ];
             @endphp
             @foreach ($sellos as $sello)
-                <div class="flex items-center gap-4 rounded-2xl bg-white border border-steel-200 p-6 shadow-sm">
+                <div class="flex items-center gap-4 rounded-2xl bg-white border border-steel-200 p-6 shadow-sm" data-cw-anim="up">
                     <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-700">
                         @if ($sello['icono'] === 'chat')
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

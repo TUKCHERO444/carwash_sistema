@@ -210,7 +210,7 @@ class DashboardService
             ->where('activo', true)
             ->where('stock', '<=', $umbral)
             ->orderBy('stock')
-            ->limit(20)
+            ->limit(5)
             ->get();
     }
 

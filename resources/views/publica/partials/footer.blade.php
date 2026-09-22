@@ -2,10 +2,10 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-8">
 
         {{-- Bloques del pie --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10" data-cw-group>
 
             {{-- Marca --}}
-            <div>
+            <div data-cw-anim="fade">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-cyan-500 text-navy-900">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -32,7 +32,7 @@
             </div>
 
             {{-- Enlaces --}}
-            <div>
+            <div data-cw-anim="fade">
                 <h3 class="text-sm font-semibold uppercase tracking-widest text-white-cold">Navegación</h3>
                 <ul class="mt-4 space-y-2.5 text-sm">
                     {{-- Rutas futuras del sitio público — reemplazar '#' por route(...) --}}
@@ -46,7 +46,7 @@
             </div>
 
             {{-- Legal --}}
-            <div>
+            <div data-cw-anim="fade">
                 <h3 class="text-sm font-semibold uppercase tracking-widest text-white-cold">Legal</h3>
                 <ul class="mt-4 space-y-2.5 text-sm">
                     <li><a href="{{ config('carwash.enlaces.terminos') }}" class="text-navy-100 hover:text-brand-cyan-400 transition-colors">Términos y condiciones</a></li>
@@ -57,7 +57,7 @@
             </div>
 
             {{-- Contacto / newsletter --}}
-            <div>
+            <div data-cw-anim="fade">
                 <h3 class="text-sm font-semibold uppercase tracking-widest text-white-cold">Boletín</h3>
                 <p class="mt-4 text-sm text-navy-100">Recibe promociones y novedades sobre nuestros servicios.</p>
                 {{-- Futuro: suscripción real al boletín (POST a /suscribirse). --}}

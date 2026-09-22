@@ -15,6 +15,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet">
 
+    {{-- Gate de animaciones de entrada (docs/design.md §13). Debe ejecutarse
+         antes del primer paint: añade html.anim-listo solo si habrá animación. --}}
+    @include('publica.partials.anim-script')
+
     @vite(['resources/css/app.css', 'resources/css/publica/publica.css', 'resources/js/publica/app.js'])
 </head>
 <body class="cw-body">
@@ -29,6 +33,9 @@
 
     {{-- Pie global del sitio público --}}
     @include('publica.partials.footer')
+
+    {{-- Botón flotante de contacto por WhatsApp --}}
+    @include('publica.partials.boton-whatsapp')
 
 </body>
 </html>

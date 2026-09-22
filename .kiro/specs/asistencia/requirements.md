@@ -15,7 +15,7 @@ El diseño visual respeta las guías `.kiro/guia-modo-oscuro.md` y `.kiro/reajus
 - **No asistente**: Trabajador **activo** (`estado = true`) sin registro de Asistencia para la fecha consultada. El sistema no almacena ausencias: se calculan por diferencia.
 - **Calendario**: Cuadrícula mensual renderizada en JavaScript (vanilla, sin librerías) con navegación entre meses.
 - **Modal de resumen**: Modal global creado con el componente `<x-modal>` que muestra el detalle de una fecha: conteos, asistentes con hora de entrada y no asistentes.
-- **Gestión / Modo de marcación**: Estado del modal en el que el administrador marca/desmarca trabajadores activos y asigna hora de entrada para una fecha no futura.
+- **Gestión / Modo de marcación**: Estado del modal en el que el administrador marca/desmarca trabajadores activos y asigna hora de entrada. **Solo está disponible para el día de hoy**: las fechas pasadas se consultan en modo de solo lectura y las futuras están deshabilitadas.
 - **Sincronización (full-sync)**: Estrategia de guardado de las marcas de una fecha: la colección enviada reemplaza por completo las marcas existentes del día (inserta, actualiza y elimina lo omitido).
 - **Trabajador activo**: Trabajador con `estado = true`. Es el único universo considerado para los conteos.
 - **acceso-asistencia**: Permiso RBAC nuevo (Spatie) que protege todas las rutas del módulo. Lo recibe el rol **Administrador** vía `syncPermissions(Permission::all())`.
@@ -84,8 +84,9 @@ El diseño visual respeta las guías `.kiro/guia-modo-oscuro.md` y `.kiro/reajus
 3. THE título del modal SHALL mostrar la fecha en formato peruano descriptivo (p. ej. "Sábado, 12 de septiembre de 2026") con `Carbon::createFromFormat(...)` y locale correspondiente.
 4. WHEN un trabajador con `estado = false` es omitido del conteo y de las listas.
 5. THE modal SHALL mostrar, en todo momento, el resumen con conteos y las listas descritas en los requisitos 5 y 6.
-6. IF el día consultado es no futuro (hoy o pasado), THEN el modal SHALL incluir el modo de gestión descrito en el requisito 7.
-7. WHEN la consulta falla (error de red o respuesta no satisfactoria), THEN THE Sistema SHALL cerrar/mantener el modal cerrado y mostrar un mensaje de error, sin dejar el modal a medias.
+6. IF el día consultado es el día actual (hoy), THEN el modal SHALL incluir el modo de gestión descrito en el requisito 7.
+7. IF el día consultado es pasado, THEN el modal SHALL mostrarse en **modo solo consulta** (sin modo de gestión ni botón de guardar) e indicar al usuario que las asistencias pasadas no se pueden modificar.
+8. WHEN la consulta falla (error de red o respuesta no satisfactoria), THEN THE Sistema SHALL cerrar/mantener el modal cerrado y mostrar un mensaje de error, sin dejar el modal a medias.
 
 **Valida:** Requisito 4 de consulta y modal.
 
@@ -126,21 +127,24 @@ El diseño visual respeta las guías `.kiro/guia-modo-oscuro.md` y `.kiro/reajus
 
 ### Requisito 7: Registro manual de asistencia (marcación)
 
-**User Story:** Como Administrador, quiero registrar manualmente la asistencia del día (o corregir una fecha pasada) marcando quiénes asistieron y la hora de entrada de cada uno, para alimentar el panel.
+**User Story:** Como Administrador, quiero registrar manualmente la asistencia del día actual marcando quiénes asistieron y la hora de entrada de cada uno, para alimentar el panel.
+
+> **Regla de integridad:** solo se puede **modificar** la asistencia del **día actual**. Las fechas pasadas son de solo consulta (no se pueden corregir) y en las futuras no se pueden registrar entradas. El backend es la fuente de verdad y rechaza con HTTP 422 cualquier intento de escribir en una fecha distinta de hoy, incluso si el cliente envía el payload manipulado.
 
 #### Criterios de Aceptación
 
-1. WHEN el modal está en modo de gestión (fecha no futura), THE Sistema SHALL mostrar un bloque "Registrar asistencia" con una fila por trabajador **activo**: checkbox + nombre completo + input de hora (`type="time"`).
+1. WHEN el modal está en modo de gestión (solo día actual), THE Sistema SHALL mostrar un bloque "Registrar asistencia" con una fila por trabajador **activo**: checkbox + nombre completo + input de hora (`type="time"`).
 2. THE input de hora SHALL estar prellenado con la hora actual (`now()->format('H:i')`) para trabajadores sin marca previa, y con la hora ya registrada para los que sí tienen marca.
 3. WHEN el Administrador guarda, THE Sistema SHALL enviar `POST /asistencia/marcar` con la fecha y el mapa `marcas = { trabajador_id: "HH:MM" }` de los trabajadores marcados.
 4. THE guardado SHALL ser una **sincronización total** (full-sync): inserta las marcas nuevas, actualiza las marcas existentes que cambian de hora y elimina las marcas de trabajadores activos que quedan desmarcados.
 5. THE guardado SHALL ser **idempotente**: reenviar exactamente el mismo payload a una fecha sin cambios intermedios no altera el estado de la base de datos.
 6. THE Sistema SHALL ignorar en el guardado cualquier `trabajador_id` que apunte a un trabajador inactivo (`estado = false`).
-7. IF la validación falla (fecha inválida o futura, formato de hora incorrecto), THEN THE Sistema SHALL responder HTTP 422 y NO modificar ninguna marca.
-8. WHEN el guardado tiene éxito, THE Sistema SHALL refrescar el contenido del modal con el nuevo resumen y el calendario con los nuevos indicadores, sin recargar la página.
-9. THE Sistema SHALL mostrar feedback visual (breve mensaje de éxito) tras guardar.
+7. **Solo fecha de hoy**: IF la fecha enviada no coincide con el día actual (pasada **o** futura), THEN THE Sistema SHALL responder HTTP 422 con un error en `fecha` y NO modificar ninguna marca existente ni crear nuevas.
+8. IF la validación falla (fecha distinta de hoy, formato de fecha u hora incorrecto), THEN THE Sistema SHALL responder HTTP 422 y NO modificar ninguna marca.
+9. WHEN el guardado tiene éxito, THE Sistema SHALL refrescar el contenido del modal con el nuevo resumen y el calendario con los nuevos indicadores, sin recargar la página.
+10. THE Sistema SHALL mostrar feedback visual (breve mensaje de éxito) tras guardar.
 
-**Valida:** Requisito 7 de marcación; **Propiedades 2 y 3** (full-sync e idempotencia).
+**Valida:** Requisito 7 de marcación; **Propiedades 2, 3 y 9** (full-sync, idempotencia y solo-fecha-de-hoy).
 
 ---
 

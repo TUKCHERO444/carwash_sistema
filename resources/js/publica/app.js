@@ -5,8 +5,10 @@
  */
 import { initMobileMenu } from './mobile-menu.js';
 import { initProductosMenu } from './nav-productos.js';
+import { initAnimaciones } from './animaciones.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initMobileMenu();
     initProductosMenu();
+    initAnimaciones();
 });

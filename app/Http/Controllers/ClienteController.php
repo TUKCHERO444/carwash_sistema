@@ -160,6 +160,7 @@ class ClienteController extends Controller
                 'placa' => $automotor->placa,
                 'nombre' => $cliente->nombre,
                 'nombre_completo' => $cliente->nombre_completo,
+                'dni' => $cliente->dni,
                 'telefono' => $cliente->telefono,
                 'lavados_count' => $cliente->lavados()->count(),
                 'cambios_aceite_count' => $cliente->cambioAceites()->count(),

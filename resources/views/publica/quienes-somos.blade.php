@@ -10,16 +10,16 @@
         1. CABECERA DE PÁGINA (breadcrumb + título)
     ============================================================ --}}
     <section class="bg-navy-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center">
-            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16 text-center" data-cw-group>
+            <nav aria-label="Ruta de navegación" class="text-xs sm:text-sm text-steel-400" data-cw-anim="up">
                 <a href="{{ route('inicio') }}" class="hover:text-brand-cyan-400 transition-colors">Inicio</a>
                 <span class="mx-2" aria-hidden="true">/</span>
                 <span class="text-white-cold" aria-current="page">¿Quiénes somos?</span>
             </nav>
-            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white-cold leading-tight">
+            <h1 class="mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold uppercase tracking-tight text-white-cold leading-tight" data-cw-anim="up">
                 ¿Quiénes somos?
             </h1>
-            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed">
+            <p class="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-navy-100 leading-relaxed" data-cw-anim="up">
                 Conoce la historia detrás de Carwash El Chinito y lo que nos motiva a cuidar tu vehículo.
             </p>
         </div>
@@ -32,12 +32,12 @@
         FUTURO: historia editable desde el panel de contenidos.
     ============================================================ --}}
     <section class="bg-white-cold py-16 sm:py-20">
-        <div class="mx-auto max-w-3xl px-4 sm:px-6">
-            <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">Nuestra empresa</span>
-            <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-navy-900">Una pasión por los vehículos</h2>
+        <div class="mx-auto max-w-3xl px-4 sm:px-6" data-cw-group>
+            <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700" data-cw-anim="up">Nuestra empresa</span>
+            <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-navy-900" data-cw-anim="up">Una pasión por los vehículos</h2>
 
             {{-- FUTURO: párrafos provenientes del panel de contenidos. --}}
-            <div class="mt-8 space-y-5 text-base leading-relaxed text-steel-700 text-justify">
+            <div class="mt-8 space-y-5 text-base leading-relaxed text-steel-700 text-justify" data-cw-anim="up">
                 <p>
                     Carwash El Chinito es una empresa de estética automotriz, apasionada por los vehículos
                     y en constante búsqueda de las nuevas tendencias internacionales, ofreciendo siempre
@@ -64,13 +64,13 @@
     ============================================================ --}}
     <section class="bg-navy-900 py-16 sm:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <div class="mx-auto max-w-2xl text-center">
-                <span class="text-sm font-semibold uppercase tracking-widest text-brand-cyan-500">Nuestra razón de ser</span>
-                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-white-cold">Misión y visión</h2>
+            <div class="mx-auto max-w-2xl text-center" data-cw-group>
+                <span class="text-sm font-semibold uppercase tracking-widest text-brand-cyan-500" data-cw-anim="up">Nuestra razón de ser</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-white-cold" data-cw-anim="up">Misión y visión</h2>
             </div>
 
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="rounded-2xl bg-navy-800 border border-navy-700 p-8 sm:p-10">
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6" data-cw-group>
+                <div class="rounded-2xl bg-navy-800 border border-navy-700 p-8 sm:p-10" data-cw-anim="up">
                     <span class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-cyan-500/10 border border-brand-cyan-500/20 text-brand-cyan-400">
                         <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
                             <circle cx="12" cy="12" r="9"/>
@@ -82,7 +82,7 @@
                     <p class="mt-4 text-base leading-relaxed text-navy-100 text-justify">{{ $mision }}</p>
                 </div>
 
-                <div class="rounded-2xl bg-navy-800 border border-navy-700 p-8 sm:p-10">
+                <div class="rounded-2xl bg-navy-800 border border-navy-700 p-8 sm:p-10" data-cw-anim="up">
                     <span class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-cyan-500/10 border border-brand-cyan-500/20 text-brand-cyan-400">
                         <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -104,17 +104,17 @@
     ============================================================ --}}
     <section class="bg-white-cold py-16 sm:py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6">
-            <div class="mx-auto max-w-2xl text-center">
-                <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700">Lo que nos define</span>
-                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold text-navy-900">Nuestros valores</h2>
-                <p class="mt-4 text-base leading-relaxed text-steel-700">
+            <div class="mx-auto max-w-2xl text-center" data-cw-group>
+                <span class="text-sm font-semibold uppercase tracking-widest text-brand-blue-700" data-cw-anim="up">Lo que nos define</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold uppercase text-navy-900" data-cw-anim="up">Nuestros valores</h2>
+                <p class="mt-4 text-base leading-relaxed text-steel-700" data-cw-anim="up">
                     Principios que guían cada lavado, cada pulido y cada atención a nuestro cliente.
                 </p>
             </div>
 
-            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-cw-group>
                 @foreach ($valores as $valor)
-                    <div class="rounded-2xl bg-white border border-steel-200 p-6 shadow-sm">
+                    <div class="rounded-2xl bg-white border border-steel-200 p-6 shadow-sm" data-cw-anim="up">
                         <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-700">
                             @if ($valor['icono'] === 'chat')
                                 <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

@@ -4,6 +4,8 @@
 
 Implementar el panel de asistencia de trabajadores de forma incremental: primero esquema y backend (migración + modelo + servicio + controlador + rutas + permisos + auditoría), luego frontend (vista + calendario vanilla + modal + módulo JS), y finalmente las pruebas de propiedad que garantizan los invariantes de conteo y de cuadrícula.
 
+**Regla de integridad transversal:** las asistencias solo se pueden **registrar/modificar el día actual** (`marcar` valida `date_equals:today`). Las fechas pasadas son de solo consulta y las futuras están bloqueadas, tanto en el frontend (`esFechaEditable`) como en el backend (fuente de verdad).
+
 Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada tarea referencia los requisitos para trazabilidad. Los property tests se etiquetan `// Feature: asistencia, Property N: <descripción>` y **Valida:** en docblock, con mínimo 100 iteraciones.
 
 ## Tareas
@@ -44,7 +46,7 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
     - `index()`: devolver vista `asistencia.index` con `$totalActivos`.
     - `porFecha(Request)`: validar `fecha` (`required`, `date_format:Y-m-d`, `before_or_equal:today`); responder JSON de `AsistenciaService::resumenDeFecha`. En formato inválido responder `422` con `errors` (JSON, ya que es AJAX).
     - `porMes(Request)`: validar `mes` (`required`, `date_format:Y-m`); responder JSON de `estadoPorMes`.
-    - `marcar(Request)`: validar `fecha` y `marcas` (array nullable; `marcas.*` `date_format:H:i`); llamar `sincronizarMarca`; responder JSON con resumen.
+    - `marcar(Request)`: validar `fecha` con `date_equals:today` (**solo el día actual es editable**; pasadas en solo consulta, futuras bloqueadas) y `marcas` (array nullable; `marcas.*` `date_format:H:i`); mensajes de validación en español; llamar `sincronizarMarca`; responder JSON con resumen.
     - _Requirements: 2, 3, 4, 5, 6, 7_
 
   - [ ] 4.2 Rutas en `routes/web.php`, junto al bloque de gestión de usuarios
@@ -69,15 +71,16 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
   - Navegación del calendario: botones `data-nav-prev` / `data-nav-next` y `#asistencia-titulo-mes`.
   - Cuadrícula `#asistencia-calendario` (tabla 7 columnas, encabezados L M X J V S D).
   - Leyenda de colores (verde/ámbar/rojo/gris).
-  - `<x-modal id="modal-asistencia" maxWidth="2xl" title="Detalle de asistencia">` con: `#asistencia-fecha`, `#asistencia-resumen` (2 tarjetas de conteo con indicadores de color), `#asistencia-asistentes`, `#asistencia-no-asistentes`, `#asistencia-gestion` (filas checkbox + hora), `#asistencia-mensaje`, footer con botón "Guardar asistencia" y cerrar.
+  - `<x-modal id="modal-asistencia" maxWidth="2xl" title="Detalle de asistencia">` con: `#asistencia-fecha`, `#asistencia-resumen` (2 tarjetas de conteo con indicadores de color), `#asistencia-asistentes`, `#asistencia-no-asistentes`, `#asistencia-gestion` (filas checkbox + hora), nota de solo lectura `#asistencia-solo-lectura` (fechas pasadas), `#asistencia-mensaje`, footer con botón "Guardar asistencia" y cerrar.
   - Datos iniciales `window.asistenciaHoy` / `window.asistenciaTotalActivos` ANTES de `@vite('resources/js/asistencia/index.js')` al final de `@section('content')`.
   - _Requirements: 2, 3, 4, 5, 6, 7_
 
 - [ ] 8. Módulo JS `resources/js/asistencia/index.js`
-  - Funciones puras exportadas: `INICIO_SEMANA`, `buildMonthGrid`, `fechaKey`, `parseFechaKey`, `esFechaPasadaOActual`, `claseDia`, `etiquetaFecha`.
+  - Funciones puras exportadas: `INICIO_SEMANA`, `buildMonthGrid`, `fechaKey`, `parseFechaKey`, `esFechaPasadaOActual`, `esFechaEditable`, `claseDia`, `etiquetaFecha`.
   - Render inicial del mes actual; navegación prev/next; `fetch por-mes` para pintar indicadores de color por día.
   - Clic en día futuro → no-op; día pasado/actual → `fetch por-fecha`, poblar modal, `openModal('modal-asistencia')`.
-  - Modo de gestión: filas checkbox + hora por trabajador activo; guardar → `POST marcar` con `{fecha, marcas}`; respuesta OK repinta modal y calendario; 422 muestra errores dentro del modal.
+  - Modo de gestión **solo para el día actual** (`esFechaEditable`): filas checkbox + hora por trabajador activo; fechas **pasadas** muestran la nota de solo consulta (`#asistencia-solo-lectura`) y ocultan la gestión; `guardarAsistencia` re-valida la fecha (bloquea si no es hoy).
+  - Guardar → `POST marcar` con `{fecha, marcas}`; respuesta OK repinta modal y calendario; 422 muestra errores dentro del modal.
   - Delegación de eventos en `document`; fetch con `Accept: application/json` y `X-CSRF-TOKEN`.
   - _Requirements: 2, 3, 4, 6, 7_
 
@@ -89,7 +92,7 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
 
 - [ ] 10. Tests de ejemplo (PHPUnit) — `tests/Feature/Asistencia/AsistenciaTest.php`
   - `RefreshDatabase`; `Permission::firstOrCreate('acceso-asistencia')` + `givePermissionTo`; trabajadores creados con factory o manualmente.
-  - Tests listados en la estrategia de pruebas del design (acceso, conteos, por-mes, marcar full-sync, idempotencia, validaciones 422, exclusión de inactivos).
+  - Tests listados en la estrategia de pruebas del design (acceso, conteos, por-mes, marcar full-sync, idempotencia, validaciones 422 incluyendo **rechazo de fecha pasada y futura**, exclusión de inactivos).
   - _Requirements: 2–8_
 
 - [ ] 11. Property tests PHP — `tests/Feature/Asistencia/AsistenciaPropertyTest.php` (100 iteraciones)
@@ -111,6 +114,10 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
   - [ ]* 11.5 Property 5: rutas requieren `acceso-asistencia` (403) para cada ruta del módulo
     - **Valida: Requisitos 8.6**
 
+  - [ ]* 11.6 Property 9: `marcar` solo admite la fecha de hoy
+    - Para fechas aleatorias distintas de hoy (pasadas y futuras), `postJson(marcar)` → 422 con error en `fecha` y la tabla `asistencias` queda intacta.
+    - **Valida: Requisitos 7.7, 7.8**
+
 - [ ] 12. Property tests JS — `tests/js/asistencia/index.property.test.js` (fast-check, 100 runs)
   - [ ]* 12.1 Property 6: `buildMonthGrid` cubre exactamente el mes (42 celdas, días únicos y ordenados, nulas solo en bordes) para years 2000–2035 y todos los meses.
     - **Valida: Requisitos 2.2**
@@ -121,6 +128,9 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
   - [ ]* 12.3 Property 8: `parseFechaKey(fechaKey(...))` round-trip y formato canónico `YYYY-MM-DD`.
     - **Valida: Requisitos 2.2, 4**
 
+  - [ ]* 12.4 Property 10: `esFechaEditable` es verdadera si y solo si la clave coincide con hoy (fechas pasadas de solo consulta; futuras bloqueadas).
+    - **Valida: Requisitos 4.6, 4.7, 7.1**
+
 - [ ] 13. Formateo y chequeos de calidad
   - `vendor/bin/pint` sobre los archivos nuevos/modificados.
   - `composer run test` (suite completa).
@@ -130,8 +140,8 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
 ## Checkpoints
 
 1. **Backend listo** (tareas 1–5): se puede marcar asistencia por terminal/Postman y consultar resúmenes JSON.
-2. **Frontend operativo** (tareas 6–9): el calendario navega, abre el modal y guarda marcas sin recargar.
-3. **Cierre** (tareas 10–13): suite verde y propiedad de conteo/idempotencia demostrada.
+2. **Frontend operativo** (tareas 6–9): el calendario navega, abre el modal y guarda marcas sin recargar; fuera del día actual el modal es de solo consulta.
+3. **Cierre** (tareas 10–13): suite verde y propiedad de conteo/idempotencia/edición-solo-hoy demostrada.
 
 ## Notas
 
