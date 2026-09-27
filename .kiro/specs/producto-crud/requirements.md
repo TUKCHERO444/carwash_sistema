@@ -78,7 +78,7 @@ Este feature añade un CRUD completo para la entidad **Producto** dentro de la s
 4. THE ProductoController SHALL validar que el campo `precio_compra` es requerido, de tipo numérico y mayor que cero.
 5. THE ProductoController SHALL validar que el campo `precio_venta` es requerido, de tipo numérico y mayor que cero.
 6. THE ProductoController SHALL validar que el campo `stock` es requerido, de tipo entero y mayor o igual a cero.
-7. THE ProductoController SHALL validar que el campo `inventario` es requerido, de tipo entero y mayor o igual a cero.
+7. THE ProductoController SHALL validar que el campo `inventario` es requerido, de tipo entero y mayor o igual a uno (no se admite `0` al crear un Producto; el `stock` inicial se deriva de este valor).
 8. THE ProductoController SHALL validar que el campo `activo` es de tipo booleano.
 9. THE ProductoController SHALL validar que el campo `foto`, cuando está presente, es un archivo de imagen con extensiones permitidas `jpg`, `jpeg`, `png`, `webp` y tamaño máximo de 2 MB.
 10. WHEN el formulario incluye una imagen válida, THE ProductoController SHALL almacenar el archivo en `storage/app/public/images/productos/` y guardar la ruta relativa en el campo `foto` del Producto.

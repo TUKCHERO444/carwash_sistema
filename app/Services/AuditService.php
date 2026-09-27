@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AjusteInventario;
 use App\Models\Asistencia;
 use App\Models\Automotor;
 use App\Models\Caja;
@@ -9,12 +10,14 @@ use App\Models\CambioAceite;
 use App\Models\CambioProducto;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Compra;
 use App\Models\ContenidoWeb;
+use App\Models\DetalleAjusteInventario;
+use App\Models\DetalleCompra;
 use App\Models\DetalleServicio;
 use App\Models\DetalleVenta;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
-use App\Models\LavadoTrabajador;
 use App\Models\Marca;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
@@ -51,6 +54,8 @@ class AuditService
         Lavado::class,
         Caja::class,
         EgresoCaja::class,
+        Compra::class,
+        AjusteInventario::class,
     ];
 
     /**
@@ -61,6 +66,8 @@ class AuditService
         CambioProducto::class,
         LavadoTrabajador::class,
         DetalleServicio::class,
+        DetalleCompra::class,
+        DetalleAjusteInventario::class,
         MovimientoKardex::class,
         RegistroAuditoria::class,
     ];
@@ -99,6 +106,8 @@ class AuditService
         Lavado::class => 'lavados',
         Caja::class => 'caja',
         EgresoCaja::class => 'caja',
+        Compra::class => 'compras',
+        AjusteInventario::class => 'ajustes',
     ];
 
     /**

@@ -1,0 +1,987 @@
+La implementación debería hacerse evolucionando el modelo, no reemplazándolo de manera brusca.
+
+1. Diagnóstico: cómo funciona actualmente
+
+Actualmente tienes este flujo:
+
+PRODUCTO
+   │
+   ├── Precio compra
+   ├── Precio venta
+   ├── Inventario
+   └── Stock
+          │
+          ▼
+   "Actualizar stock"
+          │
+          ▼
+     + cantidad
+          │
+          ├── Stock aumenta
+          ├── Inventario = nuevo stock
+          └── Kardex → Entrada INV-XXXX
+
+Y posteriormente:
+
+                     STOCK
+                       │
+              ┌────────┴────────┐
+              │                 │
+            VENTA          CAMBIO ACEITE
+              │                 │
+              ▼                 ▼
+             -X                -X
+              │                 │
+              └────────┬────────┘
+                       ▼
+                    KARDEX
+
+Esto está documentado explícitamente: el modal actual solo suma existencias, no registra proveedor, documento ni precio de compra de esa entrada.
+
+Por tanto, el módulo de compras no debería crear un segundo sistema de inventario.
+
+Debe convertirse en la nueva fuente formal de las entradas de inventario.
+
+2. El cambio conceptual principal
+
+Actualmente:
+
+"Ingresar stock" = aumentar existencias.
+
+Después de implementar compras:
+
+"Recibir una compra" = generar una entrada de inventario.
+
+Eso cambia muchísimo la calidad de la información.
+
+La arquitectura debería evolucionar de:
+
+PRODUCTO
+   ↓
+Actualizar stock
+   ↓
+Entrada Kardex
+
+a:
+
+PRODUCTO
+   ↓
+COMPRAS
+   ↓
+DETALLE DE COMPRA
+   ↓
+RECEPCIÓN
+   ↓
+ENTRADA DE INVENTARIO
+   ↓
+KARDEX
+   ↓
+STOCK
+
+Pero hay una precisión importante:
+
+la compra no debe ser directamente el stock.
+
+La compra es el documento/operación comercial.
+
+El movimiento de inventario es la consecuencia física de recibir esa compra.
+
+3. Qué NO deberíamos hacer
+
+No recomiendo esto:
+
+Nueva compra
+   ↓
+Guardar compra
+   ↓
+stock += cantidad
+
+porque estarías mezclando la operación comercial con la existencia física.
+
+Es mejor:
+
+Compra BORRADOR
+       ↓
+Compra RECIBIDA
+       ↓
+Movimiento ENTRADA
+       ↓
+Actualización STOCK
+
+Así puedes tener:
+
+Compra #00025
+Proveedor: LubriPerú
+Estado: Borrador
+
+sin que todavía aparezcan productos mágicamente en el almacén.
+
+4. La gran modificación al CRUD de productos
+
+Aquí está uno de los cambios más importantes.
+
+Actualmente el alta de producto obliga a introducir existencias iniciales y crea un INV-XXXX.
+
+Eso debería cambiar.
+
+Nuevo comportamiento
+Crear producto
+Producto
+├── Nombre
+├── Descripción
+├── Categoría
+├── Marca
+├── Precio de venta
+├── Stock mínimo
+├── Foto
+└── Estado
+
+Y:
+
+Stock inicial = 0
+
+automáticamente.
+
+Entonces:
+
+Crear producto
+       ↓
+Stock = 0
+       ↓
+Producto disponible en catálogo
+       ↓
+Comprar posteriormente
+
+Esto separa definitivamente:
+
+Catálogo ≠ Inventario.
+
+5. ¿Y el precio de compra actual?
+
+Aquí hay que hacer una modificación conceptual importante.
+
+Actualmente tienes:
+
+Producto
+   └── precio_compra
+
+y ese precio sirve para valorizar el inventario. La propia documentación reconoce que esto provoca problemas cuando cambia el precio del proveedor.
+
+Con compras:
+
+Compra #001
+Shampoo
+10 × S/20
+
+y después:
+
+Compra #002
+Shampoo
+10 × S/23
+
+El sistema necesita saber que:
+
+Entrada 1 → S/20
+Entrada 2 → S/23
+
+Por eso recomiendo:
+
+En products
+
+Mantener:
+
+sale_price
+
+y, si quieres conservar purchase_price, tratarlo como:
+
+último precio de compra / costo vigente de referencia
+
+pero no como el historial del costo.
+
+En purchase_details
+
+Guardar:
+
+quantity
+unit_cost
+subtotal
+
+Así el costo histórico queda asociado a la compra.
+
+6. ¿Qué hacemos con inventario?
+
+Aquí está el punto más delicado de toda la migración.
+
+Actualmente:
+
+inventario = línea base del ciclo
+stock = existencia física
+
+y:
+
+consumido = inventario - stock
+
+La documentación deja claro que inventario no representa otro almacén, sino la referencia del ciclo de carga.
+
+Por tanto:
+
+NO recomiendo eliminarlo inmediatamente.
+
+Pero tampoco recomiendo seguir tratándolo como una cantidad editable dentro del CRUD.
+
+Debe convertirse conceptualmente en:
+
+stock_base_del_ciclo
+
+o mantenerse como inventario en BD si cambiar el nombre genera demasiado impacto.
+
+7. ¿Qué ocurre cuando llega una compra?
+
+Aquí tenemos que respetar el comportamiento existente:
+
+Stock actual = 20
+
+Compra:
+
++50
+
+Resultado:
+
+Stock = 70
+Inventario = 70
+Consumido = 0
+
+Esto mantiene el ciclo actual.
+
+La documentación establece que cada ingreso reinicia el ciclo y pone inventario igual al stock resultante.
+
+Por tanto:
+
+COMPRA RECIBIDA
+       │
+       ├── stock += cantidad
+       │
+       ├── inventario = nuevo stock
+       │
+       └── Kardex → ENTRADA
+
+Eso permite introducir compras sin romper inmediatamente la lógica actual.
+
+8. Pero hay una mejora que yo haría
+
+Aunque conservaría el ciclo para compatibilidad, no utilizaría ese ciclo como única lógica de abastecimiento a largo plazo.
+
+Porque la propia documentación detecta que el 75 % de consumo se reinicia cada vez que entra mercadería y puede ocultar productos de alta rotación.
+
+Por ejemplo:
+
+Compra → 100
+Consume 74
+Compra → 100
+Consume 74
+Compra → 100
+Consume 74
+...
+
+Nunca llega al 75 %.
+
+Pero el negocio claramente tiene un producto de alta rotación.
+
+Por eso:
+
+Fase inicial
+
+Conservar:
+
+inventario + stock
+
+para no romper el sistema.
+
+Fase posterior
+
+Introducir:
+
+stock mínimo
+stock máximo / punto de reposición
+
+como criterio real de abastecimiento.
+
+9. Entonces tenemos dos conceptos diferentes
+
+Esto es importante para la tesis.
+
+Kardex
+
+Responde:
+
+¿Qué ocurrió con las existencias?
+
+Stock mínimo
+
+Responde:
+
+¿Cuándo debería preocuparme por reponer?
+
+Son cosas diferentes.
+
+Yo dejaría:
+
+KARDEX
+→ trazabilidad histórica
+
+y progresivamente:
+
+STOCK MÍNIMO
+→ control operativo de abastecimiento
+
+El actual 75 % puede mantenerse temporalmente para compatibilidad visual, pero no debería convertirse en la columna vertebral definitiva del abastecimiento.
+
+10. El nuevo flujo de compras
+
+Yo definiría estas funcionalidades.
+
+Compra
+Cabecera
+Compra
+├── Código
+├── Proveedor
+├── Fecha
+├── Tipo/documento
+├── Número documento
+├── Estado
+├── Subtotal
+├── Total
+├── Usuario
+└── Observaciones
+Detalle
+DetalleCompra
+├── Producto
+├── Cantidad
+├── Costo unitario
+└── Subtotal
+
+Con:
+
+subtotal = cantidad × costo_unitario
+
+y:
+
+total = Σ subtotales
+11. Estados de compra
+
+Te recomiendo mínimo:
+
+BORRADOR
+RECIBIDA
+ANULADA
+BORRADOR
+
+No afecta inventario.
+
+RECIBIDA
+
+Afecta inventario.
+
+ANULADA
+
+No se elimina físicamente la historia.
+
+Si ya fue recibida, genera una operación compensatoria según las reglas que definamos.
+
+12. La compra debe generar un Kardex más completo
+
+Actualmente el Kardex soporta:
+
+venta
+cambio_aceite
+inventario
+
+La documentación confirma esos tres orígenes actuales.
+
+Debería evolucionar a:
+
+venta
+cambio_aceite
+compra
+ajuste
+merma
+
+Por ejemplo:
+
+Kardex
+
+Producto: Shampoo Sonax
+Tipo: ENTRADA
+Fuente: COMPRA
+Origen: CMP-00025
+Cantidad: 20
+Stock anterior: 10
+Stock posterior: 30
+Costo unitario: S/20
+Usuario: Juan
+Fecha: 25/09/2026
+
+Esto es muchísimo más útil.
+
+13. Cambio fundamental: el Kardex debería guardar costo
+
+La documentación identifica esto expresamente como un vacío actual.
+
+Actualmente tienes:
+
+Stock × precio_compra_actual
+
+Eso puede ser incorrecto históricamente.
+
+Con compras:
+
+Movimiento
+├── quantity
+├── unit_cost
+└── total_cost
+
+Esto permite posteriormente calcular:
+
+costo de adquisición,
+valorización,
+costo de ventas,
+margen,
+costo promedio.
+Para tu tesis
+
+Yo implementaría costo promedio ponderado como evolución posterior si necesitas una valorización contable más precisa.
+
+Pero no mezclaría ese cálculo con la primera implementación de compras.
+
+Primero:
+
+Registrar correctamente el costo de cada entrada.
+
+Después:
+
+Determinar cómo se valoriza el stock.
+
+14. El modal "Actualizar stock" debe desaparecer como entrada normal
+
+Actualmente es la única forma de reponer stock y solo permite sumar cantidades.
+
+Con compras tenemos dos posibilidades.
+
+Opción recomendada
+
+Eliminarlo del flujo normal:
+
+Productos
+   ↓
+Actualizar stock ❌
+
+y reemplazarlo:
+
+Compras
+   ↓
+Nueva compra
+
+Pero no eliminar completamente la capacidad de modificar existencias.
+
+Porque todavía necesitas:
+
+Ajuste de inventario
+
+para situaciones excepcionales.
+
+15. Crear un módulo de ajustes
+
+Por ejemplo:
+
+Inventario
+   ↓
+Ajustes
+
+Tipos:
+
+AJUSTE POSITIVO
+AJUSTE NEGATIVO
+MERMA
+DAÑO
+CONTEO FÍSICO
+
+Ejemplo:
+
+El sistema dice:
+
+Stock = 50
+
+Se hace conteo físico:
+
+Stock real = 47
+
+Entonces:
+
+Ajuste por conteo
+-3
+
+Kardex:
+
+SALIDA
+Fuente: AJUSTE
+Motivo: CONTEO_FISICO
+Cantidad: 3
+
+Eso reemplaza la actual edición peligrosa de stock.
+
+16. El CRUD de producto tiene que perder los campos Stock e Inventario editables
+
+Esto está directamente respaldado por el problema detectado en la documentación.
+
+Actualmente editar producto permite modificar ambos valores sin Kardex.
+
+Eso debe quedar:
+
+Crear
+Stock = 0
+Editar
+❌ Stock
+❌ Inventario
+Operaciones que cambian stock
+Compra
+Venta
+Servicio
+Ajuste
+Merma
+Anulación
+
+Y absolutamente todas pasan por el mismo mecanismo de inventario.
+
+17. Nueva matriz de movimientos
+
+Esta sería una de las piezas centrales de la nueva arquitectura:
+
+Operación	Stock	Kardex	Fuente
+Crear producto	0	Opcional	—
+Compra recibida	+	Entrada	Compra
+Venta	-	Salida	Venta
+Anular venta	+	Entrada compensatoria	Venta
+Servicio confirmado	-	Salida	Servicio
+Eliminar servicio confirmado	+	Entrada	Servicio
+Ajuste positivo	+	Entrada	Ajuste
+Ajuste negativo	-	Salida	Ajuste
+Merma	-	Salida	Merma
+Edición de producto	0	0	—
+Activar/desactivar	0	0	—
+
+Eso es mucho más limpio.
+
+18. Cambio de aceite: no tocaría su lógica principal
+
+La documentación tiene una decisión correcta:
+
+PENDIENTE
+   ↓
+no consume stock
+
+y:
+
+CONFIRMADO
+   ↓
+consume stock
+
+Yo no modificaría esto al introducir compras.
+
+Solo haría dos mejoras:
+
+Origen
+
+Actualmente:
+
+placa
+
+Debería ser:
+
+CAMBIO-00025
+
+y almacenar además:
+
+placa
+
+Así tienes:
+
+Fuente: CAMBIO_ACEITE
+Origen: CAM-00025
+Vehículo: ABC-123
+
+La propia documentación identifica que usar solamente la placa mezcla varios servicios del mismo vehículo.
+
+19. Ventas tampoco deberían cambiar demasiado
+
+Actualmente:
+
+Venta
+ ↓
+validar stock
+ ↓
+descontar
+ ↓
+Kardex
+
+Eso está bien conceptualmente.
+
+La mejora importante es resolver la condición de carrera que ya está documentada:
+
+Usuario A → ve 2 disponibles
+Usuario B → ve 2 disponibles
+
+A compra 2
+B compra 2
+
+Resultado potencial:
+stock = -2
+
+La documentación identifica precisamente este riesgo.
+
+Esto debería corregirse antes o durante la implementación de compras, porque una vez que el inventario sea utilizado por múltiples operaciones, se vuelve todavía más importante.
+
+20. Arquitectura funcional final que recomiendo
+
+Quedaría:
+
+                    ┌──────────────┐
+                    │   PRODUCTOS  │
+                    │   CATÁLOGO   │
+                    └──────┬───────┘
+                           │
+          ┌────────────────┼─────────────────┐
+          │                │                 │
+          ▼                ▼                 ▼
+      COMPRAS            VENTAS          SERVICIOS
+          │                │                 │
+          ▼                ▼                 ▼
+      ENTRADAS          SALIDAS           SALIDAS
+          │                │                 │
+          └────────────────┼─────────────────┘
+                           ▼
+                    ┌──────────────┐
+                    │    KARDEX    │
+                    │  MOVIMIENTOS │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    STOCK ACTUAL
+                           │
+             ┌─────────────┼──────────────┐
+             ▼             ▼              ▼
+         Stock mínimo   Alertas       Reportes
+
+Y aparte:
+
+                 AJUSTES
+                    │
+                    ▼
+                 KARDEX
+21. Plan de implementación por fases
+
+Aquí está lo que yo utilizaría como plan real para modificar tu proyecto sin romper lo existente.
+
+FASE 0 — Preparación
+Objetivo
+
+Eliminar las ambigüedades actuales.
+
+Cambios
+Definir stock como existencia física.
+Mantener inventario temporalmente como línea base del ciclo.
+Prohibir modificación directa de ambos desde edición de producto.
+Definir catálogo vs inventario.
+Definir estados de compra.
+Definir tipos de movimiento.
+
+Resultado:
+
+El producto deja de ser responsable de modificar stock directamente.
+
+FASE 1 — Reformar creación de productos
+Antes
+Crear producto
++ stock inicial obligatorio
+Después
+Crear producto
+↓
+stock = 0
+
+Si el negocio necesita cargar inventario inicial:
+
+Producto
+↓
+Inventario inicial / Ajuste inicial
+
+Esto es importante porque el producto nuevo ya no debería "inventarse" una compra.
+
+FASE 2 — Implementar Compras
+
+Crear:
+
+purchases
+purchase_details
+
+y relaciones:
+
+Supplier
+   1
+   │
+   N
+Purchase
+   │
+   N
+   │
+   1
+Product
+
+Funcionalidades:
+
+Nueva compra
+seleccionar proveedor,
+fecha,
+documento,
+agregar productos,
+cantidad,
+costo unitario,
+subtotal,
+total.
+Estado
+Borrador
+Recibida
+Anulada
+FASE 3 — Integrar compra con inventario
+
+Al confirmar:
+
+Compra recibida
+       ↓
+por cada detalle
+       ↓
+stock += cantidad
+       ↓
+inventario = nuevo stock
+       ↓
+crear Kardex
+       ↓
+fuente = compra
+       ↓
+origen = CMP-XXXX
+
+Todo dentro de una transacción.
+
+Esto conserva una de las buenas invariantes actuales: operación de stock + Kardex atómicos.
+
+FASE 4 — Retirar el modal antiguo
+
+Una vez que compras funcione correctamente:
+
+Actualizar stock
+
+deja de ser el mecanismo normal.
+
+Puede transformarse en:
+
+Ajustar inventario
+
+pero con:
+
+motivo,
+tipo,
+cantidad,
+observación,
+usuario,
+Kardex.
+
+No simplemente:
+
++50
+FASE 5 — Implementar ajustes y mermas
+
+Casos:
+
+Ajuste positivo
+Ajuste negativo
+Merma
+Daño
+Conteo físico
+
+Todos:
+
+Movimiento → Kardex
+
+Esto cubre otro vacío explícitamente identificado en la documentación.
+
+FASE 6 — Mejorar Kardex
+
+Agregar:
+
+Compra
+Ajuste
+Merma
+
+y:
+
+costo_unitario
+costo_total
+
+Además cambiar los identificadores:
+
+INV-0001
+VTA-0001
+CAM-0001
+CMP-0001
+AJU-0001
+
+Esto hará que el historial sea muchísimo más legible.
+
+FASE 7 — Corregir anulaciones
+
+No eliminar físicamente operaciones que ya afectaron inventario.
+
+Ejemplo:
+
+Compra CMP-001
++20
+
+Si corresponde revertirla:
+
+Compra CMP-001
+ANULADA
+
+Kardex:
++20 entrada original
+-20 salida compensatoria
+
+La historia permanece.
+
+FASE 8 — Resolver concurrencia
+
+Implementar una validación de stock que ocurra dentro de la transacción y bloquee/controle la fila correspondiente.
+
+Esto aplica especialmente a:
+
+Venta
+Cambio de aceite
+Ajustes
+
+y eventualmente cualquier salida futura.
+
+FASE 9 — Mejorar alerta de stock
+
+Aquí no recomiendo mezclar todo inmediatamente.
+
+Primero conservar:
+
+75 % consumo
+
+para no romper la interfaz actual.
+
+Después implementar:
+
+stock_actual <= stock_minimo
+
+como criterio operativo.
+
+Incluso podrías mostrar:
+
+Stock: 8
+Stock mínimo: 10
+⚠ Reponer
+
+Esto es más intuitivo para el usuario del carwash que "has consumido 75 % de tu último ciclo".
+
+FASE 10 — Valorización
+
+Una vez que todas las compras tengan:
+
+cantidad
+costo_unitario
+
+se puede reemplazar progresivamente:
+
+stock × precio_compra_actual
+
+por una valorización basada en los costos registrados.
+
+La documentación señala precisamente que el cálculo actual puede quedar desalineado cuando cambia el precio de compra.
+
+22. Prioridad real de implementación
+
+Yo ordenaría las tareas así:
+
+Prioridad	Funcionalidad	Importancia
+🔴 1	Separar Producto de Stock	Crítica
+🔴 2	Crear módulo Compras	Crítica
+🔴 3	Integrar Compra → Entrada → Kardex → Stock	Crítica
+🔴 4	Eliminar edición directa de Stock	Crítica
+🟠 5	Ajustes de inventario	Alta
+🟠 6	Costo por movimiento	Alta
+🟠 7	Estados/anulación de compras	Alta
+🟠 8	Corregir concurrencia	Alta
+🟡 9	Mejorar Kardex	Media
+🟡 10	Unificar alertas	Media
+🟡 11	Stock mínimo	Media
+🟢 12	Lotes/vencimientos	Posterior
+
+24. Resultado final que deberías buscar
+
+El sistema debería llegar a este principio:
+
+Ningún usuario modifica directamente la existencia de un producto. La existencia es el resultado de las operaciones de inventario registradas por el sistema.
+
+Así:
+
+                    PRODUCTO
+                       │
+                       │ catálogo
+                       ▼
+             ┌───────────────────┐
+             │ OPERACIONES STOCK │
+             └───────────────────┘
+                │      │      │
+                ▼      ▼      ▼
+             COMPRA  VENTA  SERVICIO
+                │      │      │
+                ▼      ▼      ▼
+              +N      -N      -N
+                │      │      │
+                └──────┼──────┘
+                       ▼
+                    KARDEX
+                       │
+                       ▼
+                  STOCK ACTUAL
+
+Y para excepciones:
+
+CONTEO / MERMA / DAÑO
+          │
+          ▼
+       AJUSTE
+          │
+          ▼
+       KARDEX
+          │
+          ▼
+      STOCK ACTUAL
+La transición concreta sería
+
+No hagas todavía el CRUD de compras.
+
+Primero modifica la especificación funcional para que quede establecido:
+
+Producto se crea con stock 0.
+Stock e inventario dejan de ser campos editables del CRUD.
+Compra pasa a ser el mecanismo formal de abastecimiento.
+Una compra en borrador no modifica stock.
+Una compra recibida genera entrada de inventario.
+La entrada queda registrada en Kardex con proveedor, compra, cantidad y costo.
+El modal "Actualizar stock" deja de ser abastecimiento normal.
+Los ajustes serán el mecanismo excepcional para corregir existencias.
+Ventas y cambios de aceite conservan sus salidas actuales.
+Todas las operaciones de stock deben ser atómicas y trazables.
+
+Con eso no estás simplemente "agregando un CRUD de compras": estás haciendo una evolución coherente del modelo de inventario actual hacia un flujo de abastecimiento formal, que es justamente lo que necesitas para que la funcionalidad tenga sentido dentro de tu tesis.
+
+La documentación actual incluso identifica esta dirección como la hoja de ruta natural: primero convertir el ingreso genérico en una operación de compra con proveedor, fecha, documento, cantidades y costo unitario; después llevar ese costo al Kardex y al valorizado.

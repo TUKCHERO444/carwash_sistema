@@ -2,17 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\AjusteInventario;
 use App\Models\Asistencia;
 use App\Models\Automotor;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Compra;
 use App\Models\ContenidoWeb;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\Proveedor;
 use App\Models\Servicio;
 use App\Models\Trabajador;
 use App\Models\User;
@@ -46,6 +49,9 @@ class AuditServiceProvider extends ServiceProvider
             Producto::class,
             Categoria::class,
             Marca::class,
+            Proveedor::class,
+            Compra::class,
+            AjusteInventario::class,
             Servicio::class,
             Vehiculo::class,
             Cliente::class,

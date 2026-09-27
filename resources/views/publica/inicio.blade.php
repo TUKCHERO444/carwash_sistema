@@ -72,45 +72,40 @@
                 </p>
             </div>
 
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6" data-cw-group>
+            {{-- Laterales al 85% de su ancho original; ese 30% pasa a la card central. --}}
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-[0.85fr_1.3fr_0.85fr] gap-6" data-cw-group>
                 @forelse ($servicios as $servicio)
                     <a href="{{ route('publica.servicios') }}"
-                       class="group bg-white rounded-2xl border border-steel-200 p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand-cyan-500/60" data-cw-anim="up">
-                        <span class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-blue-50 text-brand-blue-700 transition-colors duration-200 group-hover:bg-brand-cyan-500 group-hover:text-navy-900">
-                            @switch($servicio->icono)
-                                @case('sparkles')
-                                    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                                    </svg>
-                                    @break
-                                @case('shield')
-                                    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                                    </svg>
-                                    @break
-                                @case('oil')
-                                    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 008 10.172V5L7 4z"/>
-                                    </svg>
-                                    @break
-                                @default
-                                    <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                    </svg>
-                            @endswitch
-                        </span>
-                        <h3 class="mt-6 text-xl font-semibold text-navy-900 group-hover:text-brand-blue-700 transition-colors">
-                            {{ $servicio->nombre }}
-                        </h3>
-                        <p class="mt-3 text-sm leading-relaxed text-steel-700">
-                            {{ $servicio->descripcion }}
-                        </p>
-                        <span class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-brand-blue-700 group-hover:text-brand-cyan-600 transition-colors">
-                            VER MÁS
-                            <svg class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                            </svg>
-                        </span>
+                       class="group relative flex h-full flex-col items-start justify-end overflow-hidden rounded-2xl p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" data-cw-anim="up">
+                        {{-- Fondo: misma paleta navy que las cards de la página de servicios. --}}
+                        <div class="absolute inset-0">
+                            @if ($servicio->imagen)
+                                <img src="{{ $servicio->imagen }}" alt="{{ $servicio->nombre }}"
+                                     class="h-full w-full object-cover">
+                                <div class="absolute inset-0"
+                                     style="background: linear-gradient(165deg, rgba(7, 91, 138, 0.72) 0%, rgba(11, 38, 56, 0.96) 62%);"></div>
+                            @else
+                                <div class="absolute inset-0"
+                                     style="background: linear-gradient(160deg, rgba(7, 91, 138, 0.75) 0%, rgba(11, 38, 56, 0.98) 60%);"></div>
+                            @endif
+                            <span class="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-brand-cyan-500/10 blur-2xl transition-colors duration-300 group-hover:bg-brand-cyan-500/25" aria-hidden="true"></span>
+                        </div>
+
+                        <div class="relative flex w-full flex-col">
+                            <h3 class="text-xl font-semibold uppercase tracking-wide text-white-cold drop-shadow-sm sm:text-2xl">
+                                {{ mb_strtoupper($servicio->nombre) }}
+                            </h3>
+                            <p class="mt-3 text-sm leading-relaxed text-navy-100">
+                                {{ $servicio->descripcion }}
+                            </p>
+
+                            <span class="mt-6 inline-flex items-center gap-2 self-start rounded-lg bg-white px-6 py-3 text-sm font-semibold uppercase text-navy-900 shadow-lg shadow-navy-900/40 transition-colors duration-300 group-hover:bg-brand-cyan-500">
+                                VER MÁS
+                                <svg class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </span>
+                        </div>
                     </a>
                 @empty
                     <div class="col-span-full rounded-2xl border border-dashed border-steel-300 bg-white p-10 text-center text-steel-500">

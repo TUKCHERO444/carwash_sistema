@@ -50,7 +50,7 @@ Implementación del módulo CRUD completo para la entidad **Producto** en Larave
     - _Requirements: 4.1_
 
   - [x] 4.3 Implementar método `store(Request $request)`
-    - Validar: `nombre` (required|string|max:150), `precio_compra` (required|numeric|gt:0), `precio_venta` (required|numeric|gt:0), `stock` (required|integer|min:0), `inventario` (required|integer|min:0), `activo` (nullable|boolean), `foto` (nullable|image|mimes:jpg,jpeg,png,webp|max:2048)
+    - Validar: `nombre` (required|string|max:150), `precio_compra` (required|numeric|gt:0), `precio_venta` (required|numeric|gt:0), `stock` (required|integer|min:0), `inventario` (required|integer|min:1), `activo` (nullable|boolean), `foto` (nullable|image|mimes:jpg,jpeg,png,webp|max:2048)
     - Lógica de imagen: si `$request->hasFile('foto')` → `$request->file('foto')->store('images/productos', 'public')`; si no → `null`
     - Usar `$request->boolean('activo', true)` para el campo `activo`
     - Crear el registro con `Producto::create([...])` y redirigir a `productos.index` con flash `'Producto creado correctamente.'`

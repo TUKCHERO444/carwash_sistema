@@ -40,6 +40,13 @@ export default defineConfig({
                 'resources/js/categorias/validate.js',
                 // Marcas
                 'resources/js/marcas/validate.js',
+                // Proveedores
+                'resources/js/proveedores/validate.js',
+                // Compras
+                'resources/js/compras/create.js',
+                'resources/js/compras/edit.js',
+                // Ajustes
+                'resources/js/ajustes/create.js',
                 // Automotores
                 'resources/js/automotores/validate.js',
                 // Users

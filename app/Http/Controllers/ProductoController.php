@@ -31,6 +31,35 @@ class ProductoController extends Controller
     ];
 
     /**
+     * Reglas de precio de compra y venta.
+     *
+     * `precio_compra` es opcional: sin una compra registrada el costo real es
+     * desconocido y se representa con 0, no con null, porque la columna es NOT NULL
+     * y el reporte de inventario la usa en aritmética.
+     *
+     * La regla de margen solo aplica cuando hay un costo conocido: con
+     * `precio_compra` en 0 basta con que el precio de venta sea positivo.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, array<int, string>>
+     */
+    private function reglasPrecio(array $data): array
+    {
+        $precioCompra = (float) ($data['precio_compra'] ?? 0);
+
+        $precioVenta = ['required', 'numeric', 'gt:0'];
+
+        if ($precioCompra > 0) {
+            $precioVenta[] = 'gte:precio_compra';
+        }
+
+        return [
+            'precio_compra' => ['nullable', 'numeric', 'min:0'],
+            'precio_venta' => $precioVenta,
+        ];
+    }
+
+    /**
      * Display a paginated listing of productos.
      */
     public function index(): View
@@ -92,22 +121,26 @@ class ProductoController extends Controller
 
     /**
      * Store a newly created producto in the database.
+     *
+     * El producto entra al catálogo con cero existencias y sin movimiento de Kardex:
+     * un producto que se acaba de definir no recibió mercadería. Reponer sus
+     * existencias es una operación de inventario, registrada en el Kardex.
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nombre' => ['required', 'string', 'max:150'],
-            'descripcion' => self::DESCRIPCION_RULES,
-            'precio_compra' => ['required', 'numeric', 'gt:0'],
-            'precio_venta' => ['required', 'numeric', 'gt:0', 'gte:precio_compra'],
-            'inventario' => ['required', 'integer', 'min:0'],
-            'activo' => ['nullable', 'boolean'],
-            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
-            'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
-        ], [
-            'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
-        ]);
+        $validated = $request->validate(
+            array_merge([
+                'nombre' => ['required', 'string', 'max:150'],
+                'descripcion' => self::DESCRIPCION_RULES,
+                'activo' => ['nullable', 'boolean'],
+                'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+                'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
+                'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+            ], $this->reglasPrecio($request->all())),
+            [
+                'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
+            ]
+        );
 
         $fotoUrl = null;
         if ($request->hasFile('foto')) {
@@ -119,25 +152,15 @@ class ProductoController extends Controller
             $producto = Producto::create([
                 'nombre' => $validated['nombre'],
                 'descripcion' => $validated['descripcion'] ?? null,
-                'precio_compra' => $validated['precio_compra'],
+                'precio_compra' => (float) ($validated['precio_compra'] ?? 0),
                 'precio_venta' => $validated['precio_venta'],
-                'stock' => $validated['inventario'],
-                'inventario' => $validated['inventario'],
+                'stock' => 0,
+                'inventario' => 0,
                 'activo' => $request->boolean('activo', true),
                 'foto' => $fotoUrl,
                 'categoria_id' => $validated['categoria_id'] ?? null,
                 'marca_id' => $validated['marca_id'] ?? null,
             ]);
-
-            $correlativo = $this->kardexService->siguienteCorrelativoInventario();
-
-            $this->kardexService->registrarEntrada(
-                $producto,
-                (int) $validated['inventario'],
-                0,
-                'inventario',
-                $correlativo
-            );
 
             if (! empty($validated['categoria_id'])) {
                 Categoria::find($validated['categoria_id'])->increment('contador_productos');
@@ -161,31 +184,32 @@ class ProductoController extends Controller
 
     /**
      * Update the specified producto in the database.
+     *
+     * `stock` e `inventario` quedan fuera de propósito a propósito: la existencia es el
+     * resultado de las operaciones de inventario registradas por el sistema, no un dato
+     * que se edite a mano. Cualquier valor recibido en esos campos se ignora.
      */
     public function update(Request $request, Producto $producto): RedirectResponse
     {
-        $validated = $request->validate([
-            'nombre' => ['required', 'string', 'max:150'],
-            'descripcion' => self::DESCRIPCION_RULES,
-            'precio_compra' => ['required', 'numeric', 'gt:0'],
-            'precio_venta' => ['required', 'numeric', 'gt:0', 'gte:precio_compra'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'inventario' => ['required', 'integer', 'min:0'],
-            'activo' => ['nullable', 'boolean'],
-            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
-            'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
-        ], [
-            'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
-        ]);
+        $validated = $request->validate(
+            array_merge([
+                'nombre' => ['required', 'string', 'max:150'],
+                'descripcion' => self::DESCRIPCION_RULES,
+                'activo' => ['nullable', 'boolean'],
+                'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+                'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
+                'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+            ], $this->reglasPrecio($request->all())),
+            [
+                'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
+            ]
+        );
 
         $data = [
             'nombre' => $validated['nombre'],
             'descripcion' => $validated['descripcion'] ?? null,
-            'precio_compra' => $validated['precio_compra'],
+            'precio_compra' => (float) ($validated['precio_compra'] ?? 0),
             'precio_venta' => $validated['precio_venta'],
-            'stock' => $validated['stock'],
-            'inventario' => $validated['inventario'],
             'categoria_id' => $validated['categoria_id'] ?? null,
             'marca_id' => $validated['marca_id'] ?? null,
         ];

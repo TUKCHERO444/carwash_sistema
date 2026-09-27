@@ -19,7 +19,7 @@
     $cambioAceiteActive      = request()->routeIs('cambio-aceite.*');
     $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $lavadosActive;
     $cajaActive              = request()->routeIs('caja.*');
-    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*', 'reportes.*');
+    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*', 'proveedores.*', 'compras.*', 'reportes.*');
     $sitioWebActive = request()->routeIs('contenido-web.*');
     $kardexActive            = request()->routeIs('kardex.*');
     $auditoriaActive         = request()->routeIs('kardex.*', 'auditoria.*');
@@ -187,7 +187,7 @@
             </div>
             @endcan
 
-            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-reportes'])
+            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores', 'acceso-reportes'])
             <div data-dropdown="gestion-administrativa">
                 <button data-dropdown-toggle="gestion-administrativa"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -231,6 +231,27 @@
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ request()->routeIs('automotores.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Automotores
+                    </a>
+                    @endcan
+@can('acceso-proveedores')
+                    <a href="{{ route('proveedores.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                             {{ request()->routeIs('proveedores.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Proveedores
+                    </a>
+                    @endcan
+                    @can('acceso-ajustes')
+                    <a href="{{ route('ajustes.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                             {{ request()->routeIs('ajustes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Ajustes
+                    </a>
+                    @endcan
+                    @can('acceso-compras')
+                    <a href="{{ route('compras.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                             {{ request()->routeIs('compras.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Compras
                     </a>
                     @endcan
                     @can('acceso-reportes')
@@ -483,7 +504,7 @@
         </div>
         @endcan
 
-        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-reportes'])
+        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores', 'acceso-reportes'])
         <div data-dropdown="gestion-administrativa-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-administrativa-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -531,6 +552,27 @@
                     Automotores
                 </a>
                  @endcan
+@can('acceso-proveedores')
+                <a href="{{ route('proveedores.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                         {{ request()->routeIs('proveedores.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Proveedores
+                </a>
+                @endcan
+                @can('acceso-ajustes')
+                <a href="{{ route('ajustes.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                         {{ request()->routeIs('ajustes.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Ajustes
+                </a>
+                @endcan
+                @can('acceso-compras')
+                <a href="{{ route('compras.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                         {{ request()->routeIs('compras.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Compras
+                </a>
+                @endcan
                 @can('acceso-reportes')
                 <div class="my-2 border-t border-gray-700"></div>
                 <p class="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>

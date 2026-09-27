@@ -255,6 +255,18 @@
     <div class="px-6 pb-4 sm:pb-6">
         <p id="stock-modal-nombre" class="text-sm text-secondary mb-4"></p>
 
+        {{-- Advertencia: reposición provisional --}}
+        <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <p class="text-xs text-yellow-800 dark:text-yellow-200">
+                    <span class="font-medium">Reposición provisional:</span> esta acción ajusta el stock directamente sin generar compra ni entrada en Kardex. El abastecimiento formal se gestiona en el módulo <a href="{{ route('compras.index') }}" class="underline hover:text-yellow-700">Compras</a>.
+                </p>
+            </div>
+        </div>
+
         <div class="mb-4 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
             <span class="text-xs text-secondary">Stock actual</span>
             <p id="stock-modal-stock-actual" class="text-2xl font-bold text-primary"></p>

@@ -197,4 +197,33 @@ class CajaService
             'total_ingresos_vehiculares' => (float) $totalIngresos,
         ];
     }
+
+    /**
+     * Registra un ingreso compensatorio (nota de crédito) en la caja activa.
+     *
+     * Se usa al anular una compra recibida: genera un ingreso que compensa
+     * el egreso original de la compra.
+     *
+     * @param  Caja  $caja  La caja a la que se asocia el ingreso.
+     * @param  array  $data  Debe contener: monto, descripcion, tipo_pago.
+     *                       Opcionalmente: user_id (si no se pasa, se usa el usuario autenticado).
+     *
+     * @throws \RuntimeException si la caja está cerrada.
+     */
+    public function registrarIngresoCompensatorio(Caja $caja, array $data): \App\Models\EgresoCaja
+    {
+        if ($caja->estado === 'cerrada') {
+            throw new \RuntimeException('No se pueden registrar ingresos compensatorios en una caja cerrada.');
+        }
+
+        // Usamos EgresoCaja con monto negativo para representar un ingreso (nota de crédito)
+        // El campo tipo_pago se usa para clasificar: 'transferencia' por defecto para notas de crédito
+        return \App\Models\EgresoCaja::create([
+            'caja_id' => $caja->id,
+            'monto' => -abs($data['monto']), // Monto negativo = ingreso
+            'descripcion' => $data['descripcion'],
+            'tipo_pago' => $data['tipo_pago'] ?? 'transferencia',
+            'user_id' => $data['user_id'] ?? auth()->id(),
+        ]);
+    }
 }

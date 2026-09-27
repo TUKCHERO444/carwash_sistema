@@ -21,7 +21,9 @@ class DatabaseSeeder extends Seeder
             VehiculoSeeder::class,
             TrabajadorSeeder::class,
             MarcaSeeder::class,
+            ProveedorSeeder::class,
             ProductoSeeder::class,
+            CompraSeeder::class,
             // CategoriaSeeder DEBE ir después de ProductoSeeder: asigna a cada
             // producto su categoría por palabras clave del nombre. Si se ejecuta
             // antes, no encuentra productos y la web pública queda sin

@@ -26,6 +26,8 @@ class AccionesAuditoriaController extends Controller
         'cambio_aceite' => 'Cambio de aceite',
         'lavados' => 'Lavados',
         'caja' => 'Caja',
+        'compras' => 'Compras',
+        'ajustes' => 'Ajustes',
         'sesiones' => 'Sesiones',
     ];
 
@@ -42,6 +44,8 @@ class AccionesAuditoriaController extends Controller
         'ajustar stock',
         'actualizar ticket',
         'anular venta',
+        'recibir compra',
+        'anular compra',
         'abrir caja',
         'cerrar caja',
         'registrar egreso',

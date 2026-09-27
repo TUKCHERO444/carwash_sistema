@@ -25,8 +25,9 @@ class PaginaInicioController extends Controller
         // Servicios reales publicados (toggle activo + orden manual)
         $servicios = Servicio::web()->take(3)->get();
 
-        // Marcas curadas desde el panel (o todas por nombre)
-        $marcas = $contenido->marcasWeb();
+        // Marcas curadas desde el panel (o todas por nombre). El inicio muestra
+        // solo las 12 primeras (2 filas de 6); la página de marcas muestra todas.
+        $marcas = $contenido->marcasWeb()->take(12);
 
         // Productos destacados activos con su marca y categoría (para enlazar
         // al detalle público de cada uno).

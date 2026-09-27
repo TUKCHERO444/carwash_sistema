@@ -114,9 +114,14 @@ class KardexTest extends TestCase
         $this->assertEquals(10, $producto->fresh()->stock);
     }
 
-    // ─── Producto: entrada INV ─────────────────────────────────────────────
+    // ─── Producto: el alta ya no genera entrada de inventario ───────────────
+    //
+    // Feature: compras-ingreso-mercaderia, Requisito 3: un producto que entra al
+    // catálogo no recibió mercadería, así que su alta no genera movimiento.
+    // La reposición se registra desde la compra (Fase 3) o desde el modal de
+    // reposición, que sí mantiene su entrada de inventario.
 
-    public function test_producto_store_registers_kardex_entrada_inventario(): void
+    public function test_producto_store_no_registers_kardex(): void
     {
         $this->actingAs($this->user);
         $this->giveAll();
@@ -125,20 +130,31 @@ class KardexTest extends TestCase
             'nombre' => 'Refrigerante Azul',
             'precio_compra' => 15.00,
             'precio_venta' => 25.00,
+        ])->assertRedirect();
+
+        $producto = Producto::where('nombre', 'Refrigerante Azul')->firstOrFail();
+
+        $this->assertSame(0, $producto->stock);
+        $this->assertSame(0, $producto->inventario);
+        $this->assertDatabaseCount('movimientos_kardex', 0);
+    }
+
+    public function test_producto_store_ignora_inventario_enviado_sin_kardex(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $this->post(route('productos.store'), [
+            'nombre' => 'Refrigerante Verde',
+            'precio_compra' => 15.00,
+            'precio_venta' => 25.00,
             'inventario' => 6,
         ])->assertRedirect();
 
-        $producto = Producto::where('nombre', 'Refrigerante Azul')->first();
+        $producto = Producto::where('nombre', 'Refrigerante Verde')->firstOrFail();
 
-        $this->assertDatabaseHas('movimientos_kardex', [
-            'producto_id' => $producto->id,
-            'tipo' => 'entrada',
-            'fuente' => 'inventario',
-            'origen_id' => 'INV-0001',
-            'cantidad' => 6,
-            'stock_antes' => 0,
-            'stock_despues' => 6,
-        ]);
+        $this->assertSame(0, $producto->stock);
+        $this->assertDatabaseCount('movimientos_kardex', 0);
     }
 
     public function test_producto_update_stock_registers_kardex_entrada_inventario(): void

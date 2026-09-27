@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CambioAceite;
+use App\Models\Compra;
 use App\Models\DetalleVenta;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
@@ -11,28 +12,57 @@ use Illuminate\Database\Seeder;
 
 class KardexSeeder extends Seeder
 {
+    /**
+     * Reconstruye el Kardex a partir de operaciones reales:
+     * 1. Entradas por compras recibidas (fuente='compra', origen=CMP-XXXX)
+     * 2. Salidas por ventas (fuente='venta', origen=VTA-XXXX)
+     * 3. Salidas por cambios de aceite confirmados (fuente='cambio_aceite', origen=placa)
+     *
+     * Ya NO genera entradas ficticias INV-XXXX. El stock inicial nace en 0
+     * y las compras recibidas lo construyen.
+     */
     public function run(): void
     {
         MovimientoKardex::query()->delete();
 
-        // Reconstruir el Kardex a partir de los datos ya sembrados, moviendo el
-        // stock de forma progresiva (entradas iniciales + salidas por venta/cambio).
         $productos = Producto::all();
 
-        foreach ($productos as $producto) {
-            // Entrada inicial (stock inicial)
-            $this->movimiento(
-                $producto,
-                'entrada',
-                'inventario',
-                'INV-'.str_pad($producto->id, 4, '0', STR_PAD_LEFT),
-                $producto->inventario,
-                0,
-                $producto->inventario
-            );
+        // 1. Entradas por compras RECIBIDAS (orden cronológico)
+        $comprasRecibidas = Compra::where('estado', 'recibida')
+            ->with('detalles.producto')
+            ->orderBy('fecha_recepcion')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($comprasRecibidas as $compra) {
+            foreach ($compra->detalles as $detalle) {
+                $producto = $productos->firstWhere('id', $detalle->producto_id);
+                if (! $producto) {
+                    continue;
+                }
+                $prev = $this->ultimoStock($producto->id);
+                $cantidad = $detalle->cantidad;
+                $stockDespues = $prev + $cantidad;
+
+                $this->movimiento(
+                    $producto,
+                    'entrada',
+                    'compra',
+                    $compra->correlativo,
+                    $cantidad,
+                    $prev,
+                    $stockDespues
+                );
+
+                // Actualizar stock e inventario del producto
+                $producto->update([
+                    'stock' => $stockDespues,
+                    'inventario' => $stockDespues,
+                ]);
+            }
         }
 
-        // Salidas por venta (orden cronológico)
+        // 2. Salidas por venta (orden cronológico)
         $detalleVentas = DetalleVenta::with('venta')->orderBy('venta_id')->get();
         foreach ($detalleVentas as $detalle) {
             $producto = $productos->firstWhere('id', $detalle->producto_id);
@@ -40,19 +70,28 @@ class KardexSeeder extends Seeder
                 continue;
             }
             $prev = $this->ultimoStock($producto->id);
+            $cantidad = $detalle->cantidad;
+            $stockDespues = max(0, $prev - $cantidad);
+
             $this->movimiento(
                 $producto,
                 'salida',
                 'venta',
                 $detalle->venta->correlativo,
-                $detalle->cantidad,
+                $cantidad,
                 $prev,
-                max(0, $prev - $detalle->cantidad)
+                $stockDespues
             );
+
+            // Actualizar stock e inventario del producto
+            $producto->update([
+                'stock' => $stockDespues,
+                'inventario' => $stockDespues,
+            ]);
         }
 
-        // Salidas por cambio de aceite confirmado
-        $cambios = CambioAceite::where('estado', 'confirmado')->get();
+        // 3. Salidas por cambio de aceite confirmado
+        $cambios = CambioAceite::where('estado', 'confirmado')->with('automotor')->get();
         foreach ($cambios as $cambio) {
             foreach ($cambio->productos as $productoMod) {
                 $producto = $productos->firstWhere('id', $productoMod->id);
@@ -60,15 +99,25 @@ class KardexSeeder extends Seeder
                     continue;
                 }
                 $prev = $this->ultimoStock($producto->id);
+                $cantidad = $productoMod->pivot->cantidad;
+                $stockDespues = max(0, $prev - $cantidad);
+                $origenId = $cambio->automotor?->placa ?? 'N/A';
+
                 $this->movimiento(
                     $producto,
                     'salida',
                     'cambio_aceite',
-                    $cambio->automotor_id ?? 'N/A',
-                    $productoMod->pivot->cantidad,
+                    $origenId,
+                    $cantidad,
                     $prev,
-                    max(0, $prev - $productoMod->pivot->cantidad)
+                    $stockDespues
                 );
+
+                // Actualizar stock e inventario del producto
+                $producto->update([
+                    'stock' => $stockDespues,
+                    'inventario' => $stockDespues,
+                ]);
             }
         }
     }

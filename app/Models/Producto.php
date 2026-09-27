@@ -13,6 +13,16 @@ class Producto extends Model
     use HasFactory;
 
     /**
+     * Relación con los ajustes de inventario del producto.
+     */
+    public function ajustes(): BelongsToMany
+    {
+        return $this->belongsToMany(AjusteInventario::class, 'detalle_ajustes_inventario')
+            ->withPivot('cantidad', 'stock_antes', 'stock_despues')
+            ->withTimestamps();
+    }
+
+    /**
      * Accesor para obtener la URL de la foto.
      * Maneja tanto URLs absolutas (Cloudinary) como rutas locales.
      */
@@ -46,6 +56,57 @@ class Producto extends Model
         return $consumido >= (int) ceil($this->inventario * 0.75);
     }
 
+    /**
+     * Indica si el producto está en alerta por stock mínimo.
+     * Solo aplica si stock_minimo > 0 y stock > 0.
+     */
+    public function estaEnAlertaMinimo(): bool
+    {
+        return $this->stock > 0
+            && $this->stock_minimo > 0
+            && $this->stock <= $this->stock_minimo;
+    }
+
+    /**
+     * Indica si el producto está agotado (stock = 0).
+     */
+    public function estaAgotado(): bool
+    {
+        return $this->stock === 0;
+    }
+
+    /**
+     * Estado de alerta para UI: 'agotado', 'alerta', 'alerta_legacy', 'normal'.
+     */
+    public function getEstadoAlertaAttribute(): string
+    {
+        if ($this->estaAgotado()) {
+            return 'agotado';
+        }
+        if ($this->estaEnAlertaMinimo()) {
+            return 'alerta';
+        }
+        if ($this->estaEnAlerta) {
+            return 'alerta_legacy';
+        }
+
+        return 'normal';
+    }
+
+    /**
+     * Accesor legacy: alerta por 75% consumo del ciclo (inventario).
+     * Mantenido para compatibilidad durante transición.
+     */
+    public function getAlertaLegacyAttribute(): bool
+    {
+        if ($this->inventario <= 0) {
+            return false;
+        }
+        $consumido = $this->inventario - $this->stock;
+
+        return $consumido >= (int) ceil($this->inventario * 0.75);
+    }
+
     protected $fillable = [
         'nombre',
         'descripcion',
@@ -53,6 +114,7 @@ class Producto extends Model
         'precio_venta',
         'stock',
         'inventario',
+        'stock_minimo',
         'activo',
         'foto',
         'categoria_id',
@@ -64,6 +126,7 @@ class Producto extends Model
         'precio_venta' => 'decimal:2',
         'stock' => 'integer',
         'inventario' => 'integer',
+        'stock_minimo' => 'integer',
         'activo' => 'boolean',
         'categoria_id' => 'integer',
         'marca_id' => 'integer',

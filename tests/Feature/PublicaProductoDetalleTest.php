@@ -21,7 +21,7 @@ class PublicaProductoDetalleTest extends TestCase
             'descripcion' => 'Frenos para tu auto.',
         ]);
 
-        $producto = Producto::factory()->create(array_merge([
+        $producto = Producto::factory()->conExistencias(12)->create(array_merge([
             'categoria_id' => $categoria->id,
             'marca_id' => null,
             'activo' => true,

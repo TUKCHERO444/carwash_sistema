@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccionesAuditoriaController;
+use App\Http\Controllers\AjusteInventarioController;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\AutomotorController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CambioAceiteController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ContenidoWebController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KardexController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\LavadoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PaginaInicioController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServicioController;
@@ -144,6 +147,35 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('servicios', ServicioController::class)
             ->except(['show'])
             ->parameters(['servicios' => 'servicio']);
+    });
+
+    Route::middleware('permission:acceso-proveedores')->group(function () {
+        // El singularizador de Laravel convierte "proveedores" en "proveedore",
+        // por lo que el parámetro del route model binding se declara explícito.
+        Route::resource('proveedores', ProveedorController::class)
+            ->except(['show'])
+            ->parameters(['proveedores' => 'proveedor']);
+    });
+
+    Route::middleware('permission:acceso-compras')->group(function () {
+        // Las rutas estáticas de compras deben declararse ANTES del resource, o
+        // Laravel las interpretará como un parámetro de route model binding.
+        Route::post('compras/{compra}/recibir', [CompraController::class, 'recibir'])
+            ->name('compras.recibir');
+        Route::post('compras/{compra}/anular', [CompraController::class, 'anular'])
+            ->name('compras.anular');
+        Route::post('compras/{compra}/anular-recibida', [CompraController::class, 'anularRecibida'])
+            ->name('compras.anular-recibida');
+
+        // `Str::singular('compras')` ya devuelve "compra", pero el parámetro se
+        // declara explícito para no depender de esa inferencia.
+        Route::resource('compras', CompraController::class)
+            ->parameters(['compras' => 'compra']);
+    });
+
+    Route::middleware('permission:acceso-ajustes')->group(function () {
+        Route::resource('ajustes', AjusteInventarioController::class)
+            ->parameters(['ajustes' => 'ajuste']);
     });
 
     Route::middleware('permission:acceso-contenido-web')->group(function () {

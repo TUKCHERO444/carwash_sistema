@@ -73,6 +73,16 @@ class DataNormalizer
     }
 
     /**
+     * Normaliza un RUC a exactamente 11 dígitos, o null si no es válido.
+     */
+    public function normalizarRuc(?string $value): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+
+        return (strlen($digits) === 11) ? $digits : null;
+    }
+
+    /**
      * Normaliza un nombre / apellido a "solo letras".
      * Elimina números y símbolos; colapsa espacios. Devuelve null si queda vacío.
      */

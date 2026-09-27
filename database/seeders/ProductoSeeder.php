@@ -14,10 +14,9 @@ class ProductoSeeder extends Seeder
      * Genera 30 productos organizados por categorías con precios realistas.
      * precio_venta siempre es mayor que precio_compra (margen 20%-80%).
      *
-     * Ajustado a la lógica de stock bajo por inventario: `inventario` es la
-     * cantidad del ciclo vigente e `stock` el saldo restante (0 <= stock <= inventario).
-     * Alrededor de un tercio se siembra en alerta (stock <= ceil(inventario * 0.20)),
-     * incluidos algunos agotados, para demostrar los avisos de stock bajo.
+     * IMPORTANTE: Los productos se crean con stock=0 e inventario=0.
+     * El stock real se construye vía compras recibidas (KardexSeeder).
+     * El campo `inventario_base` se conserva como referencia para la compra demo.
      */
     public function run(): void
     {
@@ -39,8 +38,8 @@ class ProductoSeeder extends Seeder
             'Mobil' => ['refrigerante', 'aditivo limpiador'],
         ];
 
-        // Productos predefinidos por categoría con precio base de compra e
-        // inventario base del ciclo vigente (unidades por reposición).
+        // Productos predefinidos por categoría, con el precio base de compra y las
+        // unidades por reposición que usará la compra de demostración (Fase 3.9).
         $productos = [
             // Aceites y lubricantes (alto consumo: ciclos amplios)
             ['nombre' => 'Aceite Motor 5W-30 Sintético',        'precio_compra_base' => 35.00, 'inventario_base' => 120],
@@ -124,30 +123,15 @@ class ProductoSeeder extends Seeder
                 }
             }
 
-            // Inventario del ciclo vigente: variación ±20% sobre la base para
-            // dar naturalidad sin perder el rango realista (siempre >= 1).
-            $inventario = max(1, $faker->numberBetween(
-                (int) round($producto['inventario_base'] * 0.8),
-                (int) round($producto['inventario_base'] * 1.2)
-            ));
-
-            // Umbral de alerta: stock <= ceil(inventario * 0.20).
-            $umbralAlerta = (int) ceil($inventario * 0.20);
-
-            // ~35% en alerta (incluye agotados con stock 0); el resto por encima
-            // del umbral, garantizando siempre 0 <= stock <= inventario.
-            if ($faker->boolean(35)) {
-                $stock = $faker->numberBetween(0, $umbralAlerta);
-            } else {
-                $stock = $faker->numberBetween($umbralAlerta + 1, $inventario);
-            }
-
+            // El producto nace con stock=0 e inventario=0.
+            // El stock real se construye vía compras recibidas (KardexSeeder).
+            // `inventario_base` se conserva como referencia para la compra demo.
             Producto::create([
                 'nombre' => $producto['nombre'],
                 'precio_compra' => $precioCompra,
                 'precio_venta' => $precioVenta,
-                'stock' => $stock,
-                'inventario' => $inventario,
+                'stock' => 0,
+                'inventario' => 0,
                 'activo' => 1,
                 'foto' => null,
                 'marca_id' => $marcaId,

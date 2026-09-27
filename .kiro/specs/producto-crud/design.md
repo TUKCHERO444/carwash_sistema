@@ -121,7 +121,7 @@ Controlador resource con los métodos `index`, `create`, `store`, `edit`, `updat
     'precio_compra' => ['required', 'numeric', 'gt:0'],
     'precio_venta'  => ['required', 'numeric', 'gt:0'],
     'stock'         => ['required', 'integer', 'min:0'],
-    'inventario'    => ['required', 'integer', 'min:0'],
+    'inventario'    => ['required', 'integer', 'min:1'],
     'activo'        => ['nullable', 'boolean'],
     'foto'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 ]

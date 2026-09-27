@@ -31,8 +31,13 @@ class PermissionSeeder extends Seeder
             'acceso-clientes',
             'acceso-automotores',
 
+            // Proveedores
+            'acceso-proveedores',
+            'acceso-ajustes',
+
             // Ventas y Operaciones
             'acceso-ventas',
+            'acceso-compras',
 
             // Caja
             'acceso-caja',

@@ -202,4 +202,33 @@ class ReporteInventarioService
             'ingreso' => round((float) $producto['ingreso'], 2),
         ];
     }
+
+    /**
+     * Valorizado del inventario actual (stock × precio_compra).
+     *
+     * @return Collection<int, array{
+     *   id:int, nombre:string, categoria:string, marca:string,
+     *   stock:int, precio_compra:float, valorizado:float
+     * }>
+     */
+    public function resumenValorizado(array $filtros = []): Collection
+    {
+        return Producto::query()
+            ->with(['categoria:id,nombre', 'marca:id,nombre'])
+            ->when(! empty($filtros['categoria_id']), fn ($q) => $q->where('categoria_id', $filtros['categoria_id']))
+            ->when(! empty($filtros['marca_id']), fn ($q) => $q->where('marca_id', $filtros['marca_id']))
+            ->orderBy('nombre')
+            ->get()
+            ->map(function (Producto $producto) {
+                return [
+                    'id' => (int) $producto->id,
+                    'nombre' => (string) $producto->nombre,
+                    'categoria' => (string) ($producto->categoria?->nombre ?? ''),
+                    'marca' => (string) ($producto->marca?->nombre ?? ''),
+                    'stock' => (int) $producto->stock,
+                    'precio_compra' => round((float) $producto->precio_compra, 2),
+                    'valorizado' => round((float) $producto->stock * (float) $producto->precio_compra, 2),
+                ];
+            })->values();
+    }
 }

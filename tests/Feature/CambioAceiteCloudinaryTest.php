@@ -83,7 +83,7 @@ class CambioAceiteCloudinaryTest extends TestCase
 
         $oldUrl = 'https://res.cloudinary.com/test/image/upload/v1/old_cambio.jpg';
         $cambio = CambioAceite::factory()->state(['estado' => 'confirmado'])->create(['foto' => $oldUrl]);
-        $producto = Producto::factory()->create();
+        $producto = Producto::factory()->conExistencias(10)->create();
         $trabajador = Trabajador::factory()->create();
 
         // Mock Delete

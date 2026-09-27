@@ -123,4 +123,70 @@ class ReporteInventarioTest extends TestCase
         $this->assertStringContainsString('producto;categoria;marca;cantidad_vendida;ingreso', $contenido);
         $this->assertStringContainsString('Aceite X', $contenido);
     }
+
+    // Feature: compras-ingreso-mercaderia
+    // Cuando precio_compra = 0 (costo desconocido), el valorizado no debe romperse
+    // y debe manejar el caso (usualmente 0 o excluido).
+
+    public function test_valorizado_con_precio_compra_cero_no_rompe(): void
+    {
+        Producto::factory()->create([
+            'nombre' => 'Producto Sin Costo',
+            'stock' => 10,
+            'precio_compra' => 0,
+            'precio_venta' => 50,
+        ]);
+
+        $filtros = [];
+        $resumen = $this->service->resumenValorizado($filtros);
+
+        $producto = $resumen->firstWhere('nombre', 'Producto Sin Costo');
+        $this->assertNotNull($producto);
+        // El valorizado con costo 0 debe ser 0 (no null, no excepción)
+        $this->assertEquals(0, $producto['valorizado']);
+    }
+
+    public function test_valorizado_con_precio_compra_positivo_calcula_correcto(): void
+    {
+        Producto::factory()->create([
+            'nombre' => 'Producto Con Costo',
+            'stock' => 10,
+            'precio_compra' => 25.00,
+            'precio_venta' => 50.00,
+        ]);
+
+        $filtros = [];
+        $resumen = $this->service->resumenValorizado($filtros);
+
+        $producto = $resumen->firstWhere('nombre', 'Producto Con Costo');
+        $this->assertNotNull($producto);
+        // 10 * 25 = 250
+        $this->assertEquals(250.00, $producto['valorizado']);
+    }
+
+    public function test_valorizado_total_suma_individuales(): void
+    {
+        Producto::factory()->create([
+            'nombre' => 'Producto A',
+            'stock' => 5,
+            'precio_compra' => 10.00,
+        ]);
+        Producto::factory()->create([
+            'nombre' => 'Producto B',
+            'stock' => 3,
+            'precio_compra' => 20.00,
+        ]);
+        Producto::factory()->create([
+            'nombre' => 'Producto C',
+            'stock' => 10,
+            'precio_compra' => 0, // Sin costo
+        ]);
+
+        $filtros = [];
+        $resumen = $this->service->resumenValorizado($filtros);
+
+        $total = $resumen->sum('valorizado');
+        // 5*10 + 3*20 + 10*0 = 50 + 60 + 0 = 110
+        $this->assertEquals(110.00, $total);
+    }
 }

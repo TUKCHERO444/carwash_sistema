@@ -126,7 +126,8 @@
             {{-- Precio Compra --}}
             <div class="mb-5">
                 <label for="precio_compra" class="label-main mb-1">
-                    Precio de compra <span class="text-red-500">*</span>
+                    Precio de compra
+                    <span class="text-xs font-normal text-secondary">(opcional)</span>
                 </label>
                 <input
                     type="number"
@@ -134,12 +135,14 @@
                     name="precio_compra"
                     value="{{ old('precio_compra', $producto->precio_compra) }}"
                     step="0.01"
-                    min="0.01"
-                    required
+                    min="0"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('precio_compra') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="0.00"
                 >
+                <p class="mt-1 text-xs text-secondary">
+                    Se completa con el costo de la última compra registrada. Déjalo en 0 si aún no conoces el costo.
+                </p>
                 @error('precio_compra')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -169,46 +172,38 @@
                 @enderror
             </div>
 
-            {{-- Stock --}}
+            {{-- Existencia (solo lectura) --}}
+            @php
+                $stockActual = (int) $producto->stock;
+                $cicloInicial = (int) $producto->inventario;
+                $consumido = $stockActual <= 0 ? 0 : round((($cicloInicial - $stockActual) / $cicloInicial) * 100);
+                $consumido = max(0, min(100, (int) $consumido));
+            @endphp
             <div class="mb-5">
-                <label for="stock" class="label-main mb-1">
-                    Stock <span class="text-red-500">*</span>
-                </label>
-                <input
-                    type="number"
-                    id="stock"
-                    name="stock"
-                    value="{{ old('stock', $producto->stock) }}"
-                    min="0"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('stock') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="0"
-                >
-                @error('stock')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+                <span class="label-main mb-1 block">Existencia actual</span>
 
-            {{-- Inventario --}}
-            <div class="mb-5">
-                <label for="inventario" class="label-main mb-1">
-                    Inventario <span class="text-red-500">*</span>
-                </label>
-                <input
-                    type="number"
-                    id="inventario"
-                    name="inventario"
-                    value="{{ old('inventario', $producto->inventario) }}"
-                    min="0"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('inventario') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="0"
-                >
-                @error('inventario')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
+                <div class="flex items-baseline justify-between px-3 py-2 border rounded-lg input-main">
+                    <span class="text-sm text-primary">{{ $stockActual }} {{ $stockActual === 1 ? 'unidad' : 'unidades' }}</span>
+                    @if ($cicloInicial > 0)
+                        <span class="text-xs {{ $consumido >= 75 ? 'text-red-600 dark:text-red-400 font-medium' : 'text-secondary' }}">
+                            {{ $consumido }}% del ciclo consumido
+                        </span>
+                    @else
+                        <span class="text-xs text-secondary">Sin ciclo activo</span>
+                    @endif
+                </div>
+
+                @if ($cicloInicial > 0)
+                    <div class="mt-2 h-1.5 w-full rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                        <div class="h-full rounded-full {{ $consumido >= 75 ? 'bg-red-500' : 'bg-blue-500' }}"
+                             style="width: {{ $consumido }}%"></div>
+                    </div>
+                @endif
+
+                <p class="mt-2 text-xs text-secondary">
+                    La existencia no se edita aquí: cambia con las operaciones de inventario
+                    (compras, ventas y cambio de aceite), todas registradas en el Kardex.
+                </p>
             </div>
 
             {{-- Foto --}}
