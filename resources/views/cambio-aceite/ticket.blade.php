@@ -258,6 +258,34 @@
 
         <hr>
 
+        {{-- Orden de atención --}}
+        <div class="ticket-section">
+            <h2>Orden de atención</h2>
+
+            <div class="data-row">
+                <span class="label">Inicio:</span>
+                <span class="value">{{ $cambioAceite->atencion_inicio_at?->format('d/m/Y H:i') ?? $cambioAceite->created_at?->format('d/m/Y H:i') ?? '—' }}</span>
+            </div>
+
+            @if($cambioAceite->atencion_fin_at)
+                <div class="data-row">
+                    <span class="label">Fin:</span>
+                    <span class="value">{{ $cambioAceite->atencion_fin_at->format('d/m/Y H:i') }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Tiempo:</span>
+                    <span class="value">{{ $cambioAceite->tiempo_atencion_label ?? '—' }}</span>
+                </div>
+            @else
+                <div class="data-row">
+                    <span class="label">Estado:</span>
+                    <span class="value">En cola</span>
+                </div>
+            @endif
+        </div>
+
+        <hr>
+
         {{-- Worker --}}
         <div class="ticket-section">
             <h2>Trabajadores</h2>

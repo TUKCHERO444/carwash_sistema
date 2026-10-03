@@ -45,7 +45,7 @@ class VentaBuscarProductoStockAlertaTest extends TestCase
 
     private function crearProducto(int $stock, int $inventario): Producto
     {
-        return Producto::create([
+        return Producto::factory()->create([
             'nombre' => 'Producto de prueba',
             'precio_compra' => 10.00,
             'precio_venta' => 20.00,

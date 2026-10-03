@@ -43,6 +43,10 @@ class PermissionSeeder extends Seeder
             'acceso-caja',
             'historial-caja',
 
+            // Zona pública de clientes (/cuenta/*): puerta de acceso,
+            // NO es un permiso operativo. El rol Cliente solo lleva este.
+            'acceso-cuenta',
+
             // Auditoría
             'acceso-auditoria',
 

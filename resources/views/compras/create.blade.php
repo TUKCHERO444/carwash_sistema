@@ -39,24 +39,26 @@
                 </div>
             @enderror
 
-            {{-- ── Proveedor ── --}}
+            {{-- ── Proveedor (búsqueda dinámica) ── --}}
             <div class="mb-5">
-                <label for="proveedor_id" class="label-main mb-1">
+                <label for="buscar-proveedor" class="label-main mb-1">
                     Proveedor <span class="text-red-500">*</span>
                 </label>
-                <select
-                    id="proveedor_id"
-                    name="proveedor_id"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('proveedor_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
-                    <option value="">Seleccione un proveedor</option>
-                    @foreach($proveedores as $proveedor)
-                        <option value="{{ $proveedor->id }}" {{ old('proveedor_id') == $proveedor->id ? 'selected' : '' }}>
-                            {{ $proveedor->razon_social }} ({{ $proveedor->ruc }})
-                        </option>
-                    @endforeach
-                </select>
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="buscar-proveedor"
+                        name="buscar-proveedor"
+                        autocomplete="off"
+                        placeholder="Escribe la razón social o RUC del proveedor..."
+                        class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                               {{ $errors->has('proveedor_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                        value="{{ old('proveedor_id') ? ($proveedores->firstWhere('id', old('proveedor_id')) ? $proveedores->firstWhere('id', old('proveedor_id'))->razon_social.' ('.$proveedores->firstWhere('id', old('proveedor_id'))->ruc.')' : '') : '' }}">
+                    <input type="hidden" id="proveedor_id" name="proveedor_id" value="{{ old('proveedor_id') }}">
+                    <div id="resultados-proveedores"
+                         class="hidden absolute z-10 w-full mt-1 bg-surface border border-main rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    </div>
+                </div>
                 @error('proveedor_id')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -248,5 +250,5 @@
     </script>
 
 </div>
-@vite('resources/js/compras/create.js')
+@vite(['resources/js/compras/create.js', 'resources/js/compras/buscar-proveedores.js', 'resources/js/compras/buscar-productos.js'])
 @endsection

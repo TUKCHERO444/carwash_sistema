@@ -273,8 +273,11 @@ class ContenidoWebPropertiesTest extends TestCase
                 );
             }
 
-            Categoria::query()->delete();
+            // Los productos se borran primero: productos.categoria_id es NOT NULL
+            // con FK RESTRICT, así que la categoría no puede eliminarse con
+            // productos asociados.
             Producto::query()->delete();
+            Categoria::query()->delete();
         }
     }
 }

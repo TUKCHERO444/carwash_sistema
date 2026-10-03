@@ -134,8 +134,8 @@ class ProductoController extends Controller
                 'descripcion' => self::DESCRIPCION_RULES,
                 'activo' => ['nullable', 'boolean'],
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-                'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
-                'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+                'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
+                'marca_id' => ['required', 'integer', 'exists:marcas,id'],
             ], $this->reglasPrecio($request->all())),
             [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
@@ -158,13 +158,11 @@ class ProductoController extends Controller
                 'inventario' => 0,
                 'activo' => $request->boolean('activo', true),
                 'foto' => $fotoUrl,
-                'categoria_id' => $validated['categoria_id'] ?? null,
-                'marca_id' => $validated['marca_id'] ?? null,
+                'categoria_id' => $validated['categoria_id'],
+                'marca_id' => $validated['marca_id'],
             ]);
 
-            if (! empty($validated['categoria_id'])) {
-                Categoria::find($validated['categoria_id'])->increment('contador_productos');
-            }
+            Categoria::find($validated['categoria_id'])->increment('contador_productos');
         });
 
         return redirect()->route('productos.index')
@@ -197,8 +195,8 @@ class ProductoController extends Controller
                 'descripcion' => self::DESCRIPCION_RULES,
                 'activo' => ['nullable', 'boolean'],
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-                'categoria_id' => ['nullable', 'integer', 'exists:categorias,id'],
-                'marca_id' => ['nullable', 'integer', 'exists:marcas,id'],
+                'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
+                'marca_id' => ['required', 'integer', 'exists:marcas,id'],
             ], $this->reglasPrecio($request->all())),
             [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
@@ -210,8 +208,8 @@ class ProductoController extends Controller
             'descripcion' => $validated['descripcion'] ?? null,
             'precio_compra' => (float) ($validated['precio_compra'] ?? 0),
             'precio_venta' => $validated['precio_venta'],
-            'categoria_id' => $validated['categoria_id'] ?? null,
-            'marca_id' => $validated['marca_id'] ?? null,
+            'categoria_id' => $validated['categoria_id'],
+            'marca_id' => $validated['marca_id'],
         ];
 
         if ($request->hasFile('foto')) {
@@ -239,17 +237,13 @@ class ProductoController extends Controller
 
         DB::transaction(function () use ($producto, $data, $validated) {
             $categoria_id_anterior = $producto->categoria_id;
-            $categoria_id_nueva = $validated['categoria_id'] ?? null;
+            $categoria_id_nueva = $validated['categoria_id'];
 
             $producto->update($data);
 
             if ($categoria_id_anterior !== $categoria_id_nueva) {
-                if ($categoria_id_anterior !== null) {
-                    Categoria::find($categoria_id_anterior)->decrement('contador_productos');
-                }
-                if ($categoria_id_nueva !== null) {
-                    Categoria::find($categoria_id_nueva)->increment('contador_productos');
-                }
+                Categoria::find($categoria_id_anterior)->decrement('contador_productos');
+                Categoria::find($categoria_id_nueva)->increment('contador_productos');
             }
         });
 

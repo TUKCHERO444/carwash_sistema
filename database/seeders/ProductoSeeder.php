@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
 use Faker\Factory as Faker;
@@ -35,7 +36,7 @@ class ProductoSeeder extends Seeder
             'NGK' => ['bujías'],
             'ACDelco' => ['alternador'],
             'Gates' => ['correa de distribución', 'correa de accesorios', 'tensor de correa'],
-            'Mobil' => ['refrigerante', 'aditivo limpiador'],
+            'Mobil' => ['refrigerante', 'aditivo limpiador', 'limpiaparabrisas'],
         ];
 
         // Productos predefinidos por categoría, con el precio base de compra y las
@@ -97,6 +98,19 @@ class ProductoSeeder extends Seeder
             }
         }
 
+        // productos.marca_id es NOT NULL: si un nombre no coincide con ninguna
+        // marca del mapa, se usa la primera disponible.
+        $marcaPorDefecto = $marcas === [] ? null : reset($marcas);
+
+        // Precargar categorías (CategoriaSeeder corre antes: son NOT NULL)
+        $categoriaIds = Categoria::pluck('id')->toArray();
+
+        if ($marcaPorDefecto === null || $categoriaIds === []) {
+            $this->command?->error('ProductoSeeder requiere marcas y categorías sembradas (MarcaSeeder y CategoriaSeeder).');
+
+            return;
+        }
+
         foreach ($productos as $producto) {
             // Aplicar variación aleatoria ±10% al precio base de compra
             $precioCompra = round($producto['precio_compra_base'] * $faker->randomFloat(2, 0.9, 1.1), 2);
@@ -112,16 +126,20 @@ class ProductoSeeder extends Seeder
 
             // Asignar marca por coincidencia de palabras clave
             $nombreLower = mb_strtolower($producto['nombre']);
-            $marcaId = null;
+            $marcaId = $marcaPorDefecto;
 
             foreach ($marcaMap as $marcaNombre => $keywords) {
                 foreach ($keywords as $keyword) {
                     if (str_contains($nombreLower, $keyword)) {
-                        $marcaId = $marcas[$marcaNombre] ?? null;
+                        $marcaId = $marcas[$marcaNombre] ?? $marcaPorDefecto;
                         break 2;
                     }
                 }
             }
+
+            // ProductoCategoriaSeeder reasigna la categoría por palabras clave
+            // del nombre; aquí basta una categoría válida para el alta.
+            $categoriaId = $faker->randomElement($categoriaIds);
 
             // El producto nace con stock=0 e inventario=0.
             // El stock real se construye vía compras recibidas (KardexSeeder).
@@ -135,6 +153,7 @@ class ProductoSeeder extends Seeder
                 'activo' => 1,
                 'foto' => null,
                 'marca_id' => $marcaId,
+                'categoria_id' => $categoriaId,
             ]);
         }
     }

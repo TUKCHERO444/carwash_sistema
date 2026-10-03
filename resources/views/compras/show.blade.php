@@ -28,6 +28,7 @@
                 <button type="submit"
                         aria-label="Recibir compra {{ $compra->correlativo ?? '#'.$compra->id }}"
                         data-confirm="¿Recibir esta compra? Se ingresarán las existencias, se registrará el egreso en caja y se actualizarán los costos. Esta acción no se puede deshacer."
+                        data-confirm-button="Sí, recibir compra"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -76,7 +77,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div>
                 <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Correlativo</p>
-                <p class="text-sm font-mono text-primary">{{ $compra->correlativo ?? '<span class="text-gray-400 italic">Sin asignar (borrador)</span>' }}</p>
+                <p class="text-sm font-mono text-primary">{!! $compra->correlativo ?? '<span class="text-gray-400 italic">Sin asignar (borrador)</span>' !!}</p>
             </div>
             <div>
                 <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Proveedor</p>

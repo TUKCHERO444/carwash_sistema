@@ -11,6 +11,7 @@ use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\ClienteAutomotorService;
 use App\Services\KardexService;
+use App\Services\TiempoAtencionService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -70,7 +71,7 @@ class CambioAceiteController extends Controller
     {
         $cambioAceites = CambioAceite::with(['cliente', 'trabajadores'])
             ->pendientes()
-            ->latest()
+            ->colaAtencion()
             ->paginate(10);
 
         return view('cambio-aceite.pendientes', compact('cambioAceites'));
@@ -145,6 +146,7 @@ class CambioAceiteController extends Controller
                     'foto' => $foto,
                     'user_id' => auth()->id(),
                     'estado' => 'pendiente',
+                    'atencion_inicio_at' => now(),
                 ]);
 
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
@@ -428,7 +430,7 @@ class CambioAceiteController extends Controller
     {
         $cambioAceites = CambioAceite::with(['cliente', 'trabajador'])
             ->confirmados()
-            ->latest()
+            ->culminadosPorAtencion()
             ->paginate(10);
 
         return view('cambio-aceite.confirmados', compact('cambioAceites'));
@@ -552,6 +554,12 @@ class CambioAceiteController extends Controller
 
                 app(AuditService::class)->anotarAccion('confirmar');
 
+                // Cierre de la orden de atención: el pago confirma el fin
+                // y persiste la duración en minutos.
+                $tiempos = app(TiempoAtencionService::class);
+                $inicioAtencion = $cambioAceite->atencion_inicio_at ?? $cambioAceite->created_at ?? now();
+                $cierre = $tiempos->datosFinalizacion($inicioAtencion);
+
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
                     'automotor_id' => $automotor->placa,
@@ -567,6 +575,9 @@ class CambioAceiteController extends Controller
                     'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                     'estado' => 'confirmado',
                     'caja_id' => $caja->id,
+                    'atencion_inicio_at' => $inicioAtencion,
+                    'atencion_fin_at' => $cierre['atencion_fin_at'],
+                    'tiempo_atencion_minutos' => $cierre['tiempo_atencion_minutos'],
                 ]);
 
                 // Sincronizar trabajadores en pivote

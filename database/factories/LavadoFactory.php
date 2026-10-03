@@ -23,6 +23,7 @@ class LavadoFactory extends Factory
             'total' => 0,
             'estado' => 'pendiente',
             'caja_id' => null,
+            'atencion_inicio_at' => now(),
         ];
     }
 
@@ -40,6 +41,9 @@ class LavadoFactory extends Factory
             'precio' => fake()->randomFloat(2, 10, 500),
             'total' => fake()->randomFloat(2, 10, 500),
             'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
+            'atencion_inicio_at' => now()->subMinutes(45),
+            'atencion_fin_at' => now(),
+            'tiempo_atencion_minutos' => 45,
         ]);
     }
 }

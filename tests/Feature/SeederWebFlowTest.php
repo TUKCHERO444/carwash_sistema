@@ -11,10 +11,12 @@ use Tests\TestCase;
  * Regresión del flujo de llegada de productos a la web.
  *
  * Este test fija el contrato de siembra: `DatabaseSeeder` debe ejecutar
- * `CategoriaSeeder` DESPUÉS de `ProductoSeeder` (CategoriaSeeder asigna a
- * cada producto su categoría por palabras clave del nombre). Si el orden se
- * invierte, los productos quedan sin `categoria_id` y la web pública se ve
- * vacía (dropdown sin categorías y mosaico sin tiles).
+ * `CategoriaSeeder` ANTES de `ProductoSeeder` (para que los productos nazcan
+ * con un `categoria_id` válido, ya obligatorio en la base de datos) y
+ * `ProductoCategoriaSeeder` DESPUÉS (ahí se asigna a cada producto su categoría
+ * definitiva por palabras clave del nombre y se recalculan los contadores).
+ * Si el orden se invierte, los productos quedan sin `categoria_id` y la web
+ * pública se ve vacía (dropdown sin categorías y mosaico sin tiles).
  */
 class SeederWebFlowTest extends TestCase
 {

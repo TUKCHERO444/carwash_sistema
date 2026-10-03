@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\CheckUserActivo;
+use App\Http\Middleware\EnsureCliente;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,11 +22,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'cliente' => EnsureCliente::class,
         ]);
 
         $middleware->appendToGroup('web', CheckUserActivo::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Guest en la zona pública va al login de cuenta, no al operativo.
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if (($request->is('cuenta') || $request->is('cuenta/*')) && ! $request->expectsJson()) {
+                return redirect()->guest(route('cuenta.login'));
+            }
+        });
+
         $exceptions->render(function (UnauthorizedException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([

@@ -31,7 +31,7 @@ class EtiquetasTest extends TestCase
 
     private function producto(int $stock = 10): Producto
     {
-        return Producto::create([
+        return Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,

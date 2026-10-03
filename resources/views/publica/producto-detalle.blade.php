@@ -82,6 +82,23 @@
                                 Agotado
                             </span>
                         @else
+                            <form action="{{ route('cuenta.carrito.agregar') }}" method="POST" data-carrito class="inline-flex flex-wrap items-center gap-3">
+                                @csrf
+                                <input type="hidden" name="producto_id" value="{{ $producto->id }}">
+                                <label for="carrito-cantidad" class="sr-only">Cantidad</label>
+                                <input type="number" id="carrito-cantidad" name="cantidad" value="1" min="1" max="{{ (int) $producto->stock }}"
+                                       class="w-20 rounded-xl border border-steel-300 px-3 py-3.5 text-center text-sm font-semibold text-navy-900">
+                                <button type="submit"
+                                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-cyan-500 px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-navy-900 transition-colors hover:bg-brand-cyan-400">
+                                    Agregar al carrito
+                                    <svg aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.31 5h18.27l-1.44 10H9.78L6.22 0H0M11 20a2 2 0 100 4 2 2 0 000-4zm11 0a2 2 0 100 4 2 2 0 000-4z"/>
+                                    </svg>
+                                </button>
+                            </form>
+                            @error('cantidad')
+                                <p role="alert" class="w-full text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                             <a href="{{ route('publica.cotiza') }}"
                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-cyan-500 px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-navy-900 transition-colors hover:bg-brand-cyan-400">
                                 Cotizar este producto

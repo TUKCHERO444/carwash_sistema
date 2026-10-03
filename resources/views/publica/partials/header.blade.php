@@ -65,16 +65,40 @@
                 </div>
             </form>
 
-            {{-- Acciones: ingresar + carrito --}}
+            {{-- Acciones: cuenta / ingresar + carrito --}}
             <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                <a href="{{ route('login') }}" class="hidden xl:inline-flex items-center gap-2.5 rounded-xl px-5 py-3.5 text-lg font-semibold text-white-cold hover:text-brand-cyan-400 transition-colors">
-                    <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    INGRESAR
-                </a>
-                {{-- Futuro: ruta del carrito de compra (aún sin implementar). --}}
-                <a href="#" aria-label="Carrito de compra (0 artículos)"
+                @auth
+                    @if (auth()->user()->hasRole('Cliente'))
+                        <a href="{{ route('cuenta.panel') }}" class="hidden xl:inline-flex items-center gap-2.5 rounded-xl px-5 py-3.5 text-lg font-semibold text-white-cold hover:text-brand-cyan-400 transition-colors">
+                            <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            MI CUENTA
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="hidden xl:inline-flex items-center gap-2.5 rounded-xl px-5 py-3.5 text-lg font-semibold text-white-cold hover:text-brand-cyan-400 transition-colors">
+                            <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            INGRESAR
+                        </a>
+                    @endif
+                @else
+                    <a href="{{ route('cuenta.registro') }}" class="hidden xl:inline-flex items-center gap-2.5 rounded-xl px-5 py-3.5 text-lg font-semibold text-white-cold hover:text-brand-cyan-400 transition-colors">
+                        <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        INGRESAR
+                    </a>
+                @endauth
+                {{-- Carrito de compra: clientes van a su carrito, el resto al login. --}}
+                @php
+                    $carritoUrl = auth()->check() && auth()->user()->hasRole('Cliente')
+                        ? route('cuenta.carrito.index')
+                        : route('cuenta.login');
+                    $carritoConteo = $carritoConteo ?? 0;
+                @endphp
+                <a href="{{ $carritoUrl }}" aria-label="Carrito de compra ({{ $carritoConteo }} artículos)"
                    class="relative inline-flex items-center gap-2.5 rounded-xl p-3 text-white-cold hover:text-brand-cyan-400 hover:bg-navy-800 transition-colors">
                     <svg aria-hidden="true" class="h-9 w-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 27 24">
                         <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -83,7 +107,7 @@
                             <path d="M7.31 5h18.27l-1.44 10H9.78L6.22 0H0" stroke-linecap="square"/>
                         </g>
                     </svg>
-                    <span class="absolute -top-1 -right-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-cyan-500 px-1.5 text-xs font-bold text-navy-900">0</span>
+                    <span data-carrito-conteo class="absolute -top-1 -right-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-cyan-500 px-1.5 text-xs font-bold text-navy-900">{{ $carritoConteo }}</span>
                     <span class="hidden lg:inline text-lg font-semibold">CARRITO</span>
                 </a>
             </div>
@@ -180,7 +204,15 @@
         <li><a href="{{ route('publica.quienes-somos') }}" class="block rounded-lg px-3 py-2.5 text-sm font-medium text-navy-100 hover:bg-navy-800 hover:text-brand-cyan-400 transition-colors">¿Quiénes somos?</a></li>
         <li><a href="{{ route('publica.cotiza') }}" class="block rounded-lg px-3 py-2.5 text-sm font-medium text-navy-100 hover:bg-navy-800 hover:text-brand-cyan-400 transition-colors">Contacto</a></li>
         <li class="pt-1">
-            <a href="{{ route('login') }}" class="flex items-center justify-center rounded-lg border border-navy-600 px-4 py-2.5 text-sm font-semibold uppercase text-white-cold hover:bg-navy-800 transition-colors">Ingresar al sistema</a>
+            @auth
+                @if (auth()->user()->hasRole('Cliente'))
+                    <a href="{{ route('cuenta.panel') }}" class="flex items-center justify-center rounded-lg border border-navy-600 px-4 py-2.5 text-sm font-semibold uppercase text-white-cold hover:bg-navy-800 transition-colors">Mi cuenta</a>
+                @else
+                    <a href="{{ route('login') }}" class="flex items-center justify-center rounded-lg border border-navy-600 px-4 py-2.5 text-sm font-semibold uppercase text-white-cold hover:bg-navy-800 transition-colors">Ingresar al sistema</a>
+                @endif
+            @else
+                <a href="{{ route('cuenta.registro') }}" class="flex items-center justify-center rounded-lg border border-navy-600 px-4 py-2.5 text-sm font-semibold uppercase text-white-cold hover:bg-navy-800 transition-colors">Ingresar</a>
+            @endauth
         </li>
     </ul>
 </nav>

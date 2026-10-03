@@ -119,6 +119,7 @@ class Producto extends Model
         'foto',
         'categoria_id',
         'marca_id',
+        'precio_incoherente',
     ];
 
     protected $casts = [
@@ -130,7 +131,24 @@ class Producto extends Model
         'activo' => 'boolean',
         'categoria_id' => 'integer',
         'marca_id' => 'integer',
+        'precio_incoherente' => 'boolean',
     ];
+
+    /**
+     * Indica si el producto tiene precio de compra mayor al de venta.
+     */
+    public function getPrecioIncoherenteAttribute(): bool
+    {
+        return $this->precio_compra > 0 && $this->precio_venta > 0 && $this->precio_compra > $this->precio_venta;
+    }
+
+    /**
+     * Actualiza el estado de precio incoherente.
+     */
+    public function actualizarPrecioIncoherente(): void
+    {
+        $this->update(['precio_incoherente' => $this->getPrecioIncoherenteAttribute()]);
+    }
 
     /**
      * Relación con Categoria

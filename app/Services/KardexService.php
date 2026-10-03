@@ -9,12 +9,42 @@ use Illuminate\Support\Facades\DB;
 class KardexService
 {
     /**
-     * Fuentes válidas para movimientos de Kardex.
+     * Fuentes válidas para movimientos de Kardex: valor en BD => etiqueta para la UI.
+     *
+     * Única fuente de verdad: la usan el registro de movimientos, el filtro del
+     * listado y el CHECK de PostgreSQL. Si se agrega una fuente hay que
+     * declararla aquí y en la migración del CHECK.
      */
     public const FUENTES = [
-        'venta', 'cambio_aceite', 'compra',
-        'ajuste_positivo', 'ajuste_negativo', 'merma', 'daño', 'conteo_fisico', 'inventario',
+        'venta' => 'Venta',
+        'compra' => 'Compra',
+        'cambio_aceite' => 'Cambio de aceite',
+        'inventario' => 'Inventario',
+        'ajuste_positivo' => 'Ajuste positivo',
+        'ajuste_negativo' => 'Ajuste negativo',
+        'merma' => 'Merma',
+        'daño' => 'Daño',
+        'conteo_fisico' => 'Conteo físico',
     ];
+
+    /**
+     * Valores de `fuente` aceptados, en el orden en que se muestran en los filtros.
+     *
+     * @return list<string>
+     */
+    public static function fuentesValidas(): array
+    {
+        return array_keys(self::FUENTES);
+    }
+
+    /**
+     * Etiqueta legible de una fuente. Los valores desconocidos (legados) se
+     * capitalizan en vez de romperse, para que la bitácora siga siendo legible.
+     */
+    public static function etiqueta(string $fuente): string
+    {
+        return self::FUENTES[$fuente] ?? ucfirst(str_replace('_', ' ', $fuente));
+    }
 
     /**
      * Registra un movimiento de salida (decremento de stock) en el Kardex.
@@ -195,6 +225,10 @@ class KardexService
         string $origenId,
         float $costoUnitario = 0
     ): void {
+        if (! in_array($fuente, self::fuentesValidas(), true)) {
+            throw new \InvalidArgumentException("Fuente de Kardex inválida: {$fuente}");
+        }
+
         $costoTotal = round($cantidad * $costoUnitario, 2);
 
         DB::table('movimientos_kardex')->insert([

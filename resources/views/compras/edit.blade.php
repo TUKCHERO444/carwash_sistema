@@ -40,24 +40,26 @@
                 </div>
             @enderror
 
-            {{-- ── Proveedor ── --}}
+            {{-- ── Proveedor (búsqueda dinámica) ── --}}
             <div class="mb-5">
-                <label for="proveedor_id" class="label-main mb-1">
+                <label for="buscar-proveedor" class="label-main mb-1">
                     Proveedor <span class="text-red-500">*</span>
                 </label>
-                <select
-                    id="proveedor_id"
-                    name="proveedor_id"
-                    required
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('proveedor_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
-                    <option value="">Seleccione un proveedor</option>
-                    @foreach($proveedores as $proveedor)
-                        <option value="{{ $proveedor->id }}" {{ $compra->proveedor_id == $proveedor->id ? 'selected' : '' }}>
-                            {{ $proveedor->razon_social }} ({{ $proveedor->ruc }})
-                        </option>
-                    @endforeach
-                </select>
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="buscar-proveedor"
+                        name="buscar-proveedor"
+                        autocomplete="off"
+                        placeholder="Escribe la razón social o RUC del proveedor..."
+                        class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                               {{ $errors->has('proveedor_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                        value="{{ old('proveedor_id') ? ($proveedores->firstWhere('id', old('proveedor_id')) ? $proveedores->firstWhere('id', old('proveedor_id'))->razon_social.' ('.$proveedores->firstWhere('id', old('proveedor_id'))->ruc.')' : '') : ($compra->proveedor ? $compra->proveedor->razon_social.' ('.$compra->proveedor->ruc.')' : '') }}">
+                    <input type="hidden" id="proveedor_id" name="proveedor_id" value="{{ old('proveedor_id', $compra->proveedor_id) }}">
+                    <div id="resultados-proveedores"
+                         class="hidden absolute z-10 w-full mt-1 bg-surface border border-main rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    </div>
+                </div>
                 @error('proveedor_id')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -240,6 +242,16 @@
                 </a>
             </div>
 
+{{-- Hidden inputs para inicializar líneas existentes en el borrador --}}
+            @if($compra->detalles->count() > 0)
+                @foreach($compra->detalles as $idx => $detalle)
+                    <input type="hidden" name="detalle[{{ $idx }}][producto_id]" value="{{ $detalle->producto_id }}" class="compra-hidden">
+                    <input type="hidden" name="detalle[{{ $idx }}][cantidad]" value="{{ $detalle->cantidad }}" class="compra-hidden">
+                    <input type="hidden" name="detalle[{{ $idx }}][costo_unitario]" value="{{ $detalle->costo_unitario }}" class="compra-hidden">
+                    <input type="hidden" name="detalle[{{ $idx }}][subtotal]" value="{{ $detalle->subtotal }}" class="compra-hidden">
+                @endforeach
+            @endif
+
         </form>
     </div>
 
@@ -247,7 +259,6 @@
     <script>
         window.productos = @json($productos ?? []);
     </script>
-
 </div>
-@vite('resources/js/compras/edit.js')
+@vite(['resources/js/compras/edit.js', 'resources/js/compras/buscar-proveedores.js', 'resources/js/compras/buscar-productos.js'])
 @endsection

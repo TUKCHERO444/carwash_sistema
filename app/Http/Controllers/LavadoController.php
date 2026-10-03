@@ -9,6 +9,7 @@ use App\Models\Vehiculo;
 use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\ClienteAutomotorService;
+use App\Services\TiempoAtencionService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -63,7 +64,7 @@ class LavadoController extends Controller
     {
         $lavados = Lavado::with(['cliente', 'vehiculo', 'trabajadores'])
             ->pendientes()
-            ->orderBy('fecha', 'desc')
+            ->colaAtencion()
             ->paginate(10);
 
         return view('lavados.pendientes', compact('lavados'));
@@ -73,7 +74,7 @@ class LavadoController extends Controller
     {
         $lavados = Lavado::with(['cliente', 'vehiculo', 'trabajadores'])
             ->confirmados()
-            ->orderBy('fecha', 'desc')
+            ->culminadosPorAtencion()
             ->paginate(10);
 
         return view('lavados.confirmados', compact('lavados'));
@@ -160,6 +161,12 @@ class LavadoController extends Controller
 
                 app(AuditService::class)->anotarAccion('confirmar');
 
+                // Cierre de la orden de atención: el pago confirma el fin
+                // y persiste la duración en minutos.
+                $tiempos = app(TiempoAtencionService::class);
+                $inicioAtencion = $lavado->atencion_inicio_at ?? $lavado->created_at ?? now();
+                $cierre = $tiempos->datosFinalizacion($inicioAtencion);
+
                 $lavado->update([
                     'cliente_id' => $cliente->id,
                     'automotor_id' => $automotor->placa,
@@ -174,6 +181,9 @@ class LavadoController extends Controller
                     'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                     'estado' => 'confirmado',
                     'caja_id' => $caja->id,
+                    'atencion_inicio_at' => $inicioAtencion,
+                    'atencion_fin_at' => $cierre['atencion_fin_at'],
+                    'tiempo_atencion_minutos' => $cierre['tiempo_atencion_minutos'],
                 ]);
 
                 $lavado->trabajadores()->sync($request->trabajadores_ids);
@@ -254,6 +264,7 @@ class LavadoController extends Controller
                     'foto' => $foto,
                     'user_id' => auth()->id(),
                     'estado' => 'pendiente',
+                    'atencion_inicio_at' => now(),
                 ]);
 
                 $lavado->trabajadores()->sync($request->trabajadores_ids);

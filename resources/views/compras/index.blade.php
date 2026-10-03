@@ -101,7 +101,7 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                             {{-- Correlativo --}}
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary font-mono">
-                                {{ $compra->correlativo ?? '<span class="text-gray-400 italic">—</span>' }}
+                                {!! $compra->correlativo ?? '<span class="text-gray-400 italic">—</span>' !!}
                             </td>
 
                             {{-- Proveedor --}}

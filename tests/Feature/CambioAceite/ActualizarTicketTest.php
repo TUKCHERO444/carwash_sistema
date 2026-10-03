@@ -37,7 +37,7 @@ class ActualizarTicketTest extends TestCase
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
-        $this->producto = Producto::create([
+        $this->producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,
@@ -153,7 +153,7 @@ class ActualizarTicketTest extends TestCase
      */
     public function test_actualizar_ticket_allows_changing_products(): void
     {
-        $newProducto = Producto::create([
+        $newProducto = Producto::factory()->create([
             'nombre' => 'Filtro de aceite',
             'precio_compra' => 10.00,
             'precio_venta' => 20.00,

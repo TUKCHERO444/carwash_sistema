@@ -38,7 +38,7 @@ class ConfirmarTest extends TestCase
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
         $this->cliente = Cliente::create(['placa' => 'ABC123', 'nombre' => 'Juan']);
-        $this->producto = Producto::create([
+        $this->producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,

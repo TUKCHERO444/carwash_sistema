@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
+use App\Services\KardexService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class KardexController extends Controller
     {
         $filtros = [
             'producto_id' => $request->get('producto_id'),
-            'fuente' => $request->get('fuente'),
+            'fuente' => $this->fuenteValida($request->get('fuente')),
             'origen_id' => trim((string) $request->get('origen_id')),
             'desde' => $request->get('desde'),
             'hasta' => $request->get('hasta'),
@@ -44,10 +45,22 @@ class KardexController extends Controller
             $query->whereDate('fecha_movimiento', '<=', $filtros['hasta']);
         }
 
-        $movimientos = $query->paginate(15)->withQueryString();
+        $movimientos = $query->paginate(10)->withQueryString();
         $productos = Producto::orderBy('nombre')->get();
+        $fuentes = KardexService::FUENTES;
 
-        return view('kardex.index', compact('movimientos', 'productos', 'filtros'));
+        return view('kardex.index', compact('movimientos', 'productos', 'filtros', 'fuentes'));
+    }
+
+    /**
+     * Normaliza el filtro de fuente: una URL con una fuente desconocida o de una
+     * versión anterior se trata como "sin filtro" en lugar de romper el listado.
+     */
+    private function fuenteValida(?string $fuente): string
+    {
+        $fuente = (string) $fuente;
+
+        return in_array($fuente, KardexService::fuentesValidas(), true) ? $fuente : '';
     }
 
     /**
@@ -58,7 +71,7 @@ class KardexController extends Controller
         $movimientos = MovimientoKardex::with('usuario')
             ->where('producto_id', $producto->id)
             ->latest('fecha_movimiento')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('kardex.por-producto', compact('producto', 'movimientos'));
     }

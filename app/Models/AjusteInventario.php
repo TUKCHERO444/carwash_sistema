@@ -12,6 +12,8 @@ class AjusteInventario extends Model
 {
     use HasFactory;
 
+    protected $table = 'ajustes_inventario';
+
     protected $fillable = [
         'correlativo',
         'tipo',

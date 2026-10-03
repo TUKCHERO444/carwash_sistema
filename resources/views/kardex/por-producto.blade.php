@@ -50,7 +50,7 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ $mov->cantidad }}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ $mov->stock_antes }}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ $mov->stock_despues }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ $mov->fuente }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ \App\Services\KardexService::etiqueta($mov->fuente) }}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-secondary">{{ $mov->origen_id }}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-secondary">{{ $mov->usuario?->name ?? '—' }}</td>
                         </tr>

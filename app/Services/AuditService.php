@@ -8,6 +8,8 @@ use App\Models\Automotor;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\CambioProducto;
+use App\Models\Carrito;
+use App\Models\CarritoItem;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Compra;
@@ -56,6 +58,8 @@ class AuditService
         EgresoCaja::class,
         Compra::class,
         AjusteInventario::class,
+        Carrito::class,
+        CarritoItem::class,
     ];
 
     /**
@@ -108,6 +112,8 @@ class AuditService
         EgresoCaja::class => 'caja',
         Compra::class => 'compras',
         AjusteInventario::class => 'ajustes',
+        Carrito::class => 'cuenta',
+        CarritoItem::class => 'cuenta',
     ];
 
     /**
@@ -177,13 +183,17 @@ class AuditService
      * @param  array|null  $antes  Valores previos (campos que cambiaron).
      * @param  array|null  $despues  Valores posteriores (campos que cambiaron).
      * @param  string|null  $modulo  Nombre de módulo (opcional, se deduce del modelo).
+     * @param  int|null  $actorId  Quien ejecuta (opcional; por defecto auth()->id()).
+     *                             Obligatorio en flujos guest (registro, recuperación),
+     *                             donde no hay sesión: se registra el propio titular.
      */
     public function registrar(
         Model $modelo,
         string $accion,
         ?array $antes = null,
         ?array $despues = null,
-        ?string $modulo = null
+        ?string $modulo = null,
+        ?int $actorId = null
     ): void {
         if (! $this->esAuditable($modelo)) {
             return;
@@ -196,7 +206,7 @@ class AuditService
             'auditable_id' => $modelo->getKey(),
             'datos_antes' => $antes === null ? null : json_encode($this->filtrarAtributos($antes)),
             'datos_despues' => $despues === null ? null : json_encode($this->filtrarAtributos($despues)),
-            'usuario_id' => auth()->id(),
+            'usuario_id' => $actorId ?? auth()->id(),
             'fecha_movimiento' => now(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -206,8 +216,8 @@ class AuditService
     /**
      * Registra una acción de sesión (inicio/cierre) sobre un usuario autenticado.
      */
-    public function registrarSesion(User $user, string $accion): void
+    public function registrarSesion(User $user, string $accion, ?int $actorId = null): void
     {
-        $this->registrar($user, $accion, null, null, 'sesiones');
+        $this->registrar($user, $accion, null, null, 'sesiones', $actorId);
     }
 }

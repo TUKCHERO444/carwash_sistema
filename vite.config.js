@@ -45,6 +45,8 @@ export default defineConfig({
                 // Compras
                 'resources/js/compras/create.js',
                 'resources/js/compras/edit.js',
+                'resources/js/compras/buscar-proveedores.js',
+                'resources/js/compras/buscar-productos.js',
                 // Ajustes
                 'resources/js/ajustes/create.js',
                 // Automotores
@@ -52,6 +54,8 @@ export default defineConfig({
                 // Users
                 'resources/js/users/toggle.js',
                 'resources/js/users/validate.js',
+                // Zona cuenta pública
+                'resources/js/cuenta/carrito.js',
                 // Roles
                 'resources/js/roles/validate.js',
                 // Trabajadores

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\User;
 use Cloudinary\Api\ApiResponse;
@@ -25,7 +27,26 @@ class ProductoCloudinaryTest extends TestCase
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-inventario');
 
+        // Categoría y marca son obligatorias: se crean una vez por test.
+        $this->categoria = Categoria::create(['nombre' => 'Filtros']);
+        $this->marca = Marca::create(['nombre' => 'Bosch']);
+
         $this->actingAs($this->user);
+    }
+
+    /**
+     * Payload base de alta/edición con los campos obligatorios del formulario.
+     */
+    private function payload(array $overrides = []): array
+    {
+        return array_merge([
+            'nombre' => 'Producto de Prueba',
+            'precio_compra' => 10,
+            'precio_venta' => 20,
+            'activo' => 1,
+            'categoria_id' => $this->categoria->id,
+            'marca_id' => $this->marca->id,
+        ], $overrides);
     }
 
     /** @test */
@@ -43,14 +64,9 @@ class ProductoCloudinaryTest extends TestCase
 
         $file = UploadedFile::fake()->create('producto.jpg', 100);
 
-        $response = $this->post(route('productos.store'), [
-            'nombre' => 'Producto de Prueba',
-            'precio_compra' => 10,
-            'precio_venta' => 20,
-            'activo' => 1,
+        $response = $this->post(route('productos.store'), $this->payload([
             'foto' => $file,
-            'categoria_id' => null,
-        ]);
+        ]));
 
         $response->assertRedirect(route('productos.index'));
 
@@ -88,14 +104,10 @@ class ProductoCloudinaryTest extends TestCase
 
         $file = UploadedFile::fake()->create('new.jpg', 100);
 
-        $response = $this->put(route('productos.update', $producto), [
+        $response = $this->put(route('productos.update', $producto), $this->payload([
             'nombre' => 'Producto Actualizado',
-            'precio_compra' => 10,
-            'precio_venta' => 20,
-            'activo' => 1,
             'foto' => $file,
-            'categoria_id' => null,
-        ]);
+        ]));
 
         $this->assertDatabaseHas('productos', [
             'id' => $producto->id,

@@ -3,10 +3,20 @@
 namespace Database\Seeders;
 
 use App\Models\Categoria;
-use App\Models\Producto;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
+/**
+ * Crea (o repara) el catálogo de las 8 categorías de la web pública.
+ *
+ * Se ejecuta ANTES de `ProductoSeeder` porque `productos.categoria_id` es
+ * NOT NULL: los productos deben poder insertarse con una categoría válida. La
+ * asignación definitiva por palabras clave del nombre la hace
+ * `ProductoCategoriaSeeder`, que corre después del alta de los productos.
+ *
+ * @see ProductoCategoriaSeeder
+ * @see tests/Feature/SeederWebFlowTest.php
+ */
 class CategoriaSeeder extends Seeder
 {
     /**
@@ -14,9 +24,6 @@ class CategoriaSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Crear las 8 categorías (idempotente con firstOrCreate)
-        $categorias = [];
-
         $categoriasData = [
             ['nombre' => 'Aceites y Lubricantes', 'descripcion' => 'Aceites de motor lubricantes y grasas para vehículos'],
             ['nombre' => 'Filtros',                'descripcion' => 'Filtros de aceite aire combustible y habitáculo'],
@@ -29,7 +36,7 @@ class CategoriaSeeder extends Seeder
         ];
 
         foreach ($categoriasData as $data) {
-            $categorias[$data['nombre']] = Categoria::updateOrCreate(
+            Categoria::updateOrCreate(
                 ['nombre' => $data['nombre']],
                 [
                     // El slug se asigna de forma explícita: DatabaseSeeder corre
@@ -46,63 +53,6 @@ class CategoriaSeeder extends Seeder
         // slug (por ejemplo sembradas antes de la migración de slugs).
         foreach (Categoria::whereNull('slug')->get() as $categoria) {
             $categoria->slug = Str::slug($categoria->nombre);
-            $categoria->save();
-        }
-
-        // 2. Mapa de categoría => palabras clave (orden importa: Aceites antes que Líquidos)
-        $keywordMap = [
-            'Aceites y Lubricantes' => ['aceite', 'lubricante', 'lubricación', 'grasa'],
-            'Filtros' => ['filtro'],
-            'Frenos' => ['freno', 'pastilla', 'disco de freno', 'líquido de freno'],
-            'Suspensión' => ['suspensión', 'amortiguador', 'resorte', 'muelle'],
-            'Neumáticos' => ['neumático', 'llanta', 'rueda', 'cubierta'],
-            'Batería y Eléctrico' => ['batería', 'bujía', 'alternador', 'arranque', 'eléctrico', 'fusible'],
-            'Correas y Cadenas' => ['correa', 'cadena', 'banda'],
-            'Líquidos' => ['líquido', 'refrigerante', 'anticongelante', 'coolant', 'aditivo'],
-        ];
-
-        // Palabras que excluyen de "Líquidos" (van a Aceites y Lubricantes)
-        $aceitesKeywords = ['aceite', 'lubricante'];
-
-        // 3. Asignar categoría a cada producto existente
-        $productos = Producto::all();
-
-        foreach ($productos as $producto) {
-            $nombreLower = mb_strtolower($producto->nombre);
-            $categoriaAsignada = null;
-
-            foreach ($keywordMap as $categoriaNombre => $keywords) {
-                // Regla especial: "Líquidos" no aplica si el nombre contiene aceite o lubricante
-                if ($categoriaNombre === 'Líquidos') {
-                    $esAceite = false;
-                    foreach ($aceitesKeywords as $acWord) {
-                        if (str_contains($nombreLower, $acWord)) {
-                            $esAceite = true;
-                            break;
-                        }
-                    }
-                    if ($esAceite) {
-                        continue;
-                    }
-                }
-
-                foreach ($keywords as $keyword) {
-                    if (str_contains($nombreLower, mb_strtolower($keyword))) {
-                        $categoriaAsignada = $categoriaNombre;
-                        break 2;
-                    }
-                }
-            }
-
-            $producto->categoria_id = $categoriaAsignada !== null
-                ? $categorias[$categoriaAsignada]->id
-                : null;
-            $producto->save();
-        }
-
-        // 4. Actualizar contador_productos para cada categoría
-        foreach ($categorias as $categoria) {
-            $categoria->contador_productos = Producto::where('categoria_id', $categoria->id)->count();
             $categoria->save();
         }
     }

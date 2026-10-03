@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Caja;
 use App\Models\Compra;
 use App\Models\DetalleCompra;
+use App\Models\EgresoCaja;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\KardexService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -96,6 +98,42 @@ class CompraController extends Controller
         $productos = Producto::where('activo', 1)->orderBy('nombre')->get(['id', 'nombre']);
 
         return view('compras.create', compact('proveedores', 'productos'));
+    }
+
+    /**
+     * Busca proveedores activos por razón social o RUC para el autocomplete
+     * del formulario de compra.
+     */
+    public function buscarProveedores(Request $request): JsonResponse
+    {
+        $q = $request->get('q', '');
+
+        $proveedores = Proveedor::where('estado', '1')
+            ->where(function ($query) use ($q) {
+                $query->where('razon_social', 'like', '%'.$q.'%')
+                    ->orWhere('ruc', 'like', '%'.$q.'%');
+            })
+            ->select('id', 'razon_social', 'ruc')
+            ->limit(10)
+            ->get();
+
+        return response()->json($proveedores);
+    }
+
+    /**
+     * Busca productos activos por nombre para el autocomplete del formulario de compra.
+     */
+    public function buscarProductos(Request $request): JsonResponse
+    {
+        $q = $request->get('q', '');
+
+        $productos = Producto::where('activo', 1)
+            ->where('nombre', 'like', '%'.$q.'%')
+            ->select('id', 'nombre', 'precio_compra', 'stock')
+            ->limit(10)
+            ->get();
+
+        return response()->json($productos);
     }
 
     public function store(Request $request): RedirectResponse
@@ -253,7 +291,7 @@ class CompraController extends Controller
 
                     if ($stockDespues < 0) {
                         throw new \RuntimeException(
-                            "Stock insuficiente para {$producto->nombre}. " .
+                            "Stock insuficiente para {$producto->nombre}. ".
                             "Disponible: {$stockAntes}, requerido: {$cantidad}"
                         );
                     }
@@ -296,18 +334,20 @@ class CompraController extends Controller
             });
 
             // Debug: log the created egreso
-            $egresoCreado = \App\Models\EgresoCaja::where('descripcion', 'like', '%Anulación compra ' . $resultado['compra']->correlativo . '%')->first();
+            $egresoCreado = EgresoCaja::where('descripcion', 'like', '%Anulación compra '.$resultado['compra']->correlativo.'%')->first();
             \Log::info('Egreso creado:', ['id' => $egresoCreado?->id, 'descripcion' => $egresoCreado?->descripcion, 'monto' => $egresoCreado?->monto]);
 
             return redirect()->route('compras.show', $resultado['compra'])
                 ->with('success', 'Compra anulada con salida compensatoria y nota de crédito registrada.');
 
         } catch (\RuntimeException $e) {
-            \Log::error('anularRecibida RuntimeException: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error('anularRecibida RuntimeException: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return redirect()->route('compras.show', $compra)
                 ->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            \Log::error('anularRecibida Throwable: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error('anularRecibida Throwable: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return redirect()->route('compras.show', $compra)
                 ->with('error', 'Error al anular la compra: '.$e->getMessage());
         }
@@ -398,9 +438,12 @@ class CompraController extends Controller
                     if ($nuevoCosto > 0) {
                         $producto->update(['precio_compra' => round($nuevoCosto, 2)]);
 
-                        // Advertencia de margen (requisito 40 / design 6.4)
+                        // Advertencia de margen: marcar producto como precio incoherente si costo > precio_venta
                         if ($producto->precio_venta > 0 && $nuevoCosto > $producto->precio_venta) {
+                            $producto->update(['precio_incoherente' => true]);
                             $productosConMargenPerdido[] = $producto->nombre;
+                        } else {
+                            $producto->update(['precio_incoherente' => false]);
                         }
                     }
                 }

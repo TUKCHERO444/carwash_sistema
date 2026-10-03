@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\TiempoAtencionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -46,6 +47,9 @@ class CambioAceite extends Model
         'monto_izipay',
         'caja_id',
         'estado',
+        'atencion_inicio_at',
+        'atencion_fin_at',
+        'tiempo_atencion_minutos',
     ];
 
     protected $casts = [
@@ -55,6 +59,9 @@ class CambioAceite extends Model
         'monto_efectivo' => 'decimal:2',
         'monto_yape' => 'decimal:2',
         'monto_izipay' => 'decimal:2',
+        'atencion_inicio_at' => 'datetime',
+        'atencion_fin_at' => 'datetime',
+        'tiempo_atencion_minutos' => 'integer',
     ];
 
     /**
@@ -131,5 +138,32 @@ class CambioAceite extends Model
     public function scopeConfirmados(Builder $query): Builder
     {
         return $query->where('estado', 'confirmado');
+    }
+
+    /**
+     * Orden de la cola de atención: arriba los últimos registrados,
+     * abajo los más antiguos (timestamp de registro descendente).
+     */
+    public function scopeColaAtencion(Builder $query): Builder
+    {
+        return $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+    }
+
+    /**
+     * Culminados ordenados por fin de atención descendente.
+     */
+    public function scopeCulminadosPorAtencion(Builder $query): Builder
+    {
+        return $query->orderBy('atencion_fin_at', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
+    }
+
+    /**
+     * Etiqueta del tiempo de atención en minutos/horas ("45 min", "2 h 15 min").
+     */
+    public function getTiempoAtencionLabelAttribute(): ?string
+    {
+        return app(TiempoAtencionService::class)->etiqueta($this->tiempo_atencion_minutos);
     }
 }

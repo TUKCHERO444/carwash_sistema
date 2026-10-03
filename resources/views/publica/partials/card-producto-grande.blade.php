@@ -16,7 +16,7 @@
         : route('publica.productos');
 @endphp
 
-<article class="group {{ $junta ? 'h-full bg-white' : 'rounded-2xl border border-steel-200 bg-white shadow-sm' }} flex flex-col overflow-hidden transition-shadow hover:shadow-md" data-cw-anim="{{ $junta ? 'fade' : 'up' }}">
+<article class="group relative {{ $junta ? 'h-full bg-white' : 'rounded-2xl border border-steel-200 bg-white shadow-sm' }} flex flex-col overflow-hidden transition-shadow hover:shadow-md" data-cw-anim="{{ $junta ? 'fade' : 'up' }}">
     {{-- Imagen del producto (o placeholder si no tiene foto). --}}
     <a href="{{ $rutaDetalle }}" class="relative aspect-[4/5] overflow-hidden bg-navy-800">
         @if ($producto->fotoUrl)
@@ -37,6 +37,22 @@
             </span>
         @endif
     </a>
+
+    {{-- Agregar rápido al carrito (1 unidad, hover en escritorio). --}}
+    @if (! $agotado)
+        <form action="{{ route('cuenta.carrito.agregar') }}" method="POST" data-carrito
+              class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-sm:opacity-100">
+            @csrf
+            <input type="hidden" name="producto_id" value="{{ $producto->id }}">
+            <input type="hidden" name="cantidad" value="1">
+            <button type="submit" title="Agregar al carrito" aria-label="Agregar al carrito"
+                    class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan-500 text-navy-900 shadow-md transition-colors hover:bg-brand-cyan-400">
+                <svg aria-hidden="true" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                </svg>
+            </button>
+        </form>
+    @endif
 
     {{-- Información de la card. --}}
     <div class="flex flex-1 flex-col gap-2 p-3">

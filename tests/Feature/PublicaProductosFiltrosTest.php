@@ -132,9 +132,10 @@ class PublicaProductosFiltrosTest extends TestCase
         $categoria = $this->crearCategoria();
         $otra = $this->crearCategoria('Otros');
         $marca = Marca::create(['nombre' => 'Michelin']);
+        $otraMarca = Marca::create(['nombre' => 'Bosch']);
 
         $this->crearProducto($categoria, ['nombre' => 'Beta', 'marca_id' => $marca->id, 'stock' => 5]);
-        $this->crearProducto($categoria, ['nombre' => 'Alpha', 'marca_id' => null, 'stock' => 30]);
+        $this->crearProducto($categoria, ['nombre' => 'Alpha', 'marca_id' => $otraMarca->id, 'stock' => 30]);
         $this->crearProducto($otra, ['nombre' => 'Gamma', 'marca_id' => $marca->id, 'stock' => 20]);
 
         $ruta = $categoria->slug;

@@ -12,9 +12,20 @@ class DashboardController extends Controller
 
     /**
      * Muestra el dashboard de estadísticas e ingresos del local.
+     *
+     * La zona pública (/cuenta/*) nunca entra aquí: una cuenta que solo
+     * tiene el rol Cliente es devuelta a su panel (las rutas con
+     * permission:* sí responden 403, ahí no hay a dónde redirigir).
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->hasRole('Cliente') && $user->roles->pluck('name')->diff(['Cliente'])->isEmpty()) {
+            return redirect()->route('cuenta.panel')
+                ->with('info', 'Tu sesión es de cliente. Para entrar al panel operativo, cierra sesión e ingresa con una cuenta del local.');
+        }
+
         $periodo = (int) $request->query('periodo', 30);
 
         // 7 | 30 | este mes

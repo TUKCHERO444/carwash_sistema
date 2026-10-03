@@ -48,10 +48,16 @@
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
                         <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            N.º
+                        </th>
+                        <th scope="col" class="px-4 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Foto
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Placa
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Registro
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Acciones
@@ -61,6 +67,10 @@
                 <tbody class="bg-surface divide-y divide-main">
                     @foreach($cambioAceites as $cambioAceite)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            {{-- Orden de atención: correlativo en la cola --}}
+                            <td class="px-4 py-8 whitespace-nowrap text-sm text-primary font-bold">
+                                #{{ $cambioAceites->firstItem() + $loop->index }}
+                            </td>
                             {{-- Foto --}}
                             <td class="px-4 py-6 whitespace-nowrap">
                                 @if($cambioAceite->foto)
@@ -79,6 +89,9 @@
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium">
                                 {{ $cambioAceite->automotor->placa ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $cambioAceite->created_at?->format('d/m H:i') ?? '—' }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm">
                                 <a href="{{ route('cambio-aceite.confirmar', $cambioAceite) }}"

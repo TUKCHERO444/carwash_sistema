@@ -53,4 +53,34 @@ class ReporteAccesoTest extends TestCase
         $this->actingAs($usuario)->get(route('reportes.index'))->assertOk();
         $this->actingAs($usuario)->get(route('reportes.ingresos'))->assertOk();
     }
+
+    public function test_resumen_vive_en_auditoria_y_no_en_gestion_administrativa(): void
+    {
+        Permission::firstOrCreate(['name' => 'acceso-reportes', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-auditoria', 'guard_name' => 'web']);
+
+        $usuario = User::factory()->create();
+        $usuario->givePermissionTo('acceso-reportes');
+
+        $html = $this->actingAs($usuario)->get(route('reportes.index'))->getContent();
+
+        // La sección Auditoría existe y contiene el resumen (desktop + móvil).
+        $this->assertSame(2, substr_count($html, 'Resumen de reportes'));
+        $this->assertStringContainsString('Auditoría', $html);
+
+        // Gestión Administrativa no lo muestra (ni siquiera existe sin sus permisos).
+        $this->assertStringNotContainsString('Gestión Administrativa', $html);
+
+        // Sin acceso-auditoria no ve los enlaces del sidebar (la página
+        // de reportes sí puede mencionar "Kardex" por su propio reporte).
+        $this->assertStringNotContainsString('/auditoria/kardex', $html);
+        $this->assertStringNotContainsString('/auditoria/acciones', $html);
+    }
+
+    public function test_sin_permiso_no_hay_seccion_auditoria_ni_resumen(): void
+    {
+        $this->actingAs(User::factory()->create())->get(route('dashboard'))
+            ->assertDontSee('Resumen de reportes')
+            ->assertDontSee('Auditoría');
+    }
 }

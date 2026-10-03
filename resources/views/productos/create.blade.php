@@ -79,15 +79,16 @@
             {{-- Categoría (create) --}}
             <div class="mb-5">
                 <label for="categoria_id" class="label-main mb-1">
-                    Categoría
+                    Categoría <span class="text-red-500">*</span>
                 </label>
                 <select
                     id="categoria_id"
                     name="categoria_id"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('categoria_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                 >
-                    <option value="">Sin categoría</option>
+                    <option value="">Seleccione una categoría</option>
                     @foreach($categorias as $cat)
                         <option value="{{ $cat->id }}" {{ old('categoria_id') == $cat->id ? 'selected' : '' }}>
                             {{ $cat->nombre }}
@@ -102,15 +103,16 @@
             {{-- Marca --}}
             <div class="mb-5">
                 <label for="marca_id" class="label-main mb-1">
-                    Marca
+                    Marca <span class="text-red-500">*</span>
                 </label>
                 <select
                     id="marca_id"
                     name="marca_id"
+                    required
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('marca_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                 >
-                    <option value="">Sin marca</option>
+                    <option value="">Seleccione una marca</option>
                     @foreach($marcas as $marca)
                         <option value="{{ $marca->id }}" {{ old('marca_id') == $marca->id ? 'selected' : '' }}>
                             {{ $marca->nombre }}

@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -30,8 +32,45 @@ class ProductoFactory extends Factory
             'inventario' => 0,
             'activo' => true,
             'foto' => null,
-            'categoria_id' => null,
+            // Categoría y marca son obligatorias en la BD: se reutiliza la primera
+            // disponible y, si la tabla está vacía, se crea una para el test.
+            'categoria_id' => $this->categoriaId(),
+            'marca_id' => $this->marcaId(),
         ];
+    }
+
+    /**
+     * Reutiliza una categoría existente; si no hay ninguna, crea una.
+     */
+    private function categoriaId(): int
+    {
+        $id = Categoria::query()->orderBy('id')->value('id');
+
+        if ($id === null) {
+            $id = Categoria::create([
+                'nombre' => 'Categoría de prueba',
+                'descripcion' => 'Categoría creada por el factory de productos.',
+            ])->id;
+        }
+
+        return $id;
+    }
+
+    /**
+     * Reutiliza una marca existente; si no hay ninguna, crea una.
+     */
+    private function marcaId(): int
+    {
+        $id = Marca::query()->orderBy('id')->value('id');
+
+        if ($id === null) {
+            $id = Marca::create([
+                'nombre' => 'Marca de prueba',
+                'descripcion' => 'Marca creada por el factory de productos.',
+            ])->id;
+        }
+
+        return $id;
     }
 
     /**

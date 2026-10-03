@@ -22,13 +22,15 @@ class DatabaseSeeder extends Seeder
             TrabajadorSeeder::class,
             MarcaSeeder::class,
             ProveedorSeeder::class,
-            ProductoSeeder::class,
-            CompraSeeder::class,
-            // CategoriaSeeder DEBE ir después de ProductoSeeder: asigna a cada
-            // producto su categoría por palabras clave del nombre. Si se ejecuta
-            // antes, no encuentra productos y la web pública queda sin
-            // categorías (dropdown vacío y mosaico sin tiles).
+            // CategoriaSeeder crea las 8 categorías y DEBE ir antes de
+            // ProductoSeeder: productos.categoria_id es NOT NULL, así que el
+            // alta necesita una categoría válida. La asignación definitiva por
+            // palabras clave la hace ProductoCategoriaSeeder, que sí corre
+            // después (necesita los productos ya cargados).
             CategoriaSeeder::class,
+            ProductoSeeder::class,
+            ProductoCategoriaSeeder::class,
+            CompraSeeder::class,
             ServicioSeeder::class,
             CambioAceiteSeeder::class,
             CambioProductoSeeder::class,

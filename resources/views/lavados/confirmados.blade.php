@@ -61,6 +61,9 @@
                             Pago
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tiempo atención
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -114,6 +117,9 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $colores[$metodo] ?? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-secondary-dark' }}">
                                     {{ $labels[$metodo] ?? ucfirst($metodo) }}
                                 </span>
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $lavado->tiempo_atencion_label ?? '—' }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 {{-- Ver detalle --}}

@@ -41,7 +41,7 @@ class StockUpdateModalTest extends TestCase
         $this->admin->assignRole($role);
 
         // Create a product with known stock
-        $this->producto = Producto::create([
+        $this->producto = Producto::factory()->create([
             'nombre' => 'Aceite Motor 5W30',
             'precio_compra' => 15.00,
             'precio_venta' => 25.00,

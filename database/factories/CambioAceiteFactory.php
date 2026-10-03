@@ -26,6 +26,7 @@ class CambioAceiteFactory extends Factory
             'descripcion' => fake()->optional()->sentence(),
             'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
             'caja_id' => null,
+            'atencion_inicio_at' => now(),
         ];
     }
 }

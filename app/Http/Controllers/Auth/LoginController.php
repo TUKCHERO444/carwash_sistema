@@ -17,11 +17,18 @@ class LoginController extends Controller
 
     /**
      * Show the login form.
-     * Redirects to /dashboard if the user is already authenticated.
+     * Redirects to /dashboard if the user is already authenticated, or to
+     * /cuenta when the session belongs to a public client account.
      */
     public function showLoginForm(): View|RedirectResponse
     {
         if (Auth::check()) {
+            $user = Auth::user();
+
+            if ($user->hasRole('Cliente') && $user->roles->pluck('name')->diff(['Cliente'])->isEmpty()) {
+                return redirect()->route('cuenta.panel');
+            }
+
             return redirect('/dashboard');
         }
 

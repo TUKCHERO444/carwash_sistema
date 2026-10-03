@@ -127,7 +127,7 @@ caja      → Caja, EgresoCaja
 | `modulo` | string(40) | not null, index | Nombre legible del módulo (p. ej. `productos`, `ventas`, `sesiones`). |
 | `accion` | string(30) | not null, index | `crear`, `actualizar`, `eliminar` o etiqueta de negocio. |
 | `auditable_type` | string | not null | Clase del modelo auditado (`App\Models\...`) |
-| `auditable_id` | bigint | not null | Id del registro en su tabla |
+| `auditable_id` | string(50) | not null | Id del registro en su tabla (texto porque hay PKs no enteras, ej. la placa en `automotores`) |
 | `datos_antes` | JSON | nullable | Valores previos de los campos que cambiaron |
 | `datos_despues` | JSON | nullable | Valores posteriores de los campos que cambiaron |
 | `usuario_id` | bigint | FK → `users.id` (restrict) | Usuario que ejecutó la acción |

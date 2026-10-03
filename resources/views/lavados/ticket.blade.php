@@ -283,6 +283,34 @@
 
         <hr>
 
+        {{-- Orden de atención --}}
+        <div class="ticket-section">
+            <h2>Orden de atención</h2>
+
+            <div class="data-row">
+                <span class="label">Inicio:</span>
+                <span class="value">{{ $lavado->atencion_inicio_at?->format('d/m/Y H:i') ?? $lavado->created_at?->format('d/m/Y H:i') ?? '—' }}</span>
+            </div>
+
+            @if($lavado->atencion_fin_at)
+                <div class="data-row">
+                    <span class="label">Fin:</span>
+                    <span class="value">{{ $lavado->atencion_fin_at->format('d/m/Y H:i') }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Tiempo:</span>
+                    <span class="value">{{ $lavado->tiempo_atencion_label ?? '—' }}</span>
+                </div>
+            @else
+                <div class="data-row">
+                    <span class="label">Estado:</span>
+                    <span class="value">En cola</span>
+                </div>
+            @endif
+        </div>
+
+        <hr>
+
         {{-- Vehicle --}}
         <div class="ticket-section">
             <h2>Vehículo</h2>

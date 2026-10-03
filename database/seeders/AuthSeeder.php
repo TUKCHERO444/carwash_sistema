@@ -22,6 +22,7 @@ class AuthSeeder extends Seeder
         // Create roles if they don't exist (idempotent)
         $adminRole = Role::firstOrCreate(['name' => 'Administrador', 'guard_name' => 'web']);
         $vendedorRole = Role::firstOrCreate(['name' => 'Vendedor', 'guard_name' => 'web']);
+        $clienteRole = Role::firstOrCreate(['name' => 'Cliente', 'guard_name' => 'web']);
 
         // Assign ALL permissions to Administrador
         $adminRole->syncPermissions(Permission::all());
@@ -34,6 +35,10 @@ class AuthSeeder extends Seeder
             'acceso-vehiculos',
             'acceso-automotores',
         ]);
+
+        // El rol Cliente solo lleva el permiso puerta de la zona pública.
+        // Nunca recibe permisos operativos (acceso-ventas, acceso-caja, ...).
+        $clienteRole->syncPermissions(['acceso-cuenta']);
 
         // Create admin user if it doesn't exist (idempotent)
         $admin = User::firstOrCreate(

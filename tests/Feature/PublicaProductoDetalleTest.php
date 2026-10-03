@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,10 +21,11 @@ class PublicaProductoDetalleTest extends TestCase
             'nombre' => $override['categoria'] ?? 'Frenos',
             'descripcion' => 'Frenos para tu auto.',
         ]);
+        $marca = Marca::create(['nombre' => 'Brembo']);
 
         $producto = Producto::factory()->conExistencias(12)->create(array_merge([
             'categoria_id' => $categoria->id,
-            'marca_id' => null,
+            'marca_id' => $marca->id,
             'activo' => true,
             'nombre' => 'Pastillas de freno Premium',
             'descripcion' => 'Pastillas de alto rendimiento para frenado seguro.',

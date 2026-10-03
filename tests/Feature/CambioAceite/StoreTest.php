@@ -30,7 +30,7 @@ class StoreTest extends TestCase
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
         $this->trabajador = Trabajador::create(['nombre' => 'Mecánico Test', 'estado' => true]);
-        $this->producto = Producto::create([
+        $this->producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,

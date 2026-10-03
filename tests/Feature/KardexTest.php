@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use App\Models\Caja;
 use App\Models\CambioAceite;
+use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\Marca;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\KardexService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -20,6 +23,10 @@ class KardexTest extends TestCase
 
     private User $user;
 
+    private Categoria $categoria;
+
+    private Marca $marca;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -29,6 +36,10 @@ class KardexTest extends TestCase
         }
 
         $this->user = User::factory()->create();
+
+        // Categoría y marca son obligatorias: se crean una vez por test.
+        $this->categoria = Categoria::create(['nombre' => 'Aceites y Lubricantes']);
+        $this->marca = Marca::create(['nombre' => 'Motul']);
     }
 
     private function giveAll(): void
@@ -45,6 +56,26 @@ class KardexTest extends TestCase
             'stock' => $stock,
             'inventario' => $stock,
             'activo' => true,
+            'categoria_id' => $this->categoria->id,
+            'marca_id' => $this->marca->id,
+        ]);
+    }
+
+    /**
+     * Registra un movimiento con una fuente concreta, para probar el filtro.
+     */
+    private function movimiento(Producto $producto, string $fuente, string $origenId): MovimientoKardex
+    {
+        return MovimientoKardex::create([
+            'producto_id' => $producto->id,
+            'tipo' => $fuente === 'compra' || $fuente === 'inventario' ? 'entrada' : 'salida',
+            'fuente' => $fuente,
+            'origen_id' => $origenId,
+            'cantidad' => 2,
+            'stock_antes' => 10,
+            'stock_despues' => 8,
+            'usuario_id' => $this->user->id,
+            'fecha_movimiento' => now(),
         ]);
     }
 
@@ -130,6 +161,8 @@ class KardexTest extends TestCase
             'nombre' => 'Refrigerante Azul',
             'precio_compra' => 15.00,
             'precio_venta' => 25.00,
+            'categoria_id' => $this->categoria->id,
+            'marca_id' => $this->marca->id,
         ])->assertRedirect();
 
         $producto = Producto::where('nombre', 'Refrigerante Azul')->firstOrFail();
@@ -149,6 +182,8 @@ class KardexTest extends TestCase
             'precio_compra' => 15.00,
             'precio_venta' => 25.00,
             'inventario' => 6,
+            'categoria_id' => $this->categoria->id,
+            'marca_id' => $this->marca->id,
         ])->assertRedirect();
 
         $producto = Producto::where('nombre', 'Refrigerante Verde')->firstOrFail();
@@ -290,5 +325,139 @@ class KardexTest extends TestCase
         $this->get(route('kardex.porProducto', $producto))
             ->assertOk()
             ->assertSee('VTA-0001');
+    }
+
+    // ─── Filtro por fuente del movimiento ────────────────────────────────
+
+    /**
+     * Regresión: las compras sí registraban movimiento pero el filtro de fuente
+     * no offered la opción, así que era imposible listar solo compras.
+     */
+    public function test_filtro_fuente_aisla_compras_de_las_ventas(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $producto = $this->producto(10);
+        $this->movimiento($producto, 'compra', 'CMP-9001');
+        $this->movimiento($producto, 'venta', 'VTA-9001');
+
+        $this->get(route('kardex.index', ['fuente' => 'compra']))
+            ->assertOk()
+            ->assertSee('CMP-9001')
+            ->assertDontSee('VTA-9001');
+    }
+
+    /**
+     * Toda fuente que el sistema puede registrar debe ser filtrable.
+     */
+    public function test_cada_fuente_registrable_es_filtrable(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $producto = $this->producto(10);
+
+        // Un movimiento por cada origen, con un correlativo que lo identifica.
+        $origenes = [];
+        foreach (KardexService::fuentesValidas() as $i => $fuente) {
+            $origenes[$fuente] = 'OR-'.$i;
+            $this->movimiento($producto, $fuente, 'OR-'.$i);
+        }
+
+        // Filtrar por cada fuente devuelve solo ese movimiento.
+        foreach ($origenes as $fuente => $origen) {
+            $otros = array_diff($origenes, [$origen]);
+
+            $this->get(route('kardex.index', ['fuente' => $fuente]))
+                ->assertOk()
+                ->assertSee($origen);
+
+            foreach ($otros as $otro) {
+                $this->get(route('kardex.index', ['fuente' => $fuente]))
+                    ->assertDontSee($otro);
+            }
+        }
+    }
+
+    /**
+     * El desplegable ofrece exactamente las fuentes del catálogo, con etiqueta legible.
+     */
+    public function test_selector_de_fuente_ofrece_todos_los_origenes(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $response = $this->get(route('kardex.index'))->assertOk();
+
+        foreach (KardexService::FUENTES as $valor => $etiqueta) {
+            $response->assertSee('<option value="'.$valor.'"', false);
+            $response->assertSee($etiqueta);
+        }
+    }
+
+    /**
+     * La columna Fuente muestra la etiqueta, no el valor crudo de la BD.
+     */
+    public function test_columna_fuente_muestra_la_etiqueta_legible(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $producto = $this->producto(10);
+        $this->movimiento($producto, 'conteo_fisico', 'AJU-9001');
+
+        $this->get(route('kardex.index', ['fuente' => 'conteo_fisico']))
+            ->assertOk()
+            ->assertSee('Conteo físico')
+            ->assertDontSee('>conteo_fisico<', false);
+    }
+
+    /**
+     * Una fuente desconocida en la URL (typo o versión anterior) no rompe el
+     * listado: se interpreta como "sin filtro".
+     */
+    public function test_fuente_desconocida_se_trata_como_sin_filtro(): void
+    {
+        $this->actingAs($this->user);
+        $this->giveAll();
+
+        $producto = $this->producto(10);
+        $this->movimiento($producto, 'compra', 'CMP-9001');
+        $this->movimiento($producto, 'venta', 'VTA-9001');
+
+        $this->get(route('kardex.index', ['fuente' => 'fuente_inventada']))
+            ->assertOk()
+            ->assertSee('CMP-9001')
+            ->assertSee('VTA-9001');
+    }
+
+    public function test_registrar_movimiento_rechaza_una_fuente_invalida(): void
+    {
+        $this->actingAs($this->user);
+        $producto = $this->producto(10);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(KardexService::class)->registrarSalida($producto, 1, 10, 'fuente_inventada', 'X-1');
+    }
+
+    /**
+     * El CHECK de PostgreSQL congela la lista de fuentes para que la migración no
+     * cambie de significado. Este test ata esa lista al catálogo de la app: si se
+     * agrega una fuente y no se actualiza la migración, PostgreSQL la rechazaría.
+     */
+    public function test_check_de_postgres_lista_las_mismas_fuentes_que_el_catalogo(): void
+    {
+        $ruta = database_path('migrations/2026_09_27_090000_completar_fuentes_movimientos_kardex_table.php');
+        $contenido = file_get_contents($ruta);
+
+        preg_match('/FUENTES_PERMITIDAS\s*=\s*\[(.*?)\];/s', $contenido, $bloque);
+        preg_match_all("/'([^']+)'/", $bloque[1] ?? '', $coincidencias);
+
+        $congeladas = $coincidencias[1];
+
+        $this->assertNotEmpty($congeladas, 'No se pudo leer la lista congelada de la migración.');
+        $this->assertEqualsCanonicalizing(KardexService::fuentesValidas(), $congeladas);
     }
 }

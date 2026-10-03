@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Categoria;
+use App\Services\CarritoService;
 use App\Services\ContenidoWebService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('publica.partials.header', function ($view) {
             $view->with('categoriasMenu', $this->categoriasPublicas());
+            $view->with('carritoConteo', app(CarritoService::class)->conteoParaHeader(auth()->user()));
         });
     }
 

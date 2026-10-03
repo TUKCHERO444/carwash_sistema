@@ -19,10 +19,10 @@
     $cambioAceiteActive      = request()->routeIs('cambio-aceite.*');
     $gestionVentasActive     = $ventasActive || $cambioAceiteActive || $lavadosActive;
     $cajaActive              = request()->routeIs('caja.*');
-    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*', 'proveedores.*', 'compras.*', 'reportes.*');
+    $gestionAdministrativaActive = request()->routeIs('vehiculos.*', 'servicios.*', 'clientes.*', 'automotores.*', 'proveedores.*', 'compras.*');
     $sitioWebActive = request()->routeIs('contenido-web.*');
     $kardexActive            = request()->routeIs('kardex.*');
-    $auditoriaActive         = request()->routeIs('kardex.*', 'auditoria.*');
+    $auditoriaActive         = request()->routeIs('kardex.*', 'auditoria.*', 'reportes.*');
 @endphp
 
     {{-- Sidebar: visible en desktop (≥1024px), oculto en móvil. Oculto al imprimir. --}}
@@ -187,7 +187,7 @@
             </div>
             @endcan
 
-            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores', 'acceso-reportes'])
+            @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores'])
             <div data-dropdown="gestion-administrativa">
                 <button data-dropdown-toggle="gestion-administrativa"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -254,15 +254,6 @@
                         Compras
                     </a>
                     @endcan
-                    @can('acceso-reportes')
-                    <div class="my-2 border-t border-gray-800"></div>
-                    <p class="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>
-                    <a href="{{ route('reportes.index') }}"
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                              {{ request()->routeIs('reportes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                        Resumen de reportes
-                    </a>
-                    @endcan
                 </div>
             </div>
             @endcanany
@@ -294,7 +285,7 @@
             </div>
             @endcan
 
-            @can('acceso-auditoria')
+            @canany(['acceso-auditoria', 'acceso-reportes'])
             <div data-dropdown="auditoria">
                 <button data-dropdown-toggle="auditoria"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
@@ -311,6 +302,7 @@
                 </button>
                 <div data-dropdown-menu="auditoria"
                      class="{{ $auditoriaActive ? '' : 'hidden' }} ml-4 mt-1 space-y-1">
+                    @can('acceso-auditoria')
                     <a href="{{ route('kardex.index') }}"
                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                               {{ $kardexActive ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
@@ -321,9 +313,17 @@
                               {{ request()->routeIs('auditoria.acciones.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                         Acciones
                     </a>
+                    @endcan
+                    @can('acceso-reportes')
+                    <a href="{{ route('reportes.index') }}"
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                              {{ request()->routeIs('reportes.*') ? 'bg-gray-800 text-white font-semibold' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                        Resumen de reportes
+                    </a>
+                    @endcan
                 </div>
             </div>
-            @endcan
+            @endcanany
         </nav>
 
         {{-- Logout button at the bottom of the sidebar --}}
@@ -504,7 +504,7 @@
         </div>
         @endcan
 
-        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores', 'acceso-reportes'])
+        @canany(['acceso-vehiculos', 'acceso-servicios', 'acceso-clientes', 'acceso-automotores', 'acceso-proveedores'])
         <div data-dropdown="gestion-administrativa-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="gestion-administrativa-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -573,15 +573,6 @@
                     Compras
                 </a>
                 @endcan
-                @can('acceso-reportes')
-                <div class="my-2 border-t border-gray-700"></div>
-                <p class="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">Reportes</p>
-                <a href="{{ route('reportes.index') }}"
-                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
-                          {{ request()->routeIs('reportes.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    Resumen de reportes
-                </a>
-                @endcan
             </div>
         </div>
         @endcanany
@@ -615,7 +606,7 @@
         </div>
         @endcan
 
-        @can('acceso-auditoria')
+        @canany(['acceso-auditoria', 'acceso-reportes'])
         <div data-dropdown="auditoria-mobile" class="flex-1 relative">
             <button data-dropdown-toggle="auditoria-mobile"
                     class="w-full flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors
@@ -634,6 +625,7 @@
                  {{ $auditoriaActive ? 'data-persistent' : '' }}
                  class="absolute bottom-[77px] left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl min-w-max
                         {{ $auditoriaActive ? '' : 'hidden' }}">
+                @can('acceso-auditoria')
                 <a href="{{ route('kardex.index') }}"
                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
                           {{ $kardexActive ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
@@ -644,9 +636,17 @@
                           {{ request()->routeIs('auditoria.acciones.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     Acciones
                 </a>
+                @endcan
+                @can('acceso-reportes')
+                <a href="{{ route('reportes.index') }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors
+                          {{ request()->routeIs('reportes.*') ? 'text-blue-400 bg-gray-700' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    Resumen de reportes
+                </a>
+                @endcan
             </div>
         </div>
-        @endcan
+        @endcanany
 
         {{-- Botón cambio de tema (móvil) --}}
         <button data-theme-toggle

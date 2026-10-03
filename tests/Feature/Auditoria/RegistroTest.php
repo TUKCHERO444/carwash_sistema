@@ -34,7 +34,7 @@ class RegistroTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $producto = Producto::create([
+        $producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,
@@ -51,7 +51,11 @@ class RegistroTest extends TestCase
             'usuario_id' => $this->user->id,
         ]);
 
-        $registro = RegistroAuditoria::where('auditable_id', $producto->id)->first();
+        // Se filtra por auditable_type porque Categoría y Marca (creadas por el
+        // factory) también se auditan y pueden compartir el id del producto.
+        $registro = RegistroAuditoria::where('auditable_type', Producto::class)
+            ->where('auditable_id', $producto->id)
+            ->first();
         $this->assertSame(5, $registro->datos_despues['stock']);
         $this->assertSame('productos', $registro->modulo);
     }
@@ -60,7 +64,7 @@ class RegistroTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $producto = Producto::create([
+        $producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,
@@ -71,7 +75,8 @@ class RegistroTest extends TestCase
 
         $producto->update(['stock' => 7]);
 
-        $registro = RegistroAuditoria::where('auditable_id', $producto->id)
+        $registro = RegistroAuditoria::where('auditable_type', Producto::class)
+            ->where('auditable_id', $producto->id)
             ->where('accion', 'actualizar')
             ->latest('fecha_movimiento')
             ->first();
@@ -85,7 +90,7 @@ class RegistroTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $producto = Producto::create([
+        $producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,
@@ -106,7 +111,7 @@ class RegistroTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $producto = Producto::create([
+        $producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,

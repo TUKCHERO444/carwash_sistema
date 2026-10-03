@@ -11,6 +11,14 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ContenidoWebController;
+use App\Http\Controllers\Cuenta\CarritoController;
+use App\Http\Controllers\Cuenta\CuentaController;
+use App\Http\Controllers\Cuenta\GoogleController;
+use App\Http\Controllers\Cuenta\LoginController as CuentaLoginController;
+use App\Http\Controllers\Cuenta\RecuperacionController;
+use App\Http\Controllers\Cuenta\RegistroController;
+use App\Http\Controllers\Cuenta\VehiculoController as CuentaVehiculoController;
+use App\Http\Controllers\Cuenta\VerificacionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KardexController;
 use App\Http\Controllers\LavadoController;
@@ -85,9 +93,10 @@ Route::get('/cotiza', [PaginaInicioController::class, 'cotiza'])->name('publica.
 // Página pública "¿Quiénes somos?" (misión, visión y valores).
 Route::get('/quienes-somos', [PaginaInicioController::class, 'quienesSomos'])->name('publica.quienes-somos');
 
-// Auth routes (guests only)
+// Auth routes: el GET decide destino según rol (LoginController@showLoginForm);
+// el POST conserva guest para no reintentar login con sesión activa.
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
 });
 
@@ -95,6 +104,64 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+// Zona pública de clientes (/cuenta/*). Sin guest middleware: los propios
+// controladores redirigen autenticados a cuenta.panel (no a /dashboard).
+// Throttle + @csrf en cada POST; estáticas antes que resource.
+Route::prefix('cuenta')->name('cuenta.')->group(function () {
+    // Google OIDC primero: estáticas, nunca como parámetro.
+    Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])
+        ->middleware('throttle:10,1')->name('google.callback');
+
+    Route::get('/registro', [RegistroController::class, 'create'])->name('registro');
+    Route::post('/registro', [RegistroController::class, 'store'])->middleware('throttle:6,1');
+
+    Route::get('/login', [CuentaLoginController::class, 'create'])->name('login');
+    Route::post('/login', [CuentaLoginController::class, 'store'])->middleware('throttle:5,1');
+
+    Route::get('/verificacion', [VerificacionController::class, 'create'])->name('verificacion.form');
+    Route::post('/verificacion/reenviar', [VerificacionController::class, 'reenviar'])
+        ->middleware('throttle:3,1')->name('verificacion.reenviar');
+    Route::get('/verificacion/{token}', [VerificacionController::class, 'verify'])
+        ->middleware('throttle:10,1')->name('verificacion');
+
+    Route::get('/recuperacion', [RecuperacionController::class, 'create'])->name('recuperacion.form');
+    Route::post('/recuperacion', [RecuperacionController::class, 'store'])
+        ->middleware('throttle:3,1')->name('recuperacion');
+    Route::get('/recuperacion/{token}', [RecuperacionController::class, 'edit'])->name('recuperacion.editar');
+    Route::post('/recuperacion/{token}', [RecuperacionController::class, 'update'])
+        ->middleware('throttle:5,1')->name('recuperacion.actualizar');
+});
+
+// Zona privada del cliente (guest sin sesión lo atiende el handler de
+// AuthenticationException en bootstrap/app.php → cuenta.login).
+Route::middleware(['auth', 'cliente', 'can:acceso-cuenta'])->prefix('cuenta')->name('cuenta.')->group(function () {
+    Route::get('/', [CuentaController::class, 'panel'])->name('panel');
+    Route::post('/logout', [CuentaLoginController::class, 'destroy'])->name('logout');
+    Route::post('/sesiones/revocar-todas', [RecuperacionController::class, 'revocarTodas'])->name('sesiones.revocar');
+
+    // Vinculación Google con prueba de control (sesión local).
+    Route::get('/auth/google/vincular', [GoogleController::class, 'vincular'])->name('google.vincular');
+    Route::post('/auth/google/vincular', [GoogleController::class, 'confirmarVinculo'])->name('google.confirmar');
+    Route::post('/auth/google/desvincular', [GoogleController::class, 'desvincular'])->name('google.desvincular');
+
+    // Estática ANTES del resource o Laravel la bindea como {vehiculo}.
+    Route::get('/vehiculos', [CuentaVehiculoController::class, 'index'])->name('vehiculos.index');
+    Route::get('/vehiculos/{vehiculo:placa}', [CuentaVehiculoController::class, 'show'])->name('vehiculos.show');
+
+    // Carrito de cotización (todo estático; pdf antes que items/{item}).
+    Route::get('/carrito', [CarritoController::class, 'index'])->name('carrito.index');
+    Route::get('/carrito/pdf', [CarritoController::class, 'pdf'])->name('carrito.pdf');
+    Route::get('/carrito/whatsapp', [CarritoController::class, 'whatsapp'])
+        ->middleware('throttle:10,1')->name('carrito.whatsapp');
+    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])
+        ->middleware('throttle:60,1')->name('carrito.agregar');
+    Route::patch('/carrito/items/{item}', [CarritoController::class, 'actualizar'])
+        ->middleware('throttle:60,1')->name('carrito.actualizar');
+    Route::delete('/carrito/items/{item}', [CarritoController::class, 'quitar'])->name('carrito.quitar');
+    Route::delete('/carrito', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
+});
 
 // Protected dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -160,6 +227,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:acceso-compras')->group(function () {
         // Las rutas estáticas de compras deben declararse ANTES del resource, o
         // Laravel las interpretará como un parámetro de route model binding.
+        Route::get('compras/buscar-proveedores', [CompraController::class, 'buscarProveedores'])
+            ->name('compras.buscar-proveedores');
+        Route::get('compras/buscar-productos', [CompraController::class, 'buscarProductos'])
+            ->name('compras.buscar-productos');
         Route::post('compras/{compra}/recibir', [CompraController::class, 'recibir'])
             ->name('compras.recibir');
         Route::post('compras/{compra}/anular', [CompraController::class, 'anular'])

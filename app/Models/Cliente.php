@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Cliente extends Model
 {
@@ -60,5 +62,23 @@ class Cliente extends Model
     public function lavados(): HasMany
     {
         return $this->hasMany(Lavado::class);
+    }
+
+    /**
+     * Vínculo 1:1 con la cuenta de acceso (zona /cuenta/*). Sin credenciales aquí.
+     */
+    public function customerLink(): HasOne
+    {
+        return $this->hasOne(CustomerUserLink::class);
+    }
+
+    /**
+     * Cuentas de acceso vinculadas (hoy 1:1; preparado para N:M futuro).
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'customer_user_links')
+            ->withPivot('estado', 'rol')
+            ->withTimestamps();
     }
 }

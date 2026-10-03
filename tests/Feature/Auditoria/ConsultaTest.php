@@ -28,7 +28,7 @@ class ConsultaTest extends TestCase
 
     public function test_index_muestra_listado(): void
     {
-        $producto = Producto::create([
+        $producto = Producto::factory()->create([
             'nombre' => 'Aceite 10W40',
             'precio_compra' => 20.00,
             'precio_venta' => 35.00,

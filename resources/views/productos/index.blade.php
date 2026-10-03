@@ -149,7 +149,15 @@
 
                             {{-- Precio Venta --}}
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                S/ {{ number_format($producto->precio_venta, 2) }}
+                                <span class="flex items-center gap-1.5">
+                                    S/ {{ number_format($producto->precio_venta, 2) }}
+                                    @if($producto->precio_incoherente)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"
+                                              title="Precio de compra superior al precio de venta">
+                                            Incoherente
+                                        </span>
+                                    @endif
+                                </span>
                             </td>
 
                             {{-- Stock --}}

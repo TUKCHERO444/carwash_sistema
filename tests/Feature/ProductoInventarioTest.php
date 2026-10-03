@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Categoria;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,6 +25,10 @@ class ProductoInventarioTest extends TestCase
 
     private User $user;
 
+    private Categoria $categoria;
+
+    private Marca $marca;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -30,6 +36,10 @@ class ProductoInventarioTest extends TestCase
         Permission::firstOrCreate(['name' => 'acceso-inventario', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-inventario');
+
+        // Categoría y marca son obligatorias: se crean una vez por test.
+        $this->categoria = Categoria::create(['nombre' => 'Líquidos']);
+        $this->marca = Marca::create(['nombre' => 'Mobil']);
 
         $this->actingAs($this->user);
     }
@@ -42,6 +52,8 @@ class ProductoInventarioTest extends TestCase
             'precio_compra' => 15.00,
             'precio_venta' => 25.00,
             'activo' => 1,
+            'categoria_id' => $this->categoria->id,
+            'marca_id' => $this->marca->id,
         ], $overrides);
     }
 
