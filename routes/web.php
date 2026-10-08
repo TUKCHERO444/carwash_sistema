@@ -20,6 +20,7 @@ use App\Http\Controllers\Cuenta\RegistroController;
 use App\Http\Controllers\Cuenta\VehiculoController as CuentaVehiculoController;
 use App\Http\Controllers\Cuenta\VerificacionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DevolucionVentaController;
 use App\Http\Controllers\KardexController;
 use App\Http\Controllers\LavadoController;
 use App\Http\Controllers\MarcaController;
@@ -265,6 +266,9 @@ Route::middleware(['auth'])->group(function () {
         // Ajax route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
         Route::get('/clientes/consultar-dni', [ClienteController::class, 'consultarDni'])->name('clientes.consultarDni');
 
+        // Resumen de lavados para el modal de frecuencia (solo lectura).
+        Route::get('/clientes/{cliente}/resumen-lavados', [ClienteController::class, 'resumenLavados'])->name('clientes.resumenLavados');
+
         Route::resource('clientes', ClienteController::class)
             ->except(['show'])
             ->parameters(['clientes' => 'cliente']);
@@ -295,6 +299,20 @@ Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
 
     Route::get('/ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
         ->name('ventas.buscar-productos');
+
+    // Devoluciones y cambios — rutas estáticas ANTES del resource para evitar
+    // que Laravel interprete 'devoluciones' o 'create' como {venta}.
+    Route::get('/ventas/{venta}/devoluciones/create', [DevolucionVentaController::class, 'create'])
+        ->name('ventas.devoluciones.create');
+
+    Route::post('/ventas/{venta}/devoluciones', [DevolucionVentaController::class, 'store'])
+        ->name('ventas.devoluciones.store');
+
+    Route::get('/devoluciones', [DevolucionVentaController::class, 'index'])
+        ->name('devoluciones.index');
+
+    Route::get('/devoluciones/{devolucion}', [DevolucionVentaController::class, 'show'])
+        ->name('devoluciones.show');
 
     Route::resource('ventas', VentaController::class)
         ->only(['index', 'create', 'store', 'show', 'destroy']);
@@ -385,4 +403,6 @@ Route::middleware(['auth', 'permission:acceso-reportes'])->prefix('reportes')->n
     Route::get('/caja', [ReporteController::class, 'caja'])->name('caja');
     Route::get('/personal', [ReporteController::class, 'personal'])->name('personal');
     Route::get('/kardex', [ReporteController::class, 'kardex'])->name('kardex');
+    Route::get('/vehiculo', [ReporteController::class, 'vehiculo'])->name('vehiculo');
+    Route::get('/compras-proveedor', [ReporteController::class, 'comprasProveedor'])->name('comprasProveedor');
 });

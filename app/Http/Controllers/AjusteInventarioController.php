@@ -11,13 +11,13 @@ use Illuminate\Http\Request;
 
 class AjusteInventarioController extends Controller
 {
-    private const TIPOS = [
-        'positivo' => 'Ajuste Positivo',
-        'negativo' => 'Ajuste Negativo',
-        'merma' => 'Merma',
-        'daño' => 'Daño',
-        'conteo_fisico' => 'Conteo Físico',
-    ];
+    /**
+     * Tipos válidos: catálogo único del modelo (incluye consumo interno).
+     */
+    private function tipos(): array
+    {
+        return AjusteInventario::TIPOS;
+    }
 
     private const MENSAJES = [
         'tipo.required' => 'Debe seleccionar un tipo de ajuste.',
@@ -60,7 +60,13 @@ class AjusteInventarioController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate($this->reglas(), self::MENSAJES);
+        $validated = $request->validate($this->reglas($request->input('tipo')), self::MENSAJES);
+
+        if ($validated['tipo'] === 'consumo_interno' && trim((string) ($validated['motivo'] ?? '')) === '') {
+            return back()->withInput()->withErrors([
+                'motivo' => 'El motivo es obligatorio para el consumo interno.',
+            ]);
+        }
 
         try {
             $ajuste = app(AjusteInventarioService::class)->crear($validated, $request->user());
@@ -83,19 +89,33 @@ class AjusteInventarioController extends Controller
 
     /**
      * Reglas de validación compartidas.
+     *
+     * Las reglas de línea dependen del tipo: solo `conteo_fisico` usa el
+     * campo de conteo; los demás tipos usan `cantidad` con signo
+     * (negativo = salida). La versión anterior referenciaba campos top-level
+     * inexistentes (`required_without:cantidad`), por lo que ningún ajuste
+     * podía validarse correctamente.
      */
-    private function reglas(): array
+    private function reglas(?string $tipo = null): array
     {
-        $tipos = implode(',', array_keys(self::TIPOS));
+        $tipos = implode(',', array_keys($this->tipos()));
 
-        return [
+        $reglas = [
             'tipo' => ['required', 'in:'.$tipos],
             'motivo' => ['nullable', 'string', 'max:500'],
             'observaciones' => ['nullable', 'string', 'max:500'],
             'lineas' => ['required', 'array', 'min:1'],
             'lineas.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
-            'lineas.*.cantidad' => ['required_without:conteo_fisico', 'integer', 'not_in:0', 'min:-9999', 'max:9999'],
-            'lineas.*.conteo_fisico' => ['required_without:cantidad', 'integer', 'min:0', 'max:99999'],
         ];
+
+        if ($tipo === 'conteo_fisico') {
+            $reglas['lineas.*.cantidad'] = ['nullable', 'integer'];
+            $reglas['lineas.*.conteo_fisico'] = ['required', 'integer', 'min:0', 'max:99999'];
+        } else {
+            $reglas['lineas.*.cantidad'] = ['required', 'integer', 'not_in:0', 'min:-9999', 'max:9999'];
+            $reglas['lineas.*.conteo_fisico'] = ['nullable'];
+        }
+
+        return $reglas;
     }
 }

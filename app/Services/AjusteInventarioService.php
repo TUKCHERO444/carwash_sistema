@@ -19,15 +19,31 @@ class AjusteInventarioService
     public function crear(array $data, User $user): AjusteInventario
     {
         return DB::transaction(function () use ($data, $user) {
+            // El consumo interno siempre es salida: normaliza el signo para
+            // que un valor positivo no incremente existencias por error.
+            if (($data['tipo'] ?? null) === 'consumo_interno') {
+                $data['lineas'] = collect($data['lineas'] ?? [])
+                    ->map(function ($linea) {
+                        if (isset($linea['cantidad'])) {
+                            $linea['cantidad'] = -abs((int) $linea['cantidad']);
+                        }
+
+                        return $linea;
+                    })
+                    ->all();
+            }
+
             // 1. Preparar líneas (incluye lógica de conteo_fisico)
-            $lineas = $this->prepararLineas($data['lineas']);
+            $lineas = $this->prepararLineas($data['lineas'], $data['tipo'] ?? '');
 
             if (empty($lineas)) {
                 throw new \RuntimeException('No hay líneas válidas para procesar.');
             }
 
-            // 2. Crear cabecera
+            // 2. Crear cabecera (la etiqueta se anota ANTES para que el
+            // evento `created` del observer la consuma)
             $correlativo = $this->siguienteCorrelativo();
+            app(AuditService::class)->anotarAccion('crear ajuste');
             $ajuste = AjusteInventario::create([
                 'correlativo' => $correlativo,
                 'tipo' => $data['tipo'],
@@ -41,9 +57,6 @@ class AjusteInventarioService
                 $this->procesarLinea($ajuste, $linea);
             }
 
-            // Auditoría
-            app(AuditService::class)->anotarAccion('crear ajuste');
-
             return $ajuste->refresh();
         });
     }
@@ -51,13 +64,17 @@ class AjusteInventarioService
     /**
      * Prepara las líneas normalizando conteo_fisico a cantidad con signo.
      *
+     * El campo de conteo solo aplica al tipo `conteo_fisico`: el formulario
+     * envía la clave en todas las líneas y debe ignorarse en los demás
+     * tipos para no vaciar el stock por error.
+     *
      * @return array<int, array{producto_id: int, cantidad: int}>
      */
-    private function prepararLineas(array $lineas): array
+    private function prepararLineas(array $lineas, string $tipo): array
     {
         return collect($lineas)
-            ->map(function ($linea) {
-                if (isset($linea['conteo_fisico']) && $linea['conteo_fisico'] !== '') {
+            ->map(function ($linea) use ($tipo) {
+                if ($tipo === 'conteo_fisico' && isset($linea['conteo_fisico']) && $linea['conteo_fisico'] !== '' && is_numeric($linea['conteo_fisico'])) {
                     $producto = Producto::findOrFail($linea['producto_id']);
                     $delta = (int) $linea['conteo_fisico'] - $producto->stock;
                     if ($delta === 0) {
@@ -151,13 +168,15 @@ class AjusteInventarioService
         $esEntrada = $cantidad > 0;
 
         return match ($tipoAjuste) {
-            'positivo' => ['entrada', 'ajuste_positivo'],
-            'negativo' => ['salida', 'ajuste_negativo'],
-            'merma' => ['salida', 'merma'],
-            'daño' => ['salida', 'daño'],
+            'positivo' => ['entrada', 'ajuste_positivo', 0.0],
+            'negativo' => ['salida', 'ajuste_negativo', 0.0],
+            'merma' => ['salida', 'merma', 0.0],
+            'daño' => ['salida', 'daño', 0.0],
+            'consumo_interno' => ['salida', 'consumo_interno', 0.0],
             'conteo_fisico' => [
                 $esEntrada ? 'entrada' : 'salida',
                 'conteo_fisico',
+                0.0,
             ],
             default => throw new \InvalidArgumentException("Tipo de ajuste inválido: {$tipoAjuste}"),
         };
@@ -175,6 +194,7 @@ class AjusteInventarioService
             'negativo' => 'ajuste_negativo',
             'merma' => 'merma',
             'daño' => 'daño',
+            'consumo_interno' => 'consumo_interno',
             'conteo_fisico' => 'conteo_fisico',
             default => throw new \InvalidArgumentException('Tipo inválido'),
         };

@@ -183,6 +183,22 @@ El stack es PHP 8.2 + Laravel 12, Blade + Tailwind CSS, PHPUnit/Pest para prueba
   - Ejecutar `php artisan test` y verificar que todos los tests (unitarios, de propiedades e integración) pasen sin errores
   - Consultar al usuario si surgen dudas o ajustes necesarios
 
+- [x] 12. Arqueo de caja antes del cierre (Requisito 10)
+  - Migración `add_arqueo_to_cajas_table` (esperado/contado/diferencia, `arqueo_user_id` restrict, `fecha_arqueo`, `observacion_arqueo` 500, todo nullable para cajas legadas)
+  - `Caja`: fillable/casts + `arqueoUser()`; `CajaService::calcularEfectivoEsperado` (reutiliza `calcularResumen`, solo físico) + `cerrarConArqueo` transaccional con lock (esperado fresco, diferencia automática); `cerrarCaja` intacto
+  - `CajaController@cerrar`: exige `efectivo_contado`, observación obligatoria con diferencia, `anotarAccion('cerrar caja')`; `index()` pasa el esperado al panel
+  - Modal de cierre como formulario de arqueo + `resources/js/caja/cerrar.js` (preview, en `vite.config.js`); detalle con sección de arqueo (o nota de régimen anterior); columna Diferencia en historial
+  - Tests `tests/Feature/CajaArqueoTest.php` (7 tests) + `tests/js/caja/cerrar.property.test.js` (2 props × 100 runs)
+  - _Requisitos: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
+
+- [x] 13. Egresos clasificados por categoría de gasto (Requisito 11)
+  - Migración `add_clasificacion_to_egresos_caja_table` (`categoria` 30 nullable, `trabajador_id` restrict nullable; históricos quedan "Sin clasificar")
+  - `EgresoCaja::CATEGORIAS` (catálogo único + `categoriasManuales()` sin compra + `etiquetaCategoria()`) + `trabajador()`; `CajaService::registrarEgreso` con passthrough; `CompraController@recibir` clasifica `compra_abastecimiento`
+  - `CajaController@registrarEgreso`: categoría obligatoria del catálogo manual, trabajador opcional; modal con selects + aviso de no duplicar Compras; categoría visible en panel/detalle/historial
+  - `ReporteCajaService::egresosPorCategoria` + tabla en `reportes/caja` y `reportes/pdf/caja`
+  - Tests `tests/Feature/EgresoClasificadoTest.php` (5 tests)
+  - _Requisitos: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
+
 ---
 
 ## Notas

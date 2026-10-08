@@ -107,6 +107,28 @@ class ReporteCajaService
             ->all();
     }
 
+    /**
+     * @return array<int, array{ categoria:string, etiqueta:string, total:float, cantidad:int }>
+     */
+    public function egresosPorCategoria(CarbonImmutable $desde, CarbonImmutable $hasta): array
+    {
+        return EgresoCaja::whereHas('caja', function ($q) use ($desde, $hasta) {
+            $q->where('estado', 'cerrada')->whereBetween('fecha_cierre', [$desde, $hasta]);
+        })
+            ->selectRaw('categoria, SUM(monto) as total, COUNT(*) as cantidad')
+            ->groupBy('categoria')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($fila) => [
+                'categoria' => (string) ($fila->categoria ?? ''),
+                'etiqueta' => EgresoCaja::etiquetaCategoria($fila->categoria),
+                'total' => round((float) $fila->total, 2),
+                'cantidad' => (int) $fila->cantidad,
+            ])
+            ->values()
+            ->all();
+    }
+
     private function cerradasEnRango(CarbonImmutable $desde, CarbonImmutable $hasta): Builder
     {
         return Caja::cerrada()->whereBetween('fecha_cierre', [$desde, $hasta]);

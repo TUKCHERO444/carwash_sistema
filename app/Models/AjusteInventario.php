@@ -33,6 +33,7 @@ class AjusteInventario extends Model
         'merma' => 'Merma',
         'daño' => 'Daño',
         'conteo_fisico' => 'Conteo Físico',
+        'consumo_interno' => 'Consumo Interno',
     ];
 
     public function user(): BelongsTo
@@ -64,7 +65,7 @@ class AjusteInventario extends Model
 
     public function esSalida(): bool
     {
-        return in_array($this->tipo, ['negativo', 'merma', 'daño']);
+        return in_array($this->tipo, ['negativo', 'merma', 'daño', 'consumo_interno']);
     }
 
     public function esConteo(): bool

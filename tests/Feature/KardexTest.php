@@ -359,10 +359,11 @@ class KardexTest extends TestCase
         $producto = $this->producto(10);
 
         // Un movimiento por cada origen, con un correlativo que lo identifica.
+        // Relleno a 2 dígitos: con 10+ fuentes, 'OR-1' sería subcadena de 'OR-10'.
         $origenes = [];
         foreach (KardexService::fuentesValidas() as $i => $fuente) {
-            $origenes[$fuente] = 'OR-'.$i;
-            $this->movimiento($producto, $fuente, 'OR-'.$i);
+            $origenes[$fuente] = sprintf('OR-%02d', $i);
+            $this->movimiento($producto, $fuente, sprintf('OR-%02d', $i));
         }
 
         // Filtrar por cada fuente devuelve solo ese movimiento.

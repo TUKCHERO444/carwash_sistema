@@ -155,7 +155,7 @@ class VentaController extends Controller
      */
     public function show(Venta $venta): View
     {
-        $venta->load('user', 'detalles.producto');
+        $venta->load('user', 'detalles.producto', 'devoluciones.detalles', 'devoluciones.user', 'devoluciones.ventaNueva');
 
         return view('ventas.show', compact('venta'));
     }
@@ -173,9 +173,19 @@ class VentaController extends Controller
     /**
      * Remove the specified venta from the database.
      * Restores product stock for each detalle line within a DB transaction.
+     *
+     * Una venta con devoluciones registradas no puede anularse: sus líneas ya
+     * tienen movimientos Kardex de devolución que quedarían huérfanos. En ese
+     * caso se rechaza con un mensaje explícito (la restricción FK restrict en
+     * devoluciones_venta.venta_id lo impediría de todos modos).
      */
     public function destroy(Venta $venta): RedirectResponse
     {
+        if ($venta->devoluciones()->exists()) {
+            return redirect()->route('ventas.index')
+                ->with('error', 'No se puede eliminar la venta '.$venta->correlativo.': tiene devoluciones registradas. La anulación completa solo aplica a ventas sin devoluciones.');
+        }
+
         try {
             $correlativo = $venta->correlativo;
 

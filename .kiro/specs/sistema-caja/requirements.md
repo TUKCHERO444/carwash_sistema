@@ -94,6 +94,19 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 6. WHEN el usuario confirma el egreso, THE Sistema_Caja SHALL guardar el registro de egreso asociado a la caja activa y actualizar el "Total Egresos" en las tarjetas de resumen.
 7. WHEN el egreso es registrado, THE Sistema_Caja SHALL añadir el egreso al listado de egresos del panel con su monto, descripción y tipo de pago.
 
+### Requisito 11: Egresos clasificados por categoría de gasto
+
+**User Story:** Como responsable, quiero clasificar cada egreso por categoría de gasto (y trabajador cuando corresponda), para saber en qué se utilizó el dinero sin crear un módulo de gastos.
+
+#### Criterios de Aceptación
+
+1. THE Sistema_Caja SHALL exigir la categoría en todo egreso manual, del catálogo único `EgresoCaja::CATEGORIAS` (insumos, mantenimiento, servicios básicos, transporte/movilidad, pago a trabajador, otros); `compra_abastecimiento` queda reservada al flujo de Compras y se rechaza en el formulario manual.
+2. THE Sistema_Caja SHALL permitir asociar un trabajador (opcional) al egreso, sin modificar el módulo de trabajadores.
+3. THE recepción de una compra SHALL clasificar su egreso como `compra_abastecimiento` (mismo egreso del flujo, sin duplicar la operación).
+4. THE clasificación SHALL ser solo informativa: mismo impacto en saldo, método de pago, usuario, fecha, caja, historial y balance; sin tocar inventario ni Kardex; sin rutas de edición/eliminación de egresos.
+5. WHEN se consulta el panel, detalle, historial o reporte de caja, THE Sistema_Caja SHALL mostrar la categoría de cada egreso y el agregado por categoría.
+6. THE catálogo SHALL ampliarse editando solo `EgresoCaja::CATEGORIAS` (validación, formularios y reportes lo leen de ahí).
+
 ---
 
 ### Requisito 6: Restricción de Registro sin Caja Activa
@@ -145,3 +158,19 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 2. WHEN un administrador accede al historial de cajas, THE Sistema_Caja SHALL mostrar la lista de cajas cerradas ordenadas por fecha de cierre descendente.
 3. THE Sistema_Caja SHALL mostrar para cada caja cerrada: fecha de apertura, fecha de cierre, monto inicial, total de ingresos, total de egresos y balance final.
 4. WHERE el usuario tiene el rol "Administrador", THE Sistema_Caja SHALL permitir acceder al detalle completo de cualquier caja cerrada.
+
+---
+
+### Requisito 10: Arqueo de caja antes del cierre
+
+**User Story:** Como responsable de caja, quiero contar el efectivo físico y compararlo con el esperado por el sistema antes de cerrar, para dejar registrada cualquier diferencia (sobrante/faltante) con su responsable y observación.
+
+#### Criterios de Aceptación
+
+1. WHEN el usuario abre el modal de cierre, THE Sistema_Caja SHALL mostrar el efectivo esperado calculado por el sistema, un campo para el efectivo contado y la diferencia (contado − esperado) calculada automáticamente, más una observación.
+2. THE efectivo esperado SHALL ser `monto_inicial + ingresos en efectivo − egresos en efectivo` (reutiliza `calcularResumen`; Yape/Izipay/transferencia/tarjeta no son físico y se excluyen).
+3. THE diferencia SHALL ser `contado − esperado` (positiva = sobrante, negativa = faltante, cero = coincide) y nunca editable manualmente.
+4. IF la diferencia es distinta de cero y no hay observación, THEN THE Sistema_Caja SHALL rechazar el cierre hasta registrarla.
+5. WHEN el cierre se confirma, THE Sistema_Caja SHALL guardar en la misma transacción: estado `cerrada`, `fecha_cierre`, esperado, contado, diferencia, responsable, fecha de arqueo y observación; el cierre queda auditado con la acción `cerrar caja`.
+6. THE Sistema_Caja SHALL impedir cerrar sin arqueo y modificar el arqueo de una caja cerrada.
+7. WHEN se consulta el historial/detalle, THE Sistema_Caja SHALL mostrar la sección de arqueo (esperado, contado, diferencia, responsable, fecha/hora, observación) o la nota de régimen anterior si la caja se cerró sin arqueo.

@@ -41,6 +41,7 @@
                     <option value="negativo" {{ request('tipo') === 'negativo' ? 'selected' : '' }}>Negativo</option>
                     <option value="merma" {{ request('tipo') === 'merma' ? 'selected' : '' }}>Merma</option>
                     <option value="daño" {{ request('tipo') === 'daño' ? 'selected' : '' }}>Daño</option>
+                    <option value="consumo_interno" {{ request('tipo') === 'consumo_interno' ? 'selected' : '' }}>Consumo interno</option>
                     <option value="conteo_fisico" {{ request('tipo') === 'conteo_fisico' ? 'selected' : '' }}>Conteo Físico</option>
                 </select>
             </div>
@@ -93,6 +94,7 @@
                                         'negativo' => ['Ajuste Negativo', 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'],
                                         'merma' => ['Merma', 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'],
                                         'daño' => ['Daño', 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'],
+                                        'consumo_interno' => ['Consumo Interno', 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'],
                                         'conteo_fisico' => ['Conteo Físico', 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'],
                                         default => ['—', 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'],
                                     };

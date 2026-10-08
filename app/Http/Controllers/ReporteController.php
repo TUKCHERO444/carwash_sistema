@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Automotor;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\Proveedor;
 use App\Models\Servicio;
 use App\Models\Trabajador;
 use App\Models\User;
@@ -13,6 +15,7 @@ use App\Services\Reportes\DateRangeFiltro;
 use App\Services\Reportes\ReporteCajaService;
 use App\Services\Reportes\ReporteCambioAceiteService;
 use App\Services\Reportes\ReporteClientesService;
+use App\Services\Reportes\ReporteComprasService;
 use App\Services\Reportes\ReporteCsvService;
 use App\Services\Reportes\ReporteIngresosService;
 use App\Services\Reportes\ReporteInventarioService;
@@ -20,6 +23,7 @@ use App\Services\Reportes\ReporteKardexService;
 use App\Services\Reportes\ReporteLavadosService;
 use App\Services\Reportes\ReportePdfService;
 use App\Services\Reportes\ReportePersonalService;
+use App\Services\Reportes\ReporteVehiculoService;
 use App\Services\Reportes\ReporteVentasService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -51,6 +55,8 @@ class ReporteController extends Controller
         private readonly ReporteCajaService $cajaService,
         private readonly ReportePersonalService $personalService,
         private readonly ReporteKardexService $kardexService,
+        private readonly ReporteVehiculoService $vehiculoService,
+        private readonly ReporteComprasService $comprasService,
         private readonly ReporteCsvService $csvService,
         private readonly ReportePdfService $pdfService,
     ) {}
@@ -384,6 +390,7 @@ class ReporteController extends Controller
                     'detalle' => $this->cajaService->detalle($desde, $hasta, 100000)->getCollection(),
                     'egresos' => $this->cajaService->egresos($desde, $hasta),
                     'egresosPorDescripcion' => $this->cajaService->egresosPorDescripcion($desde, $hasta),
+                    'egresosPorCategoria' => $this->cajaService->egresosPorCategoria($desde, $hasta),
                     'etiqueta' => $etiqueta,
                 ]
             );
@@ -394,6 +401,7 @@ class ReporteController extends Controller
             'detalle' => $this->cajaService->detalle($desde, $hasta),
             'egresos' => $this->cajaService->egresos($desde, $hasta),
             'egresosPorDescripcion' => $this->cajaService->egresosPorDescripcion($desde, $hasta),
+            'egresosPorCategoria' => $this->cajaService->egresosPorCategoria($desde, $hasta),
             'desde' => $desde->toDateString(),
             'hasta' => $hasta->toDateString(),
             'etiqueta' => $etiqueta,
@@ -484,6 +492,149 @@ class ReporteController extends Controller
             'agregado' => $this->kardexService->agregado($desde, $hasta, $filtros),
             'detalle' => $this->kardexService->detalle($desde, $hasta, $filtros),
             'productos' => Producto::orderBy('nombre')->get(['id', 'nombre']),
+            'desde' => $desde->toDateString(),
+            'hasta' => $hasta->toDateString(),
+            'etiqueta' => $etiqueta,
+        ]);
+    }
+
+    public function vehiculo(Request $request): View|StreamedResponse|JsonResponse|Response
+    {
+        $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
+            'placa' => ['nullable', 'string', 'max:7', 'regex:/^[A-Z0-9-]{6,7}$/i'],
+            'tipo' => ['nullable', 'in:lavado,cambio_aceite'],
+        ]));
+
+        [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
+        $filtros = $this->filtrosExtras($request, ['tipo']);
+        $placa = ! empty($datos['placa']) ? Automotor::normalizarPlaca($datos['placa']) : null;
+        $automotor = $placa ? $this->vehiculoService->buscarAutomotor($placa) : null;
+
+        if ($request->query('export') && ! $automotor) {
+            throw new HttpResponseException(response()->json([
+                'errors' => ['placa' => ['Debe indicar una placa registrada para exportar el historial.']],
+            ], 422));
+        }
+
+        if ($request->query('export') === 'csv') {
+            return $this->csvService->descargar(
+                $this->nombreArchivo('reporte-vehiculo-'.$placa),
+                ['fecha', 'tipo', 'cliente', 'placa', 'detalle', 'trabajadores', 'total', 'estado'],
+                $this->vehiculoService->historial($placa, $desde, $hasta, $filtros)->map(fn ($h) => [
+                    $h['fecha'],
+                    $h['tipo_etiqueta'],
+                    $h['cliente'],
+                    $placa,
+                    $h['detalle'],
+                    $h['trabajadores'],
+                    $h['total'],
+                    $h['estado'],
+                ])
+            );
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.vehiculo',
+                $this->nombreArchivo('reporte-vehiculo-'.$placa, 'pdf'),
+                [
+                    'automotor' => $automotor,
+                    'kpis' => $this->vehiculoService->kpis($placa, $desde, $hasta, $filtros),
+                    'porServicio' => $this->vehiculoService->porServicio($placa, $desde, $hasta, $filtros),
+                    'porProducto' => $this->vehiculoService->porProducto($placa, $desde, $hasta, $filtros),
+                    'historial' => $this->vehiculoService->historial($placa, $desde, $hasta, $filtros),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
+        return view('reportes.vehiculo', [
+            'automotor' => $automotor,
+            'placa' => $placa,
+            'kpis' => $automotor ? $this->vehiculoService->kpis($placa, $desde, $hasta, $filtros) : null,
+            'porServicio' => $automotor ? $this->vehiculoService->porServicio($placa, $desde, $hasta, $filtros) : [],
+            'porProducto' => $automotor ? $this->vehiculoService->porProducto($placa, $desde, $hasta, $filtros) : [],
+            'detalle' => $automotor
+                ? $this->vehiculoService->historialPaginado($placa, $desde, $hasta, $filtros, (int) $request->query('page', 1))
+                : null,
+            'desde' => $desde->toDateString(),
+            'hasta' => $hasta->toDateString(),
+            'etiqueta' => $etiqueta,
+        ]);
+    }
+
+    public function comprasProveedor(Request $request): View|StreamedResponse|JsonResponse|Response
+    {
+        $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
+            'proveedor_id' => ['nullable', 'integer', 'exists:proveedores,id'],
+            'producto_id' => ['nullable', 'integer', 'exists:productos,id'],
+        ]));
+
+        [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
+        $filtros = $this->filtrosExtras($request, ['producto_id']);
+        $proveedorId = ! empty($datos['proveedor_id']) ? (int) $datos['proveedor_id'] : null;
+        $proveedor = $proveedorId ? Proveedor::find($proveedorId) : null;
+
+        if ($request->query('export') === 'csv') {
+            if ($proveedor) {
+                $filas = $this->comprasService->historialColeccion($proveedor->id, $desde, $hasta, $filtros)
+                    ->flatMap(fn ($c) => $c->detalles->map(fn ($d) => [
+                        $c->correlativo ?? '—',
+                        $c->fecha?->format('d/m/Y'),
+                        $c->fecha_recepcion?->format('d/m/Y H:i'),
+                        $c->estado,
+                        $d->producto?->nombre,
+                        $d->cantidad,
+                        $d->costo_unitario,
+                        $d->subtotal,
+                        $c->total,
+                    ]));
+
+                return $this->csvService->descargar(
+                    $this->nombreArchivo('reporte-compras-proveedor-'.$proveedor->id),
+                    ['correlativo', 'fecha', 'recepcion', 'estado', 'producto', 'cantidad', 'costo_unitario', 'subtotal', 'total_compra'],
+                    $filas
+                );
+            }
+
+            return $this->csvService->descargar(
+                $this->nombreArchivo('reporte-compras-resumen'),
+                ['proveedor', 'ruc', 'compras', 'total', 'ultima_compra'],
+                $this->comprasService->resumenProveedores($desde, $hasta)->map(fn ($r) => [
+                    $r['razon_social'],
+                    $r['ruc'],
+                    $r['compras'],
+                    $r['total'],
+                    $r['ultima_compra'],
+                ])
+            );
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.compras-proveedor',
+                $this->nombreArchivo($proveedor ? 'reporte-compras-proveedor-'.$proveedor->id : 'reporte-compras-resumen', 'pdf'),
+                [
+                    'proveedor' => $proveedor,
+                    'resumen' => $this->comprasService->resumenProveedores($desde, $hasta),
+                    'kpis' => $proveedor ? $this->comprasService->kpis($proveedor->id, $desde, $hasta, $filtros) : null,
+                    'porProducto' => $proveedor ? $this->comprasService->porProducto($proveedor->id, $desde, $hasta, $filtros) : [],
+                    'evolucion' => $proveedor ? $this->comprasService->evolucionPrecios($proveedor->id, $desde, $hasta, $filtros) : [],
+                    'historial' => $proveedor ? $this->comprasService->historialColeccion($proveedor->id, $desde, $hasta, $filtros) : collect(),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
+        return view('reportes.compras-proveedor', [
+            'proveedor' => $proveedor,
+            'proveedores' => Proveedor::orderBy('razon_social')->get(['id', 'razon_social']),
+            'productos' => Producto::orderBy('nombre')->get(['id', 'nombre']),
+            'resumen' => $this->comprasService->resumenProveedores($desde, $hasta),
+            'kpis' => $proveedor ? $this->comprasService->kpis($proveedor->id, $desde, $hasta, $filtros) : null,
+            'porProducto' => $proveedor ? $this->comprasService->porProducto($proveedor->id, $desde, $hasta, $filtros) : [],
+            'evolucion' => $proveedor ? $this->comprasService->evolucionPrecios($proveedor->id, $desde, $hasta, $filtros) : [],
+            'detalle' => $proveedor ? $this->comprasService->historial($proveedor->id, $desde, $hasta, $filtros) : null,
             'desde' => $desde->toDateString(),
             'hasta' => $hasta->toDateString(),
             'etiqueta' => $etiqueta,

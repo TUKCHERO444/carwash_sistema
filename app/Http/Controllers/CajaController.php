@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caja;
+use App\Models\EgresoCaja;
+use App\Models\Trabajador;
 use App\Services\AuditService;
 use App\Services\CajaService;
 use Illuminate\Http\RedirectResponse;
@@ -32,8 +34,11 @@ class CajaController extends Controller
         }
 
         $resumen = $caja ? $this->cajaService->calcularResumen($caja) : null;
+        $efectivoEsperado = $caja ? $this->cajaService->calcularEfectivoEsperado($caja) : null;
+        $categoriasGasto = EgresoCaja::categoriasManuales();
+        $trabajadores = $caja ? Trabajador::orderBy('nombre')->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno']) : collect();
 
-        return view('caja.panel', compact('caja', 'resumen'));
+        return view('caja.panel', compact('caja', 'resumen', 'efectivoEsperado', 'categoriasGasto', 'trabajadores'));
     }
 
     /**
@@ -66,10 +71,18 @@ class CajaController extends Controller
     }
 
     /**
-     * Cierra la caja activa.
+     * Cierra la caja activa con arqueo previo obligatorio.
+     *
+     * El esperado lo calcula el sistema; el responsable ingresa el contado y
+     * la diferencia es automática. Con diferencia se exige observación.
      */
     public function cerrar(Request $request): RedirectResponse
     {
+        $request->validate([
+            'efectivo_contado' => ['required', 'numeric', 'min:0'],
+            'observacion_arqueo' => ['nullable', 'string', 'max:500'],
+        ]);
+
         $caja = $this->cajaService->getCajaActiva();
 
         if (! $caja) {
@@ -77,20 +90,45 @@ class CajaController extends Controller
                 ->with('error', 'No hay caja activa.');
         }
 
+        $esperado = $this->cajaService->calcularEfectivoEsperado($caja);
+        $contado = round((float) $request->efectivo_contado, 2);
+        $observacion = trim((string) $request->observacion_arqueo);
+
+        if (round($contado - $esperado, 2) != 0.0 && $observacion === '') {
+            return back()
+                ->withErrors(['observacion_arqueo' => 'Debe registrar una observación cuando existe diferencia en el arqueo.'])
+                ->withInput();
+        }
+
         try {
             app(AuditService::class)->anotarAccion('cerrar caja');
 
-            $this->cajaService->cerrarCaja($caja);
+            $caja = $this->cajaService->cerrarConArqueo(
+                $caja,
+                $contado,
+                $observacion === '' ? null : $observacion,
+                auth()->id()
+            );
 
-            return redirect()->route('caja.index')
-                ->with('success', 'Caja cerrada correctamente.');
+            $mensaje = 'Caja cerrada correctamente.';
+            if ((float) $caja->diferencia > 0) {
+                $mensaje .= ' Sobrante de S/ '.number_format($caja->diferencia, 2).'.';
+            } elseif ((float) $caja->diferencia < 0) {
+                $mensaje .= ' Faltante de S/ '.number_format(abs((float) $caja->diferencia), 2).'.';
+            }
+
+            return redirect()->route('caja.index')->with('success', $mensaje);
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Registra un egreso manual en la caja activa.
+     * Registra un egreso manual clasificado en la caja activa.
+     *
+     * La categoría es obligatoria y solo admite el catálogo manual (se
+     * excluye compra_abastecimiento, reservada al flujo de Compras, para no
+     * duplicar operaciones de mercadería). No toca inventario ni Kardex.
      */
     public function registrarEgreso(Request $request): RedirectResponse
     {
@@ -98,6 +136,8 @@ class CajaController extends Controller
             'monto' => ['required', 'numeric', 'gt:0'],
             'descripcion' => ['required', 'string', 'max:500'],
             'tipo_pago' => ['required', 'in:efectivo,yape'],
+            'categoria' => ['required', 'string', 'in:'.implode(',', array_keys(EgresoCaja::categoriasManuales()))],
+            'trabajador_id' => ['nullable', 'integer', 'exists:trabajadores,id'],
         ]);
 
         $caja = $this->cajaService->getCajaActiva();
@@ -114,6 +154,8 @@ class CajaController extends Controller
                 'monto' => $request->monto,
                 'descripcion' => $request->descripcion,
                 'tipo_pago' => $request->tipo_pago,
+                'categoria' => $request->categoria,
+                'trabajador_id' => $request->trabajador_id,
                 'user_id' => auth()->id(),
             ]);
 
@@ -143,7 +185,7 @@ class CajaController extends Controller
      */
     public function detalle(Caja $caja): View
     {
-        $caja->load('user', 'egresos.user');
+        $caja->load('user', 'arqueoUser', 'egresos.user');
         $resumen = $this->cajaService->calcularResumen($caja);
 
         return view('caja.detalle', compact('caja', 'resumen'));

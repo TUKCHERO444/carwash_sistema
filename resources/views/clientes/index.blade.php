@@ -69,6 +69,18 @@
                                     Editar
                                 </a>
 
+                                <button type="button"
+                                        aria-label="Ver lavados del cliente {{ $cliente->nombre_completo }}"
+                                        data-cliente-lavados="{{ $cliente->id }}"
+                                        data-url="{{ route('clientes.resumenLavados', $cliente) }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-xs font-medium rounded-lg hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M4 7h16M4 7a2 2 0 012-2h12a2 2 0 012 2m0 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7zm6 4h8m-8 4h5"/>
+                                    </svg>
+                                    Lavados
+                                </button>
+
                                 <form method="POST" action="{{ route('clientes.destroy', $cliente) }}" class="inline">
                                     @csrf
                                     @method('DELETE')
@@ -96,5 +108,47 @@
         </div>
     @endif
 
+    {{-- Modal de frecuencia de lavados (contenido vía Ajax, sin recargar) --}}
+    <x-modal id="modal-lavados-cliente" title="Lavados del cliente">
+        <div class="px-6 pb-4 sm:pb-6">
+            <p id="lavados-cargando" class="text-sm text-secondary">Cargando resumen…</p>
+            <p id="lavados-error" class="hidden text-sm text-red-600 dark:text-red-400">No se pudo cargar el resumen. Intente nuevamente.</p>
+            <div id="lavados-contenido" class="hidden">
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Cliente</dt>
+                        <dd id="lavados-nombre" class="mt-1 text-sm text-primary font-medium"></dd>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">DNI</p>
+                        <p id="lavados-dni" class="mt-1 text-sm text-primary"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Teléfono</p>
+                        <p id="lavados-telefono" class="mt-1 text-sm text-primary"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Total de lavados confirmados</p>
+                        <p id="lavados-total" class="mt-1 text-2xl font-bold text-primary"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Último lavado</p>
+                        <p id="lavados-ultimo" class="mt-1 text-sm text-primary"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Vehículos</p>
+                        <ul id="lavados-vehiculos" class="mt-1 text-sm text-primary list-disc list-inside"></ul>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        <x-slot:footer>
+            <button type="button" data-modal-close class="w-full sm:w-auto inline-flex justify-center rounded-md border border-main shadow-sm px-4 py-2 bg-surface text-base font-medium text-secondary hover:bg-slate-50 dark:hover:bg-slate-700 sm:text-sm">
+                Cerrar
+            </button>
+        </x-slot:footer>
+    </x-modal>
+
 </div>
+@vite('resources/js/clientes/index.js')
 @endsection

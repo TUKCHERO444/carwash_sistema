@@ -125,6 +125,26 @@
                 @enderror
             </div>
 
+            {{-- Destino --}}
+            <div class="mb-5">
+                <label for="destino" class="label-main mb-1">
+                    Destino
+                </label>
+                <select
+                    id="destino"
+                    name="destino"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('destino') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                >
+                    <option value="comercial" {{ old('destino', $producto->destino ?? 'comercial') === 'comercial' ? 'selected' : '' }}>Comercialización / Operación</option>
+                    <option value="consumo_interno" {{ old('destino', $producto->destino ?? 'comercial') === 'consumo_interno' ? 'selected' : '' }}>Consumo interno</option>
+                </select>
+                <p class="mt-1 text-xs text-secondary">Insumos de operación interna (p. ej. shampoo de lavado). Es informativo: no bloquea ventas ni servicios.</p>
+                @error('destino')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Precio Compra --}}
             <div class="mb-5">
                 <label for="precio_compra" class="label-main mb-1">

@@ -650,6 +650,27 @@ PHPUnit (Laravel Feature Tests + property tests server-side en loop de 100 itera
 
 ---
 
+### ReporteVehiculoService — historial por placa
+
+- **Archivo:** `app/Services/Reportes/ReporteVehiculoService.php` (puro, sin auth/sesión).
+- **Universo:** `Lavado::confirmado + automotor_id = placa` (rango por `DATE(fecha)`) y `CambioAceite::confirmado + automotor_id = placa` (rango por `created_at`). Ventas excluidas (sin FK a automotor).
+- **Firma:** `buscarAutomotor(placa): ?Automotor` (normaliza con `Automotor::normalizarPlaca`); `kpis()` (operaciones, lavados, cambios, total, ticket promedio, primera/última atención, días promedio entre atenciones, último cambio con productos); `porServicio()` (vía `detalle_servicios`); `porProducto()` (vía `cambio_productos` con cantidad y total); `historial(): Collection` unificada ordenada desc (clave `orden = fecha#id`); `historialPaginado(placa,desde,hasta,filtros,pagina,perPage=10): LengthAwarePaginator` manual sobre la colección.
+- **Filtro `tipo`:** `lavado` o `cambio_aceite` restringen ambas ramas (bases, agregados e historial).
+- **Controlador:** `ReporteController@vehiculo` con reglas `placa|tipo + REGLAS_DESDE_HASTA`; sin automotor y con `export` → 422 JSON; HTML sin placa → mensaje de búsqueda; vistas `reportes/vehiculo.blade.php` + `reportes/pdf/vehiculo.blade.php`, tarjeta en `reportes.index`, ruta estática `GET /reportes/vehiculo`.
+- **Propiedad PBT:** *para cualquier* placa con N confirmados (lavados + cambios) y M pendientes/ajenos, `kpis.operaciones = N` y el historial contiene exactamente los N con `estado = confirmado`.
+
+---
+
+### ReporteComprasService — compras por proveedor
+
+- **Archivo:** `app/Services/Reportes/ReporteComprasService.php` (puro, sin auth/sesión).
+- **Universo:** historial = `Compra::whereIn(estado, [recibida, anulada])` (rango por `DATE(fecha)`); KPIs/agregados/comparativo = `recibida`. Borradores excluidos (editables, sin efecto).
+- **Firma:** `resumenProveedores(desde,hasta,limite=20): Collection` (razón social, RUC, compras, total, última, ordenado por total desc); `kpis(proveedorId,...)` (total, compras, promedio, última, productos distintos vía `distinct producto_id`); `porProducto()` (unidades, veces, total, último costo); `evolucionPrecios()` (registros fecha→costo agrupados por producto con mín/máx/primero/último/variación %); `historial(): LengthAwarePaginator` e `historialColeccion()` con `detalles.producto`.
+- **Controlador:** `ReporteController@comprasProveedor` con reglas `proveedor_id|producto_id + REGLAS_DESDE_HASTA`; CSV en dos modos (comparativo o líneas de detalle); PDF con comparativo + detalle completo; vista `reportes/compras-proveedor.blade.php` + `reportes/pdf/compras-proveedor.blade.php`, tarjeta en `reportes.index`, ruta estática `GET /reportes/compras-proveedor`.
+- **Propiedad PBT:** *para cualquier* proveedor con R recibidas, A anuladas y B borradores, `kpis.compras = R`, `historial.total = R + A` y el resumen lo ordena por total desc.
+
+---
+
 ## Notas de alcance
 
 - **Fuera de alcance (fases futuras)**: gráficos para los demás reportes (hoy solo ingresos usa Chart.js), alertas programadas por correo, dashboards por rol, exportación Excel nativa, comparativo interanual, presupuestos. El esquema y los servicios de agregación dejan espacio para añadir estos sin romper nada.

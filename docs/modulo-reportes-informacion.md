@@ -177,11 +177,14 @@ Filtros: rango de fechas por **fecha de cierre** (solo cajas cerradas).
 **Tabla "Balance por jornada" (pagina de 10 en 10):**
 `Caja | Usuario | Apertura | Cierre | Monto inicial | Ingresos | Egresos | Balance final`.
 
+**Tabla "Egresos por categoría" (agregado):**
+`Categoría | Cantidad | Total`.
+
 **Tabla "Egresos por descripción" (agregado):**
 `Descripción | Tipo de pago | Cantidad | Total`.
 
 **Tabla "Detalle de egresos":**
-`Fecha | Caja | Descripción | Usuario | Monto`.
+`Fecha | Caja | Descripción | Categoría | Usuario | Monto`.
 
 **CSV:** `caja;usuario;apertura;cierre;monto_inicial;total_ingresos;total_egresos;balance_final`.
 
@@ -221,6 +224,44 @@ Saldo neto = entradas − salidas del rango.
 `ID | Fecha | Producto | Tipo | Fuente | Cantidad | Stock antes | Stock después | Usuario`.
 
 **CSV:** `id;fecha;producto;tipo;fuente;cantidad;stock_antes;stock_despues;usuario`.
+
+---
+
+## 10. Historial de atención por vehículo — `GET /reportes/vehiculo` (`reportes.vehiculo`)
+
+Filtros: **Placa** (obligatoria para ver datos; `regex 6-7 alfanum + guion`, normalizada a mayúsculas sin espacios), **Tipo** (`lavado|cambio_aceite`) y rango.
+
+Universo: lavados y cambios de aceite **confirmados** con `automotor_id = placa` (rango por `fecha` en lavados y `created_at` en cambios). Las ventas de mostrador no aparecen: no se vinculan a ningún automotor. Sin placa o con placa inexistente la vista muestra el mensaje de búsqueda/no encontrado (sin 404); el export sin placa válida responde 422 JSON.
+
+**Ficha del vehículo:** `Placa | Cliente | Marca/Modelo | Color`.
+
+**KPIs:** operaciones (lavados + cambios), total gastado, ticket promedio, primera/última atención, días promedio entre atenciones y último cambio de aceite con sus productos.
+
+**Tablas "Servicios utilizados" y "Productos utilizados (cambios)":** `Servicio | Veces`; `Producto | Unidades | Total`.
+
+**Tabla "Historial cronológico" (pagina de 10 en 10):**
+`Fecha | Tipo | Cliente | Servicios/Productos | Trabajadores | Importe | Estado`.
+
+**CSV:** `fecha;tipo;cliente;placa;detalle;trabajadores;total;estado`.
+
+---
+
+## 11. Compras por proveedor — `GET /reportes/compras-proveedor` (`reportes.comprasProveedor`)
+
+Filtros: **Proveedor** (`proveedor_id`; vacío = resumen general), **Producto** (`producto_id`) y rango (por `fecha` de compra).
+
+Universo del historial: compras cerradas (`recibida` + `anulada`, con estado visible). KPIs, agregados y comparativo: solo `recibida` (abastecimiento vigente). Borradores excluidos.
+
+**Tabla "Comparativo de proveedores":** `Proveedor | RUC | Compras | Total | Última compra` (ordenada por total desc, con enlace al detalle).
+
+**Con proveedor — KPIs:** total comprado, compras recibidas, compra promedio, productos distintos y última compra.
+
+**Tablas "Productos con mayor frecuencia" y "Evolución de precios":** `Producto | Unidades | Veces | Último costo`; evolución con registros fecha→costo, mín/máx y variación % primero→último.
+
+**Tabla "Historial de compras" (pagina de 10 en 10):**
+`Correlativo | Fecha | Recepción | Estado | Productos (×cantidad, costo) | Subtotal | Total`.
+
+**CSV:** comparativo (`proveedor;ruc;compras;total;ultima_compra`) o detalle por línea (`correlativo;fecha;recepcion;estado;producto;cantidad;costo_unitario;subtotal;total_compra`).
 
 ---
 

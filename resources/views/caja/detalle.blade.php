@@ -75,6 +75,50 @@
         </div>
     </div>
 
+    <!-- Arqueo de Caja -->
+    <div class="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-border-dark p-6 transition-colors duration-300">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-text-primary-dark mb-4">Arqueo de Caja</h3>
+        @if($caja->fecha_arqueo)
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                    <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Efectivo Esperado</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($caja->efectivo_esperado, 2) }}</p>
+                </div>
+                <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                    <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Efectivo Contado</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($caja->efectivo_contado, 2) }}</p>
+                </div>
+                <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                    <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Diferencia</p>
+                    <p class="mt-1 text-xl font-bold {{ (float) $caja->diferencia > 0 ? 'text-green-600 dark:text-green-400' : ((float) $caja->diferencia < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-text-primary-dark') }}">
+                        S/ {{ number_format($caja->diferencia, 2) }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-text-secondary-dark">
+                        @if((float) $caja->diferencia > 0) Sobrante
+                        @elseif((float) $caja->diferencia < 0) Faltante
+                        @else Coincide @endif
+                    </p>
+                </div>
+            </div>
+            <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Responsable</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-text-primary-dark">{{ $caja->arqueoUser?->name ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Fecha y Hora</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-text-primary-dark">{{ $caja->fecha_arqueo->format('d/m/Y H:i') }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Observación</dt>
+                    <dd class="mt-1 text-gray-900 dark:text-text-primary-dark">{{ $caja->observacion_arqueo ?: '—' }}</dd>
+                </div>
+            </dl>
+        @else
+            <p class="text-sm text-gray-500 dark:text-text-secondary-dark">Cerrada sin arqueo (régimen anterior al arqueo obligatorio).</p>
+        @endif
+    </div>
+
     <!-- Tablas de Detalle -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Ingresos -->
@@ -120,7 +164,7 @@
                         <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                             <div>
                                 <p class="text-sm font-medium text-gray-900 dark:text-text-primary-dark">{{ $egreso->descripcion }}</p>
-                                <p class="text-xs text-gray-500 dark:text-text-secondary-dark">{{ $egreso->created_at->format('H:i:s') }} - {{ ucfirst($egreso->tipo_pago) }} | Usuario: {{ $egreso->user->name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-text-secondary-dark">{{ $egreso->created_at->format('H:i:s') }} - {{ ucfirst($egreso->tipo_pago) }} · {{ \App\Models\EgresoCaja::etiquetaCategoria($egreso->categoria) }} | Usuario: {{ $egreso->user->name }}</p>
                             </div>
                             <span class="text-sm font-bold text-red-600 dark:text-red-400">- S/ {{ number_format($egreso->monto, 2) }}</span>
                         </li>

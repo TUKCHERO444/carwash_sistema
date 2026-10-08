@@ -136,6 +136,7 @@ class ProductoController extends Controller
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
                 'marca_id' => ['required', 'integer', 'exists:marcas,id'],
+                'destino' => ['nullable', 'string', 'in:comercial,consumo_interno'],
             ], $this->reglasPrecio($request->all())),
             [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
@@ -160,6 +161,7 @@ class ProductoController extends Controller
                 'foto' => $fotoUrl,
                 'categoria_id' => $validated['categoria_id'],
                 'marca_id' => $validated['marca_id'],
+                'destino' => $validated['destino'] ?? 'comercial',
             ]);
 
             Categoria::find($validated['categoria_id'])->increment('contador_productos');
@@ -197,6 +199,7 @@ class ProductoController extends Controller
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'categoria_id' => ['required', 'integer', 'exists:categorias,id'],
                 'marca_id' => ['required', 'integer', 'exists:marcas,id'],
+                'destino' => ['nullable', 'string', 'in:comercial,consumo_interno'],
             ], $this->reglasPrecio($request->all())),
             [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
@@ -210,6 +213,7 @@ class ProductoController extends Controller
             'precio_venta' => $validated['precio_venta'],
             'categoria_id' => $validated['categoria_id'],
             'marca_id' => $validated['marca_id'],
+            'destino' => $validated['destino'] ?? $producto->destino ?? 'comercial',
         ];
 
         if ($request->hasFile('foto')) {

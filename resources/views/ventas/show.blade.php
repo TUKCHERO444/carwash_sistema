@@ -143,7 +143,7 @@
     </div>
 
     {{-- Actions --}}
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
         <a href="{{ route('ventas.ticket', $venta) }}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,6 +152,51 @@
             </svg>
             Generar ticket
         </a>
+        <a href="{{ route('ventas.devoluciones.create', $venta) }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M16 15v-1a3 3 0 00-3-3H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
+            </svg>
+            Devolver / Cambiar
+        </a>
+    </div>
+
+    {{-- Historial de devoluciones --}}
+    <div class="mt-6">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-text-primary-dark mb-3">Devoluciones</h2>
+        @if($venta->devoluciones->isEmpty())
+            <p class="text-sm text-secondary">Esta venta no tiene devoluciones registradas. No debe confundirse con la anulación completa (botón Eliminar del listado), que borra la venta y restaura todo el stock.</p>
+        @else
+            <div class="bg-surface rounded-lg border border-main overflow-x-auto">
+                <table class="min-w-full divide-y divide-main">
+                    <thead class="bg-gray-50 dark:bg-slate-800/50">
+                        <tr>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correlativo</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                            <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-surface divide-y divide-main">
+                        @foreach($venta->devoluciones as $devolucion)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
+                                    <a href="{{ route('devoluciones.show', $devolucion) }}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ $devolucion->correlativo }}</a>
+                                </td>
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $devolucion->tipo === 'cambio' ? 'Cambio' : 'Devolución' }}</td>
+                                <td class="px-6 py-8 text-sm text-secondary max-w-xs truncate" title="{{ $devolucion->motivo }}">{{ $devolucion->motivo }}</td>
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">S/ {{ number_format($devolucion->total_devuelto, 2) }}</td>
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $devolucion->user->name }}</td>
+                                <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $devolucion->created_at->format('d/m/Y H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
     </div>
 
 </div>

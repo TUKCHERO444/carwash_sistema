@@ -266,6 +266,20 @@ Las tareas marcadas con `*` son opcionales y pueden omitirse para un MVP. Cada t
   - [ ] 10.7 Actualizar `docs/modulo-reportes-informacion.md` (acciones comunes y notas) y las specs `design.md`/`requirements.md`.
     - `vendor/bin/pint`; suite de reportes verde.
 
+  - [x] 11. Historial de atención por vehículo (Requisito 20)
+    - `app/Services/Reportes/ReporteVehiculoService.php`: `buscarAutomotor`, `kpis`, `porServicio`, `porProducto`, `historial`, `historialPaginado` (universo confirmado, rango lavados→`fecha`/cambios→`created_at`).
+    - `ReporteController@vehiculo` + `GET /reportes/vehiculo` (`reportes.vehiculo`): reglas placa/tipo + rango; 422 JSON en export sin placa válida; CSV/PDF con detalle completo.
+    - Vistas `reportes/vehiculo.blade.php` + `reportes/pdf/vehiculo.blade.php` (ficha, KPIs, agregados, historial paginado 10) + tarjeta en `reportes.index`; `print.js` reutilizado, sin JS nuevo.
+    - Tests `tests/Feature/Reportes/ReporteVehiculoTest.php` (universo, filtro tipo, normalización, CSV/PDF/422, acceso) + `reportes.vehiculo` en `ReporteAccesoTest::rutas()` y `ReportePdfExportTest::rutasPdf()`.
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6_
+
+  - [x] 12. Compras por proveedor (Requisito 21)
+    - `app/Services/Reportes/ReporteComprasService.php`: `resumenProveedores`, `kpis`, `porProducto`, `evolucionPrecios`, `historial`/`historialColeccion` (historial = recibida+anulada, volumen = recibida, rango por `fecha`).
+    - `ReporteController@comprasProveedor` + `GET /reportes/compras-proveedor` (`reportes.comprasProveedor`): reglas proveedor/producto + rango; CSV en dos modos; PDF con comparativo + detalle completo.
+    - Vistas `reportes/compras-proveedor.blade.php` + `reportes/pdf/compras-proveedor.blade.php` (comparativo, ficha, KPIs, frecuencia, evolución, historial paginado 10) + tarjeta en `reportes.index`; `print.js` reutilizado, sin JS nuevo.
+    - Tests `tests/Feature/Reportes/ReporteComprasProveedorTest.php` (universo, frecuencia/evolución, HTML ambos modos, CSV/PDF, acceso) + `reportes.comprasProveedor` en `ReporteAccesoTest::rutas()` y `ReportePdfExportTest::rutasPdf()`.
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
+
 ## Checkpoints
 
 1. **Esquema listo** (tareas 1): `pago_diario` migrado y `acceso-reportes` creado; se puede asignar jornal a trabajadores.

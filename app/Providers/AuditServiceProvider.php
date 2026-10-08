@@ -11,6 +11,7 @@ use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Compra;
 use App\Models\ContenidoWeb;
+use App\Models\DevolucionVenta;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
 use App\Models\Marca;
@@ -57,6 +58,7 @@ class AuditServiceProvider extends ServiceProvider
             Cliente::class,
             Automotor::class,
             Venta::class,
+            DevolucionVenta::class,
             CambioAceite::class,
             Lavado::class,
             Caja::class,

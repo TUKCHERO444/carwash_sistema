@@ -487,6 +487,30 @@ Route::middleware('auth')->prefix('caja')->name('caja.')->group(function () {
 
 ---
 
+### Propiedad 15: Efectivo esperado solo con dinero físico
+
+*Para cualquier* caja con ingresos en efectivo, Yape, Izipay y mixtos más egresos de varios tipos, `calcularEfectivoEsperado` debe ser igual a `monto_inicial + monto_efectivo − SUM(egresos efectivo)`, sin incluir Yape/Izipay/transferencia/tarjeta.
+
+**Valida: Requisito 10.2**
+
+---
+
+### Propiedad 16: Arqueo obligatorio y diferencia automática
+
+*Para cualquier* intento de cierre sin `efectivo_contado`, el sistema lo rechaza y la caja sigue abierta; *para cualquier* cierre válido, `diferencia = contado − esperado` (redondeo a 2 decimales) queda persistida junto con responsable, fecha y observación, sin que el cliente pueda enviarla.
+
+**Valida: Requisitos 10.1, 10.3, 10.5, 10.6**
+
+---
+
+### Propiedad 17: Observación obligatoria con diferencia e inmutabilidad
+
+*Para cualquier* cierre con diferencia distinta de cero y sin observación, el sistema lo rechaza; *para cualquier* caja ya cerrada, un nuevo cierre no modifica el arqueo registrado.
+
+**Valida: Requisitos 10.4, 10.6**
+
+---
+
 ## Manejo de Errores
 
 | Escenario | Comportamiento |

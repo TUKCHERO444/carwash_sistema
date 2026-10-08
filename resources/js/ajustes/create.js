@@ -104,7 +104,7 @@ if (typeof document !== 'undefined') {
         function actualizarCamposPorTipo(tipo) {
             tipoAjuste = tipo;
             const esConteo = tipo === 'conteo_fisico';
-            const requiereMotivo = ['merma', 'daño', 'conteo_fisico'].includes(tipo);
+            const requiereMotivo = ['merma', 'daño', 'consumo_interno', 'conteo_fisico'].includes(tipo);
 
             // Mostrar/ocultar campo motivo
             campoMotivo.classList.toggle('hidden', !requiereMotivo);

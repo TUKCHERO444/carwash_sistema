@@ -115,6 +115,13 @@ echo 'CPP > 0: '.\App\Models\Producto::where('costo_promedio_ponderado', '>', 0)
 "
 ```
 
+- [x] 13. Insumos de consumo interno y salidas por consumo (docs/feature-consumo-interno-insumos.md)
+  - `productos.destino` (`comercial` default histórico, `consumo_interno` editable; informativo, no bloquea ventas/servicios) + badge en listado
+  - Nuevo tipo de ajuste `consumo_interno` (salida general con motivo obligatorio, sin atar a lavados) + fuente Kardex `consumo_interno`
+  - `ajustes_inventario.tipo` ENUM → string(20) (tipos en `AjusteInventario::TIPOS`; controlador sin catálogo duplicado)
+  - Rehabilitación del flujo (nunca funcionó): `KardexService::registrar()` público, `resolveMovimiento` con costo, `prepararLineas` solo usa conteo en su tipo, reglas por tipo, etiqueta de auditoría antes del create
+  - Tests `tests/Feature/ConsumoInternoTest.php` (7 tests); `KardexTest` con orígenes `OR-%02d`
+
 ### Criterios de Finalización
 - [ ] 466+ tests pasan (2 fallos preexistentes máx)
 - [ ] `vendor\bin\pint --test` → passed

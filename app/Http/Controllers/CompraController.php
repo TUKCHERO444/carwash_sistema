@@ -448,12 +448,15 @@ class CompraController extends Controller
                     }
                 }
 
-                // 4. Registrar egreso en caja (requisito 37)
+                // 4. Registrar egreso en caja (requisito 37). Se clasifica como
+                // compra/abastecimiento: es el mismo egreso del flujo, no un
+                // gasto manual duplicado.
                 $proveedorNombre = $compra->proveedor?->razon_social ?? 'Proveedor';
                 $egreso = app(CajaService::class)->registrarEgreso($caja, [
                     'monto' => (float) $compra->total,
                     'descripcion' => "Pago compra {$correlativo} ({$proveedorNombre})",
                     'tipo_pago' => 'efectivo',
+                    'categoria' => 'compra_abastecimiento',
                     'user_id' => $request->user()->id,
                 ]);
 

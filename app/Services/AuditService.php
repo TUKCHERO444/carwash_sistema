@@ -16,8 +16,10 @@ use App\Models\Compra;
 use App\Models\ContenidoWeb;
 use App\Models\DetalleAjusteInventario;
 use App\Models\DetalleCompra;
+use App\Models\DetalleDevolucionVenta;
 use App\Models\DetalleServicio;
 use App\Models\DetalleVenta;
+use App\Models\DevolucionVenta;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
 use App\Models\Marca;
@@ -52,6 +54,7 @@ class AuditService
         Cliente::class,
         Automotor::class,
         Venta::class,
+        DevolucionVenta::class,
         CambioAceite::class,
         Lavado::class,
         Caja::class,
@@ -67,6 +70,7 @@ class AuditService
      */
     public const EXCLUIDOS = [
         DetalleVenta::class,
+        DetalleDevolucionVenta::class,
         CambioProducto::class,
         LavadoTrabajador::class,
         DetalleServicio::class,
@@ -106,6 +110,7 @@ class AuditService
         Cliente::class => 'clientes',
         Automotor::class => 'automotores',
         Venta::class => 'ventas',
+        DevolucionVenta::class => 'ventas',
         CambioAceite::class => 'cambio_aceite',
         Lavado::class => 'lavados',
         Caja::class => 'caja',

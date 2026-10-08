@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Reportes;
 
+use App\Models\Automotor;
+use App\Models\Cliente;
+use App\Models\Lavado;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use App\Models\User;
@@ -39,12 +42,28 @@ class ReportePdfExportTest extends TestCase
             'reportes.caja' => null,
             'reportes.personal' => ['mes' => now()->format('Y-m')],
             'reportes.kardex' => null,
+            'reportes.vehiculo' => ['placa' => 'PDF-001'],
+            'reportes.comprasProveedor' => null,
         ];
+    }
+
+    private function sembrarAutomotorParaPdf(): void
+    {
+        $cliente = Cliente::factory()->create();
+        $auto = Automotor::create(['placa' => 'PDF-001', 'cliente_id' => $cliente->id]);
+        Lavado::factory()->confirmado()->create([
+            'cliente_id' => $cliente->id,
+            'automotor_id' => $auto->placa,
+            'fecha' => now()->toDateString(),
+            'total' => 40,
+        ]);
     }
 
     // Feature: exportación PDF de reportes, Property {2}
     public function test_exportar_pdf_por_cada_modulo_de_reporte(): void
     {
+        $this->sembrarAutomotorParaPdf();
+
         foreach ($this->rutasPdf() as $ruta => $parametros) {
             $this->actingAs($this->usuarioConPermiso());
 

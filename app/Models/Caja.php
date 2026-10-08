@@ -17,12 +17,22 @@ class Caja extends Model
         'monto_inicial',
         'fecha_apertura',
         'fecha_cierre',
+        'efectivo_esperado',
+        'efectivo_contado',
+        'diferencia',
+        'arqueo_user_id',
+        'fecha_arqueo',
+        'observacion_arqueo',
     ];
 
     protected $casts = [
         'monto_inicial' => 'decimal:2',
         'fecha_apertura' => 'datetime',
         'fecha_cierre' => 'datetime',
+        'efectivo_esperado' => 'decimal:2',
+        'efectivo_contado' => 'decimal:2',
+        'diferencia' => 'decimal:2',
+        'fecha_arqueo' => 'datetime',
     ];
 
     /**
@@ -31,6 +41,14 @@ class Caja extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relación con User (responsable del arqueo de cierre)
+     */
+    public function arqueoUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'arqueo_user_id');
     }
 
     /**

@@ -25,6 +25,8 @@ class KardexService
         'merma' => 'Merma',
         'daño' => 'Daño',
         'conteo_fisico' => 'Conteo físico',
+        'devolucion' => 'Devolución',
+        'consumo_interno' => 'Consumo interno',
     ];
 
     /**
@@ -54,7 +56,7 @@ class KardexService
      * @param  Producto  $producto  Producto afectado (con el stock ya mutado por el llamador).
      * @param  int  $cantidad  Cantidad movida (>0).
      * @param  int  $stockAntes  Stock del producto antes de la operación.
-     * @param  string  $fuente  'venta' | 'cambio_aceite' | 'ajuste_negativo' | 'merma' | 'daño' | 'conteo_fisico'.
+     * @param  string  $fuente  'venta' | 'cambio_aceite' | 'ajuste_negativo' | 'merma' | 'daño' | 'conteo_fisico' | 'devolucion'.
      * @param  string  $origenId  Correlativo (VTA-XXXX), placa, o correlativo ajuste.
      * @param  float  $costoUnitario  Costo unitario para valorización (opcional).
      */
@@ -84,7 +86,7 @@ class KardexService
      * @param  Producto  $producto  Producto afectado (con el stock ya mutado por el llamador).
      * @param  int  $cantidad  Cantidad movida (>0).
      * @param  int  $stockAntes  Stock del producto antes de la operación.
-     * @param  string  $fuente  'inventario' | 'venta' (anulación) | 'cambio_aceite' (anulación) | 'compra' | 'ajuste_positivo' | 'conteo_fisico'.
+     * @param  string  $fuente  'inventario' | 'venta' (anulación) | 'cambio_aceite' (anulación) | 'compra' | 'ajuste_positivo' | 'conteo_fisico' | 'devolucion'.
      * @param  string  $origenId  Correlativo INV-XXXX, VTA-XXXX, CAM-XXXX, CMP-XXXX, AJU-XXXX.
      * @param  float  $costoUnitario  Costo unitario para valorización (opcional).
      */
@@ -214,8 +216,12 @@ class KardexService
 
     /**
      * Crea la fila de Kardex de forma individual por producto.
+     *
+     * Es público porque los servicios de inventario (ajustes, consumos)
+     * materializan sus movimientos a través de este único punto; el stock
+     * siempre lo muta el llamador antes de registrar.
      */
-    private function registrar(
+    public function registrar(
         Producto $producto,
         string $tipo,
         int $cantidad,

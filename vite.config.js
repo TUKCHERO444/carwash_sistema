@@ -14,6 +14,8 @@ export default defineConfig({
                 'resources/js/publica/productos-filtros.js',
                 // Ventas
                 'resources/js/ventas/create.js',
+                // Devoluciones de venta
+                'resources/js/devoluciones/create.js',
                 // Lavados
                 'resources/js/lavados/create.js',
                 'resources/js/lavados/edit.js',
@@ -36,6 +38,7 @@ export default defineConfig({
                 'resources/js/vehiculos/create.js',
                 // Clientes
                 'resources/js/clientes/validate.js',
+                'resources/js/clientes/index.js',
                 // Categorias
                 'resources/js/categorias/validate.js',
                 // Marcas
@@ -67,6 +70,8 @@ export default defineConfig({
                 // Reportes
                 'resources/js/reportes/ingresos.js',
                 'resources/js/reportes/print.js',
+                // Caja
+                'resources/js/caja/cerrar.js',
             ],
             refresh: true,
         }),

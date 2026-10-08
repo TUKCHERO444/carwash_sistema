@@ -57,6 +57,28 @@
         </tbody>
     </table>
 
+    <h2>Egresos por categoría</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Categoría</th>
+                <th class="derecha">Cantidad</th>
+                <th class="derecha">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($egresosPorCategoria as $fila)
+                <tr>
+                    <td>{{ $fila['etiqueta'] }}</td>
+                    <td class="derecha">{{ $fila['cantidad'] }}</td>
+                    <td class="derecha resaltado">S/ {{ number_format($fila['total'], 2) }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="3" class="vacio">Sin egresos en el período.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
     <h2>Egresos por descripción</h2>
     <table>
         <thead>
@@ -88,6 +110,7 @@
                 <th>Fecha</th>
                 <th>Caja</th>
                 <th>Descripción</th>
+                <th>Categoría</th>
                 <th>Usuario</th>
                 <th class="derecha">Monto</th>
             </tr>
@@ -98,11 +121,12 @@
                     <td>{{ $egreso->created_at->format('d/m/Y H:i') }}</td>
                     <td>#{{ $egreso->caja_id }}</td>
                     <td>{{ $egreso->descripcion }}</td>
+                    <td>{{ \App\Models\EgresoCaja::etiquetaCategoria($egreso->categoria) }}</td>
                     <td>{{ $egreso->user?->name ?? '—' }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($egreso->monto, 2) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="vacio">Sin egresos en el período.</td></tr>
+                <tr><td colspan="6" class="vacio">Sin egresos en el período.</td></tr>
             @endforelse
         </tbody>
     </table>

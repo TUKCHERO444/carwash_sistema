@@ -77,30 +77,28 @@
     @endif
 
     {{-- Egresos --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <div class="bg-surface rounded-lg border border-main overflow-x-auto">
             <div class="px-6 py-4 border-b border-main">
-                <h2 class="text-sm font-semibold text-primary">Egresos por descripción</h2>
+                <h2 class="text-sm font-semibold text-primary">Egresos por categoría</h2>
             </div>
             <table class="min-w-full divide-y divide-main">
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Descripción</th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Tipo de pago</th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Categoría</th>
                         <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Cantidad</th>
                         <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Total</th>
                     </tr>
                 </thead>
                 <tbody class="bg-surface divide-y divide-main">
-                    @forelse($egresosPorDescripcion as $fila)
+                    @forelse($egresosPorCategoria as $fila)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $fila['descripcion'] }}</td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $fila['tipo_pago'] ?: '—' }}</td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $fila['etiqueta'] }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['cantidad'] }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($fila['total'], 2) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-6 py-8 text-center text-sm text-secondary">Sin egresos en el período.</td></tr>
+                        <tr><td colspan="3" class="px-6 py-8 text-center text-sm text-secondary">Sin egresos en el período.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -116,6 +114,7 @@
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Fecha</th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Caja</th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Descripción</th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Categoría</th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Usuario</th>
                         <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Monto</th>
                     </tr>
@@ -126,15 +125,45 @@
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $egreso->created_at->format('d/m/Y H:i') }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">#{{ $egreso->caja_id }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $egreso->descripcion }}</td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ \App\Models\EgresoCaja::etiquetaCategoria($egreso->categoria) }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $egreso->user?->name ?? '—' }}</td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-red-600 dark:text-red-400 text-right">S/ {{ number_format($egreso->monto, 2) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-secondary">Sin egresos en el período.</td></tr>
+                        <tr><td colspan="6" class="px-6 py-8 text-center text-sm text-secondary">Sin egresos en el período.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+    </div>
+
+    {{-- Egresos por descripción --}}
+    <div class="bg-surface rounded-lg border border-main overflow-x-auto">
+        <div class="px-6 py-4 border-b border-main">
+            <h2 class="text-sm font-semibold text-primary">Egresos por descripción</h2>
+        </div>
+        <table class="min-w-full divide-y divide-main">
+            <thead class="bg-gray-50 dark:bg-slate-800/50">
+                <tr>
+                    <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Descripción</th>
+                    <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-secondary uppercase tracking-wider">Tipo de pago</th>
+                    <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Cantidad</th>
+                    <th scope="col" class="px-6 py-6 text-right text-xs font-medium text-secondary uppercase tracking-wider">Total</th>
+                </tr>
+            </thead>
+            <tbody class="bg-surface divide-y divide-main">
+                @forelse($egresosPorDescripcion as $fila)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $fila['descripcion'] }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $fila['tipo_pago'] ?: '—' }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary text-right">{{ $fila['cantidad'] }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($fila['total'], 2) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="px-6 py-8 text-center text-sm text-secondary">Sin egresos en el período.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
 </div>

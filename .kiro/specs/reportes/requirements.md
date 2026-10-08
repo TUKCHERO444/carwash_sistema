@@ -341,6 +341,39 @@ Este módulo agrega un **bloque de reportes de solo lectura** con filtros variad
 
 ---
 
+### Requisito 20: Historial de atención por vehículo (placa)
+
+**User Story:** Como Administrador, quiero consultar por placa el historial cronológico de atenciones de un vehículo, para ver frecuencia, servicios, últimos cambios, productos y totales sin crear un módulo nuevo.
+
+#### Criterios de Aceptación
+
+1. THE ruta `GET /reportes/vehiculo` (nombre `reportes.vehiculo`, grupo `acceso-reportes`) SHALL aceptar `placa` (opcional en HTML, `regex:/^[A-Z0-9-]{6,7}$/i`, normalizada con `Automotor::normalizarPlaca`), `tipo` (`lavado|cambio_aceite`) y el rango `desde/hasta` estándar.
+2. THE universo SHALL ser lavados y cambios de aceite en estado `confirmado` con `automotor_id = placa`; se excluyen pendientes y ventas de mostrador (sin vínculo a automotor). Rango por fecha efectiva (lavados → `fecha`, cambios → `created_at`, criterio del Requisito 18.4).
+3. THE vista SHALL mostrar ficha del vehículo (placa, cliente, marca/modelo, color), KPIs (operaciones, lavados/cambios, total, ticket promedio, primera/última atención, días promedio entre atenciones, último cambio con productos), agregados (servicios utilizados, productos de cambios) e historial cronológico unificado y paginado (10) con fecha, tipo, cliente, servicios/productos, trabajadores, importe y estado.
+4. WHEN no se indica placa o no existe, THE vista SHALL mostrar el mensaje de búsqueda/no encontrado en lugar de las tablas (sin 404).
+5. THE reporte SHALL reutilizar `DateRangeFiltro`, `filtrosExtras`, `nombreArchivo`, `ReporteCsvService`, `ReportePdfService`, los parciales `filtros`/`acciones`, `print.js` y la tarjeta en `reportes.index`; el export CSV/PDF SHALL incluir el detalle completo y responder 422 JSON sin placa válida.
+6. THE implementación SHALL ser de solo lectura: sin migraciones, sin cambios a modelos/flujos operativos, sin permiso nuevo.
+
+**Valida:** Trazabilidad histórica por vehículo con los mecanismos existentes.
+
+---
+
+### Requisito 21: Compras por proveedor
+
+**User Story:** Como Administrador, quiero analizar por proveedor el historial de abastecimiento (compras, productos, precios) y un comparativo general, para decidir compras futuras sin crear un módulo nuevo.
+
+#### Criterios de Aceptación
+
+1. THE ruta `GET /reportes/compras-proveedor` (nombre `reportes.comprasProveedor`, grupo `acceso-reportes`) SHALL aceptar `proveedor_id` (`exists:proveedores`), `producto_id` (`exists:productos`) y el rango `desde/hasta` estándar (rango por `fecha` de compra).
+2. THE historial SHALL incluir compras cerradas (`recibida` + `anulada`, con su estado visible); los KPIs, agregados y comparativo SHALL calcularse solo sobre `recibida` (abastecimiento vigente; anuladas revertidas y borradores sin efecto se excluyen del volumen).
+3. THE vista sin proveedor SHALL mostrar el comparativo (proveedor, RUC, n° compras, total, última compra, ordenado por total desc) con enlace al detalle; con proveedor SHALL mostrar ficha, KPIs (total, compras, promedio, última compra, productos distintos), productos con mayor frecuencia (unidades, veces, último costo), evolución de precios (registros fecha→costo, mín/máx, variación % primero→último) e historial paginado (10) con correlativo, fechas de compra/recepción, estado, productos × cantidad × costo, subtotal y total.
+4. THE export CSV SHALL listar el comparativo (sin proveedor) o el detalle por línea de producto (con proveedor); el PDF SHALL incluir comparativo + detalle completo según el modo.
+5. THE implementación SHALL ser de solo lectura: sin migraciones, sin cambios a proveedores/compras, sin permiso nuevo; reutiliza `DateRangeFiltro`, `filtrosExtras`, `nombreArchivo`, CSV/PDF, parciales `filtros`/`acciones`, `print.js` y tarjeta en `reportes.index`.
+
+**Valida:** Análisis de abastecimiento y evolución de precios con datos existentes.
+
+---
+
 ## Convenciones que la implementación debe respetar
 
 - Todo el código (controlador, servicios, vistas, JS, mensajes, commit messages) en español.

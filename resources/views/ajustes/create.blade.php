@@ -49,6 +49,7 @@
                     <option value="negativo" {{ old('tipo') === 'negativo' ? 'selected' : '' }}>Negativo (salida)</option>
                     <option value="merma" {{ old('tipo') === 'merma' ? 'selected' : '' }}>Merma</option>
                     <option value="daño" {{ old('tipo') === 'daño' ? 'selected' : '' }}>Daño</option>
+                    <option value="consumo_interno" {{ old('tipo') === 'consumo_interno' ? 'selected' : '' }}>Consumo interno (salida)</option>
                     <option value="conteo_fisico" {{ old('tipo') === 'conteo_fisico' ? 'selected' : '' }}>Conteo Físico</option>
                 </select>
                 @error('tipo')
@@ -68,12 +69,12 @@
                     maxlength="500"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('motivo') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="Explique el motivo del ajuste (obligatorio para merma, daño, conteo físico)"></textarea>
+                    placeholder="Explique el motivo del ajuste (obligatorio para merma, daño, consumo interno y conteo físico)"></textarea>
                 @error('motivo')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
                 <p id="ayuda-motivo" class="mt-1 text-xs text-secondary hidden">
-                    Obligatorio para merma, daño y conteo físico. Mínimo 10 caracteres.
+                    Obligatorio para merma, daño, consumo interno y conteo físico. Mínimo 10 caracteres.
                 </p>
             </div>
 

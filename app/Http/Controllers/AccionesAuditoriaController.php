@@ -44,6 +44,8 @@ class AccionesAuditoriaController extends Controller
         'ajustar stock',
         'actualizar ticket',
         'anular venta',
+        'registrar devolución',
+        'registrar cambio',
         'recibir compra',
         'anular compra',
         'abrir caja',

@@ -176,6 +176,55 @@ class ClienteController extends Controller
     }
 
     /**
+     * Resumen de lavados confirmados de un cliente para el modal de
+     * frecuencia en el listado. Solo lectura: agregados sobre los registros
+     * existentes (sin cargar el historial completo, sin contadores manuales).
+     */
+    public function resumenLavados(Cliente $cliente): JsonResponse
+    {
+        $confirmados = $cliente->lavados()->confirmados();
+
+        $total = (clone $confirmados)->count();
+
+        $ultimo = (clone $confirmados)
+            ->with(['automotor:placa,marca,modelo', 'vehiculo:id,nombre'])
+            ->orderByDesc('fecha')
+            ->orderByDesc('id')
+            ->first();
+
+        $vehiculos = (clone $confirmados)
+            ->whereNotNull('automotor_id')
+            ->selectRaw('automotor_id as placa, COUNT(*) as lavados')
+            ->groupBy('automotor_id')
+            ->orderByDesc('lavados')
+            ->get()
+            ->map(fn ($fila) => [
+                'placa' => (string) $fila->placa,
+                'lavados' => (int) $fila->lavados,
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'cliente' => [
+                'id' => $cliente->id,
+                'nombre_completo' => $cliente->nombre_completo,
+                'dni' => $cliente->dni,
+                'telefono' => $cliente->telefono,
+            ],
+            'resumen' => [
+                'total_lavados' => $total,
+                'ultimo_lavado' => $ultimo ? [
+                    'fecha' => $ultimo->fecha?->format('d/m/Y'),
+                    'placa' => $ultimo->automotor?->placa,
+                    'vehiculo' => $ultimo->vehiculo?->nombre,
+                ] : null,
+                'vehiculos' => $vehiculos,
+            ],
+        ]);
+    }
+
+    /**
      * Consulta los datos de la persona por DNI para autocompletar el formulario.
      *
      * Prioriza los datos locales si el DNI ya está registrado; de lo contrario,

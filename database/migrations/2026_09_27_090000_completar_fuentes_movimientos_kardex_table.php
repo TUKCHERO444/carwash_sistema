@@ -40,6 +40,8 @@ return new class extends Migration
         'merma',
         'daño',
         'conteo_fisico',
+        'devolucion',
+        'consumo_interno',
     ];
 
     public function up(): void

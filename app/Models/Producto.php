@@ -116,6 +116,7 @@ class Producto extends Model
         'inventario',
         'stock_minimo',
         'activo',
+        'destino',
         'foto',
         'categoria_id',
         'marca_id',
@@ -133,6 +134,22 @@ class Producto extends Model
         'marca_id' => 'integer',
         'precio_incoherente' => 'boolean',
     ];
+
+    /**
+     * Destinos válidos de un producto. `comercial` es el valor histórico
+     * (venta directa o uso en servicios facturables); `consumo_interno`
+     * identifica insumos de operación interna. Es informativo y de control:
+     * no bloquea ventas ni servicios (un producto puede tener ambos usos).
+     */
+    public const DESTINOS = [
+        'comercial' => 'Comercialización / Operación',
+        'consumo_interno' => 'Consumo interno',
+    ];
+
+    public static function etiquetaDestino(?string $destino): string
+    {
+        return self::DESTINOS[$destino] ?? $destino ?? '—';
+    }
 
     /**
      * Indica si el producto tiene precio de compra mayor al de venta.

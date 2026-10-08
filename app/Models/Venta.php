@@ -47,6 +47,24 @@ class Venta extends Model
     }
 
     /**
+     * Devoluciones registradas sobre esta venta (la venta nunca se modifica).
+     */
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(DevolucionVenta::class, 'venta_id');
+    }
+
+    /**
+     * Cantidad ya devuelta de una línea de detalle (suma de devoluciones previas).
+     */
+    public function cantidadDevueltaPorDetalle(int $detalleVentaId): int
+    {
+        return (int) DetalleDevolucionVenta::where('detalle_venta_id', $detalleVentaId)
+            ->whereHas('devolucion', fn ($q) => $q->where('venta_id', $this->id))
+            ->sum('cantidad');
+    }
+
+    /**
      * Relación con DetalleVenta
      */
     public function detalles(): HasMany

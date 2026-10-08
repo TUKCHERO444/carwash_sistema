@@ -65,11 +65,70 @@ class CajaService
     }
 
     /**
+     * Calcula el efectivo físico esperado en la caja.
+     *
+     * Solo representa dinero en efectivo: monto inicial + ingresos en
+     * efectivo − egresos en efectivo. Yape/Izipay/transferencia/tarjeta no
+     * son dinero físico y no se incluyen. Reutiliza `calcularResumen` para
+     * no duplicar la consolidación de ingresos por método de pago.
+     */
+    public function calcularEfectivoEsperado(Caja $caja): float
+    {
+        $resumen = $this->calcularResumen($caja);
+
+        $egresosEfectivo = (float) EgresoCaja::where('caja_id', $caja->id)
+            ->where('tipo_pago', 'efectivo')
+            ->sum('monto');
+
+        return round((float) $caja->monto_inicial + $resumen['monto_efectivo'] - $egresosEfectivo, 2);
+    }
+
+    /**
+     * Cierra la caja registrando el arqueo en la misma transacción.
+     *
+     * El esperado se calcula dentro de la transacción (nunca se confía en
+     * valores del cliente) y la diferencia es `contado − esperado`. Una
+     * diferencia no bloquea el cierre, pero queda registrada. Una caja
+     * cerrada no admite modificar su arqueo (no existen rutas de edición y
+     * este método rechaza cajas cerradas).
+     *
+     * @throws \RuntimeException si la caja ya está cerrada.
+     */
+    public function cerrarConArqueo(Caja $caja, float $efectivoContado, ?string $observacion, int $userId): Caja
+    {
+        return DB::transaction(function () use ($caja, $efectivoContado, $observacion, $userId) {
+            $caja = Caja::where('id', $caja->id)->lockForUpdate()->firstOrFail();
+
+            if ($caja->estado === 'cerrada') {
+                throw new \RuntimeException('La caja ya está cerrada.');
+            }
+
+            $esperado = $this->calcularEfectivoEsperado($caja);
+            $contado = round($efectivoContado, 2);
+
+            $caja->update([
+                'estado' => 'cerrada',
+                'fecha_cierre' => now(),
+                'efectivo_esperado' => $esperado,
+                'efectivo_contado' => $contado,
+                'diferencia' => round($contado - $esperado, 2),
+                'arqueo_user_id' => $userId,
+                'fecha_arqueo' => now(),
+                'observacion_arqueo' => $observacion,
+            ]);
+
+            return $caja->fresh();
+        });
+    }
+
+    /**
      * Registra un egreso manual en la caja activa.
      *
      * @param  Caja  $caja  La caja a la que se asocia el egreso.
      * @param  array  $data  Debe contener: monto, descripcion, tipo_pago.
-     *                       Opcionalmente: user_id (si no se pasa, se usa el usuario autenticado).
+     *                       Opcionalmente: categoria, trabajador_id, user_id
+     *                       (si no se pasa, se usa el usuario autenticado).
+     *                       La clasificación no altera el impacto financiero.
      *
      * @throws \RuntimeException si la caja está cerrada.
      */
@@ -84,6 +143,8 @@ class CajaService
             'monto' => $data['monto'],
             'descripcion' => $data['descripcion'],
             'tipo_pago' => $data['tipo_pago'],
+            'categoria' => $data['categoria'] ?? null,
+            'trabajador_id' => $data['trabajador_id'] ?? null,
             'user_id' => $data['user_id'] ?? auth()->id(),
         ]);
     }
@@ -210,7 +271,7 @@ class CajaService
      *
      * @throws \RuntimeException si la caja está cerrada.
      */
-    public function registrarIngresoCompensatorio(Caja $caja, array $data): \App\Models\EgresoCaja
+    public function registrarIngresoCompensatorio(Caja $caja, array $data): EgresoCaja
     {
         if ($caja->estado === 'cerrada') {
             throw new \RuntimeException('No se pueden registrar ingresos compensatorios en una caja cerrada.');
@@ -218,7 +279,7 @@ class CajaService
 
         // Usamos EgresoCaja con monto negativo para representar un ingreso (nota de crédito)
         // El campo tipo_pago se usa para clasificar: 'transferencia' por defecto para notas de crédito
-        return \App\Models\EgresoCaja::create([
+        return EgresoCaja::create([
             'caja_id' => $caja->id,
             'monto' => -abs($data['monto']), // Monto negativo = ingreso
             'descripcion' => $data['descripcion'],

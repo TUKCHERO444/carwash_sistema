@@ -171,7 +171,7 @@
                             <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                                 <div>
                                     <p class="text-sm font-medium text-gray-900 dark:text-text-primary-dark">{{ $egreso->descripcion }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-text-secondary-dark">{{ $egreso->created_at->format('H:i:s') }} - {{ ucfirst($egreso->tipo_pago) }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-text-secondary-dark">{{ $egreso->created_at->format('H:i:s') }} - {{ ucfirst($egreso->tipo_pago) }} · {{ \App\Models\EgresoCaja::etiquetaCategoria($egreso->categoria) }}</p>
                                 </div>
                                 <span class="text-sm font-bold text-red-600 dark:text-red-400">- S/ {{ number_format($egreso->monto, 2) }}</span>
                             </li>
@@ -228,7 +228,26 @@
             </div>
             <div>
                 <label for="descripcion" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Descripción</label>
-                <input type="text" name="descripcion" id="descripcion" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej. Pago de servicios">
+                <input type="text" name="descripcion" id="descripcion" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej. Productos de limpieza">
+                <p class="mt-1 text-xs text-gray-500 dark:text-text-secondary-dark">Obligatoria: explica el motivo del gasto. Las compras de mercadería para inventario van en el módulo de Compras, no aquí.</p>
+            </div>
+            <div>
+                <label for="categoria" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Categoría</label>
+                <select name="categoria" id="categoria" required class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">Seleccione…</option>
+                    @foreach($categoriasGasto as $valor => $etiqueta)
+                        <option value="{{ $valor }}">{{ $etiqueta }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="trabajador_id" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Trabajador <span class="text-xs text-gray-400 font-normal">(solo para Pago a trabajador)</span></label>
+                <select name="trabajador_id" id="trabajador_id" class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="">Ninguno</option>
+                    @foreach($trabajadores as $trabajador)
+                        <option value="{{ $trabajador->id }}">{{ $trabajador->nombre_completo }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label for="tipo_pago" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Tipo de Pago</label>
@@ -249,24 +268,41 @@
     </x-slot:footer>
 </x-modal>
 
-<!-- Modal Cerrar Caja -->
-<x-modal id="modal-cerrar-caja" title="¿Cerrar Caja?">
-    <div class="px-6 pb-4 sm:pb-6">
-        <div class="flex items-start gap-3">
-            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:h-10 sm:w-10">
-                <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-            </div>
-            <p class="text-sm text-secondary">¿Estás seguro de que deseas cerrar la caja actual? El balance final registrado será de <strong class="text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($resumen['balance_final'], 2) }}</strong>. Esta acción no se puede deshacer.</p>
-        </div>
-    </div>
+<!-- Modal Cerrar Caja con Arqueo -->
+<x-modal id="modal-cerrar-caja" title="Arqueo y Cierre de Caja" maxWidth="lg">
     <form action="{{ route('caja.cerrar') }}" method="POST" id="form-cerrar-caja">
         @csrf
+        <div class="px-6 pb-4 sm:pb-6 space-y-4">
+            <p class="text-sm text-secondary">Cuente el efectivo físico de la caja. El sistema calcula el esperado y la diferencia automáticamente.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                    <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Esperado</p>
+                    <p class="mt-1 text-xl font-bold text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($efectivoEsperado, 2) }}</p>
+                </div>
+                <div>
+                    <label for="efectivo_contado" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Contado (S/) <span class="text-red-500">*</span></label>
+                    <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado" required
+                           data-esperado="{{ number_format($efectivoEsperado, 2, '.', '') }}"
+                           value="{{ old('efectivo_contado') }}"
+                           class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0.00">
+                </div>
+                <div class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                    <p class="text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">Diferencia</p>
+                    <p id="diferencia-preview" class="mt-1 text-xl font-bold text-gray-900 dark:text-text-primary-dark">S/ 0.00</p>
+                    <p id="diferencia-etiqueta" class="text-xs text-gray-500 dark:text-text-secondary-dark"></p>
+                </div>
+            </div>
+            <div>
+                <label for="observacion_arqueo" class="block text-sm font-medium text-gray-700 dark:text-text-secondary-dark">Observación <span class="text-xs text-gray-400">(obligatoria si hay diferencia)</span></label>
+                <textarea name="observacion_arqueo" id="observacion_arqueo" rows="2" maxlength="500"
+                          class="mt-1 block w-full border-gray-300 dark:border-border-dark bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Ej. Faltante por vuelto mal dado...">{{ old('observacion_arqueo') }}</textarea>
+            </div>
+        </div>
     </form>
     <x-slot:footer>
         <button type="submit" form="form-cerrar-caja" class="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:text-sm">
-            Sí, Cerrar Caja
+            Registrar Arqueo y Cerrar
         </button>
         <button type="button" data-modal-close class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-border-dark shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-text-primary-dark hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:text-sm transition-colors">
             Cancelar
@@ -274,5 +310,7 @@
     </x-slot:footer>
 </x-modal>
 @endif
+
+@vite('resources/js/caja/cerrar.js')
 
 @endsection

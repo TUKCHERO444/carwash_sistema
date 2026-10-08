@@ -70,6 +70,18 @@
                     'descripcion' => 'Movimientos de stock por producto: entradas, salidas y saldo neto.',
                     'icono' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
                 ],
+                [
+                    'ruta' => 'reportes.vehiculo',
+                    'titulo' => 'Historial por vehículo',
+                    'descripcion' => 'Trazabilidad cronológica de lavados y cambios de aceite por placa.',
+                    'icono' => 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+                ],
+                [
+                    'ruta' => 'reportes.comprasProveedor',
+                    'titulo' => 'Compras por proveedor',
+                    'descripcion' => 'Abastecimiento por proveedor: volumen, frecuencia y evolución de precios.',
+                    'icono' => 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z',
+                ],
             ];
         @endphp
 

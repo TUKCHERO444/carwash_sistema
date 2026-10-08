@@ -91,6 +91,9 @@
                             Categoría
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Destino
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Precio Compra
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
@@ -140,6 +143,13 @@
                             {{-- Categoría --}}
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 {{ $producto->categoria->nombre ?? '—' }}
+                            </td>
+
+                            {{-- Destino --}}
+                            <td class="px-6 py-8 whitespace-nowrap text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ ($producto->destino ?? 'comercial') === 'consumo_interno' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' }}">
+                                    {{ \App\Models\Producto::etiquetaDestino($producto->destino ?? 'comercial') }}
+                                </span>
                             </td>
 
                             {{-- Precio Compra --}}
