@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Cuenta;
 
 use App\Http\Controllers\Controller;
-use App\Models\Automotor;
+use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -22,7 +22,7 @@ class VehiculoController extends Controller
             ->wherePivot('estado', 'ACTIVO')
             ->pluck('clientes.id');
 
-        $vehiculos = Automotor::whereIn('cliente_id', $clienteIds)
+        $vehiculos = Vehiculo::whereIn('cliente_id', $clienteIds)
             ->orderBy('placa')
             ->paginate(10);
 
@@ -30,9 +30,9 @@ class VehiculoController extends Controller
     }
 
     /**
-     * Detalle de un vehículo propio (ownership por AutomotorPolicy).
+     * Detalle de un vehículo propio (ownership por VehiculoPolicy).
      */
-    public function show(Request $request, Automotor $vehiculo): View
+    public function show(Request $request, Vehiculo $vehiculo): View
     {
         Gate::authorize('view', $vehiculo);
 

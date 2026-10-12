@@ -92,18 +92,14 @@
             <div class="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-border-dark p-6 transition-colors duration-300">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-text-primary-dark mb-4">Ingresos por Método de Pago</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
-                        <span class="text-sm font-medium text-gray-600 dark:text-text-secondary-dark">Efectivo</span>
-                        <span class="text-lg font-bold text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($resumen['monto_efectivo'], 2) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-900/30">
-                        <span class="text-sm font-medium text-purple-800 dark:text-purple-400">Yape</span>
-                        <span class="text-lg font-bold text-purple-900 dark:text-purple-300">S/ {{ number_format($resumen['monto_yape'], 2) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                        <span class="text-sm font-medium text-blue-800 dark:text-blue-400">Izipay</span>
-                        <span class="text-lg font-bold text-blue-900 dark:text-blue-300">S/ {{ number_format($resumen['monto_izipay'], 2) }}</span>
-                    </div>
+                    @forelse($resumen['por_metodo'] as $codigoMetodo => $montoMetodo)
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                            <span class="text-sm font-medium text-gray-600 dark:text-text-secondary-dark">{{ $nombresMetodos[$codigoMetodo] ?? ucfirst($codigoMetodo) }}</span>
+                            <span class="text-lg font-bold text-gray-900 dark:text-text-primary-dark">S/ {{ number_format($montoMetodo, 2) }}</span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-text-secondary-dark">Sin ingresos por método en esta caja.</p>
+                    @endforelse
                 </div>
             </div>
 

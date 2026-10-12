@@ -30,7 +30,7 @@
     {{-- Resumen superior --}}
     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
         <h2 class="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Resumen del Ticket</h2>
-        <p class="text-sm text-blue-700 dark:text-blue-400"><strong>Placa:</strong> {{ $cambioAceite->automotor->placa ?? 'N/A' }}</p>
+        <p class="text-sm text-blue-700 dark:text-blue-400"><strong>Placa:</strong> {{ $cambioAceite->vehiculo->placa ?? 'N/A' }}</p>
         <div class="text-sm text-blue-700 dark:text-blue-400 mt-1">
             <strong>Productos asignados:</strong>
             @if($cambioAceite->productos->count() > 0)
@@ -69,7 +69,7 @@
                     required
                     maxlength="7"
                     data-filter="alphanumeric"
-                    value="{{ old('placa', $cambioAceite->automotor->placa ?? '') }}"
+                    value="{{ old('placa', $cambioAceite->vehiculo->placa ?? '') }}"
                     placeholder="Ej: ABC-123"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors input-main {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                 >
@@ -292,74 +292,7 @@
                     @error('total') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- Método de pago --}}
-                <div>
-                    <label class="label-main mb-2">
-                        Método de pago <span class="text-red-500">*</span>
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                        @foreach(['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'] as $val => $label)
-                            <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors metodo-pago-option {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-main' }}">
-                                <input
-                                    type="radio"
-                                    name="metodo_pago"
-                                    value="{{ $val }}"
-                                    class="hidden metodo-pago-radio"
-                                    {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'checked' : '' }}
-                                >
-                                <span class="text-sm font-medium {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'text-blue-700 dark:text-blue-400' : 'text-secondary' }}">
-                                    {{ $label }}
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                    @error('metodo_pago') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                </div>
-
-                {{-- Bloque mixto --}}
-                <div id="bloque-mixto" class="hidden space-y-3">
-                    <p class="text-xs text-secondary">Ingresa los montos. La suma debe igualar el total.</p>
-                    <div id="alerta-mixto" class="hidden px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400 text-xs">
-                        Suma (<span id="suma-mixto-display">0.00</span>) no coincide con total (<span id="total-mixto-display">0.00</span>).
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-secondary mb-1">Efectivo (S/)</label>
-                        <input
-                            type="number"
-                            id="monto_efectivo"
-                            name="monto_efectivo"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('monto_efectivo', $cambioAceite->monto_efectivo) }}"
-                            class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-secondary mb-1">Yape (S/)</label>
-                        <input
-                            type="number"
-                            id="monto_yape"
-                            name="monto_yape"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('monto_yape', $cambioAceite->monto_yape) }}"
-                            class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-secondary mb-1">Izipay (S/)</label>
-                        <input
-                            type="number"
-                            id="monto_izipay"
-                            name="monto_izipay"
-                            step="0.01"
-                            min="0"
-                            value="{{ old('monto_izipay', $cambioAceite->monto_izipay) }}"
-                            class="w-full px-3 py-2 border rounded-lg text-sm input-main focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                    </div>
-                </div>
-            </div>
+                @include('pagos._form', ['metodosPago' => $metodosPago, 'metodoActual' => old('metodo_pago', $resumenPagos['mixto'] ? 'mixto' : ($resumenPagos['codigo'] ?? 'efectivo')), 'montos' => $resumenPagos['montos']])
 
             {{-- ── Acciones ── --}}
             <div class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-main">
@@ -416,8 +349,8 @@
 {{-- Variables globales para el módulo JS --}}
 <script>
 window.productosConfirmar  = @json($productosData);
-window.confirmarMetodoPago = @json($cambioAceite->metodo_pago ?? 'efectivo');
-window.confirmarMontos     = @json($montosData);
+window.confirmarMetodoPago = @json(old('metodo_pago', $resumenPagos['mixto'] ? 'mixto' : ($resumenPagos['codigo'] ?? 'efectivo')));
+window.confirmarMontos     = @json($resumenPagos['montos']);
 window._confirmarUpdateUrl = "{{ route('cambio-aceite.actualizarTicket', $cambioAceite) }}";
 </script>
 @vite('resources/js/cambio-aceite/confirmar.js')

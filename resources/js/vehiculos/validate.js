@@ -1,6 +1,6 @@
 /**
- * Módulo: automotores/validate.js
- * Responsabilidad: Validación en submit para los formularios de automotores (create y edit)
+ * Módulo: vehiculos/validate.js
+ * Responsabilidad: Validación en submit para los formularios de vehículos (create y edit)
  * y autocompletado de datos del vehículo desde la API de consulta de placa.
  * Sigue el patrón de validation.js — bloquea el envío si el formulario no es válido.
  */
@@ -8,7 +8,7 @@
 import { Validation } from '../utils/validation.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('form-automotor');
+    const form = document.getElementById('form-vehiculo');
     if (form) {
         form.addEventListener('submit', (e) => {
             if (!Validation.validate(form)) {
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Autocompleta los campos del automotor consultando la placa (datos locales o API).
+ * Autocompleta los campos del vehículo consultando la placa (datos locales o API).
  * Solo rellena los campos que estén vacíos.
  */
 function initConsultarPlaca() {
@@ -39,7 +39,7 @@ function initConsultarPlaca() {
         if (label) label.textContent = 'Consultando...';
 
         try {
-            const response = await fetch(`/automotores/consultar-placa?placa=${encodeURIComponent(placa)}`, {
+            const response = await fetch(`/vehiculos/consultar-placa?placa=${encodeURIComponent(placa)}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',

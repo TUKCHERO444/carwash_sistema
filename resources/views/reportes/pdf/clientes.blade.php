@@ -7,7 +7,7 @@
     @php
         $totalGasto = round($topClientes->sum('gasto'), 2);
         $totalVisitas = $topClientes->sum('visitas');
-        $totalAutomotores = $topClientes->sum('automotores');
+        $totalVehiculos = $topClientes->sum('automotores');
     @endphp
 
     <table class="kpis">
@@ -21,8 +21,8 @@
                 <div class="kpi-valor">{{ number_format($totalVisitas) }}</div>
             </td>
             <td>
-                <div class="kpi-label">Automotores atendidos</div>
-                <div class="kpi-valor">{{ number_format($totalAutomotores) }}</div>
+                <div class="kpi-label">Vehículos atendidos</div>
+                <div class="kpi-valor">{{ number_format($totalVehiculos) }}</div>
             </td>
         </tr>
     </table>
@@ -34,7 +34,7 @@
                 <th>Cliente</th>
                 <th class="derecha">Gasto</th>
                 <th class="derecha">Visitas</th>
-                <th class="derecha">Automotores</th>
+                <th class="derecha">Vehículos</th>
                 <th class="derecha">Lavados</th>
                 <th class="derecha">Cambio de aceite</th>
                 <th class="derecha">Visitas / mes</th>
@@ -46,7 +46,7 @@
                     <td>{{ $fila['nombre'] }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($fila['gasto'], 2) }}</td>
                     <td class="derecha">{{ $fila['visitas'] }}</td>
-                    <td class="derecha">{{ $fila['automotores'] }}</td>
+                    <td class="derecha">{{ $fila['vehiculos'] }}</td>
                     <td class="derecha">{{ $fila['lavados'] }}</td>
                     <td class="derecha">{{ $fila['cambio_aceite'] }}</td>
                     <td class="derecha">{{ number_format($fila['visitas_por_mes'], 2) }}</td>
@@ -57,7 +57,7 @@
         </tbody>
     </table>
 
-    <h2>Automotores más atendidos</h2>
+    <h2>Vehículos más atendidos</h2>
     <table>
         <thead>
             <tr>
@@ -69,7 +69,7 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($topAutomotores as $fila)
+            @forelse($topVehiculos as $fila)
                 <tr>
                     <td>{{ $fila['placa'] }}</td>
                     <td>{{ trim(implode(' ', array_filter([$fila['marca'], $fila['modelo']]))); }}</td>
@@ -90,7 +90,7 @@
                 <th>Cliente</th>
                 <th class="derecha">Gasto</th>
                 <th class="derecha">Visitas</th>
-                <th class="derecha">Automotores registrados</th>
+                <th class="derecha">Vehículos registrados</th>
                 <th class="derecha">Visitas / mes</th>
             </tr>
         </thead>
@@ -100,7 +100,7 @@
                     <td>{{ $fila['nombre'] }}</td>
                     <td class="derecha">S/ {{ number_format($fila['gasto'], 2) }}</td>
                     <td class="derecha">{{ $fila['visitas'] }}</td>
-                    <td class="derecha">{{ $fila['automotores'] }}</td>
+                    <td class="derecha">{{ $fila['vehiculos'] }}</td>
                     <td class="derecha">{{ number_format($fila['visitas_por_mes'], 2) }}</td>
                 </tr>
             @empty

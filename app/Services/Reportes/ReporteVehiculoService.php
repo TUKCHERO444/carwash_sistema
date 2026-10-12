@@ -2,9 +2,9 @@
 
 namespace App\Services\Reportes;
 
-use App\Models\Automotor;
 use App\Models\CambioAceite;
 use App\Models\Lavado;
+use App\Models\Vehiculo;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,19 +16,19 @@ use Illuminate\Support\Collection;
  * Historial de atención por vehículo (placa).
  *
  * Universo: lavados y cambios de aceite en estado confirmado. Las ventas de
- * mostrador no se incluyen porque no se vinculan a ningún automotor.
+ * mostrador no se incluyen porque no se vinculan a ningún vehículo.
  * Rango por fecha efectiva: lavados → `fecha`, cambios → `created_at`.
  * Funciones puras de agregación.
  */
 class ReporteVehiculoService
 {
     /**
-     * Busca el automotor por placa normalizada (mayúsculas, sin espacios).
+     * Busca el vehículo por placa normalizada (mayúsculas, sin espacios).
      */
-    public function buscarAutomotor(string $placa): ?Automotor
+    public function buscarVehiculo(string $placa): ?Vehiculo
     {
-        return Automotor::with('cliente')
-            ->where('placa', Automotor::normalizarPlaca($placa))
+        return Vehiculo::with('cliente')
+            ->where('placa', Vehiculo::normalizarPlaca($placa))
             ->first();
     }
 
@@ -38,7 +38,7 @@ class ReporteVehiculoService
     private function lavados(string $placa, CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): Builder
     {
         $query = Lavado::query()->where('lavados.estado', 'confirmado')
-            ->where('lavados.automotor_id', $placa)
+            ->where('lavados.vehiculo_id', $placa)
             ->whereDate('lavados.fecha', '>=', $desde->toDateString())
             ->whereDate('lavados.fecha', '<=', $hasta->toDateString());
 
@@ -55,7 +55,7 @@ class ReporteVehiculoService
     private function cambios(string $placa, CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): Builder
     {
         $query = CambioAceite::query()->where('cambio_aceites.estado', 'confirmado')
-            ->where('cambio_aceites.automotor_id', $placa)
+            ->where('cambio_aceites.vehiculo_id', $placa)
             ->whereBetween('cambio_aceites.created_at', [$desde, $hasta]);
 
         if (! empty($filtros['producto_id'])) {
@@ -211,7 +211,7 @@ class ReporteVehiculoService
 
         if ($this->conTipo($placa, $desde, $hasta, $filtros)) {
             $lavados = $this->lavados($placa, $desde, $hasta, $filtros)
-                ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'vehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores:id,nombre,apellido_paterno,apellido_materno'])
+                ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'tipoVehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores:id,nombre,apellido_paterno,apellido_materno'])
                 ->orderByDesc('fecha')
                 ->orderByDesc('id')
                 ->get();
@@ -221,7 +221,7 @@ class ReporteVehiculoService
                     'fecha' => $lavado->fecha?->format('d/m/Y') ?? '—',
                     'orden' => ($lavado->fecha?->format('Y-m-d') ?? '').'#'.str_pad((string) $lavado->id, 10, '0', STR_PAD_LEFT),
                     'tipo' => 'lavado',
-                    'tipo_etiqueta' => 'Lavado'.($lavado->vehiculo ? ' · '.$lavado->vehiculo->nombre : ''),
+                    'tipo_etiqueta' => 'Lavado'.($lavado->tipoVehiculo ? ' · '.$lavado->tipoVehiculo->nombre : ''),
                     'cliente' => $lavado->cliente?->nombre_completo ?? '—',
                     'detalle' => $lavado->servicios->pluck('nombre')->implode(' + ') ?: '—',
                     'trabajadores' => $lavado->trabajadores->pluck('nombre_completo')->implode(' + ') ?: '—',
@@ -246,8 +246,7 @@ class ReporteVehiculoService
                     'tipo_etiqueta' => 'Cambio de aceite',
                     'cliente' => $cambio->cliente?->nombre_completo ?? '—',
                     'detalle' => $cambio->productos->pluck('nombre')->implode(' + ') ?: '—',
-                    'trabajadores' => $cambio->trabajadores->pluck('nombre_completo')->implode(' + ')
-                        ?: ($cambio->trabajador?->nombre_completo ?? '—'),
+                    'trabajadores' => $cambio->trabajadores->pluck('nombre_completo')->implode(' + ') ?: '—',
                     'total' => round((float) $cambio->total, 2),
                     'estado' => $cambio->estado,
                 ]);

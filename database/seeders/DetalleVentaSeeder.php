@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\DetalleVenta;
+use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Venta;
 use Faker\Factory as Faker;
@@ -53,6 +54,16 @@ class DetalleVentaSeeder extends Seeder
                 'subtotal' => round($totalVenta, 2),
                 'total' => round($totalVenta, 2),
             ]);
+
+            // Línea de pago única con método aleatorio.
+            $metodoId = MetodoPago::where('activo', true)->inRandomOrder()->value('id');
+            if ($metodoId) {
+                $venta->pagos()->create([
+                    'metodo_pago_id' => $metodoId,
+                    'monto' => round($totalVenta, 2),
+                    'user_id' => $venta->user_id,
+                ]);
+            }
         }
     }
 }

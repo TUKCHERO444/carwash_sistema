@@ -23,6 +23,9 @@ class ReporteLavadosService
             ->whereDate('lavados.fecha', '>=', $desde->toDateString())
             ->whereDate('lavados.fecha', '<=', $hasta->toDateString());
 
+        if (! empty($filtros['tipo_vehiculo_id'])) {
+            $query->where('tipo_vehiculo_id', $filtros['tipo_vehiculo_id']);
+        }
         if (! empty($filtros['vehiculo_id'])) {
             $query->where('vehiculo_id', $filtros['vehiculo_id']);
         }
@@ -61,9 +64,9 @@ class ReporteLavadosService
     public function porVehiculo(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): array
     {
         return $this->base($desde, $hasta, $filtros)
-            ->selectRaw('automotores.placa as placa, SUM(lavados.total) as total, COUNT(*) as operaciones')
-            ->leftJoin('automotores', 'automotores.placa', '=', 'lavados.automotor_id')
-            ->groupBy('automotores.placa')
+            ->selectRaw('vehiculos.placa as placa, SUM(lavados.total) as total, COUNT(*) as operaciones')
+            ->leftJoin('vehiculos', 'vehiculos.placa', '=', 'lavados.vehiculo_id')
+            ->groupBy('vehiculos.placa')
             ->orderByDesc('total')
             ->get()
             ->map(fn ($fila) => [
@@ -131,7 +134,7 @@ class ReporteLavadosService
     public function detalle(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = [], int $perPage = 10): LengthAwarePaginator
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'automotor:placa,marca,modelo', 'vehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores:id,nombre,apellido_paterno,apellido_materno'])
+            ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'vehiculo:placa,marca,modelo', 'tipoVehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores:id,nombre,apellido_paterno,apellido_materno'])
             ->orderByDesc('fecha')
             ->paginate($perPage);
     }
@@ -139,7 +142,7 @@ class ReporteLavadosService
     public function detalleColeccion(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): Collection
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with(['cliente', 'automotor', 'vehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores'])
+            ->with(['cliente', 'vehiculo', 'tipoVehiculo:id,nombre', 'servicios:id,nombre', 'trabajadores'])
             ->orderByDesc('fecha')
             ->get();
     }

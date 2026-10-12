@@ -91,13 +91,13 @@
                                 {{ $lavado->fecha->format('d/m/Y') }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $lavado->automotor->placa ?? 'N/A' }}
+                                {{ $lavado->vehiculo->placa ?? 'N/A' }}
                                 @if($lavado->cliente->nombre)
                                     — {{ $lavado->cliente->nombre }}
                                 @endif
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $lavado->vehiculo->nombre }}
+                                {{ $lavado->tipoVehiculo->nombre }}
                             </td>
                             <td class="px-6 py-8 text-sm text-secondary">
                                 {{ $lavado->trabajadores->pluck('nombre')->implode(', ') }}
@@ -109,14 +109,7 @@
                                 S/ {{ number_format($lavado->total, 2) }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap">
-                                @php
-                                    $colores = ['efectivo' => 'bg-green-100 text-green-700', 'yape' => 'bg-purple-100 text-purple-700', 'izipay' => 'bg-blue-100 text-blue-700', 'mixto' => 'bg-orange-100 text-orange-700'];
-                                    $labels  = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'];
-                                    $metodo  = $lavado->metodo_pago ?? 'efectivo';
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $colores[$metodo] ?? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-secondary-dark' }}">
-                                    {{ $labels[$metodo] ?? ucfirst($metodo) }}
-                                </span>
+                                @include('pagos._etiqueta', ['pagable' => $lavado])
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 {{ $lavado->tiempo_atencion_label ?? '—' }}

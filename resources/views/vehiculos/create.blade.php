@@ -29,72 +29,205 @@
 
     {{-- Form --}}
     <div class="bg-surface rounded-lg border border-main p-6 max-w-lg">
-        <form action="{{ route('vehiculos.store') }}" method="POST" novalidate>
+        <form id="form-vehículo" action="{{ route('vehiculos.store') }}" method="POST" novalidate>
             @csrf
 
-            {{-- Nombre --}}
+            {{-- Placa --}}
             <div class="mb-5">
-                <label for="nombre" class="label-main mb-1">
-                    Nombre <span class="text-red-500">*</span>
+                <label for="placa" class="label-main mb-1">
+                    Placa <span class="text-red-500">*</span>
+                </label>
+                <div class="flex gap-2">
+                    <input
+                        type="text"
+                        id="placa"
+                        name="placa"
+                        value="{{ old('placa') }}"
+                        maxlength="7"
+                        required
+                        autocomplete="off"
+                        data-filter="alphanumeric"
+                        data-length="7"
+                        class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main uppercase
+                               {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                        placeholder="ABC1234"
+                    >
+                    <button
+                        type="button"
+                        id="btn-consultar-placa"
+                        aria-label="Consultar placa"
+                        class="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+                        <span id="label-consultar-placa">Consultar placa</span>
+                    </button>
+                </div>
+                <p class="mt-1 text-xs text-secondary">Letras y números. Máximo 7 caracteres.</p>
+                @error('placa')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Cliente --}}
+            <div class="mb-5">
+                <label for="cliente_id" class="label-main mb-1">
+                    Cliente <span class="text-red-500">*</span>
+                </label>
+                <select
+                    id="cliente_id"
+                    name="cliente_id"
+                    required
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('cliente_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                >
+                    <option value="">Seleccione un cliente...</option>
+                    @foreach($clientes as $cliente)
+                        <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
+                            {{ $cliente->nombre_completo }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('cliente_id')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Marca --}}
+            <div class="mb-5">
+                <label for="marca" class="label-main mb-1">
+                    Marca <span class="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
                     type="text"
-                    id="nombre"
-                    name="nombre"
-                    value="{{ old('nombre') }}"
-                    autocomplete="off"
-                    required
-                    maxlength="30"
-                    data-filter="alphanumeric"
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('nombre') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="Nombre del vehículo"
-                >
-                <p class="mt-1 text-xs text-secondary">Solo letras y números. Máximo 30 caracteres.</p>
-                @error('nombre')
-                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Descripción --}}
-            <div class="mb-5">
-                <label for="descripcion" class="label-main mb-1">
-                    Descripción
-                </label>
-                <textarea
-                    id="descripcion"
-                    name="descripcion"
-                    rows="3"
+                    id="marca"
+                    name="marca"
+                    value="{{ old('marca') }}"
                     maxlength="100"
+                    autocomplete="off"
                     data-filter="alphanumeric"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('descripcion') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="Descripción del vehículo (opcional)"
-                >{{ old('descripcion') }}</textarea>
+                           {{ $errors->has('marca') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="Marca del vehículo"
+                >
                 <p class="mt-1 text-xs text-secondary">Solo letras y números. Máximo 100 caracteres.</p>
-                @error('descripcion')
+                @error('marca')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- Precio --}}
-            <div class="mb-6">
-                <label for="precio" class="label-main mb-1">
-                    Precio <span class="text-red-500">*</span>
+            {{-- Modelo --}}
+            <div class="mb-5">
+                <label for="modelo" class="label-main mb-1">
+                    Modelo <span class="text-gray-400 font-normal">(opcional)</span>
                 </label>
                 <input
-                    type="number"
-                    id="precio"
-                    name="precio"
-                    value="{{ old('precio') }}"
-                    step="0.01"
-                    min="0.01"
-                    required
+                    type="text"
+                    id="modelo"
+                    name="modelo"
+                    value="{{ old('modelo') }}"
+                    maxlength="100"
+                    autocomplete="off"
+                    data-filter="alphanumeric"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('precio') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="0.00"
+                           {{ $errors->has('modelo') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="Modelo del vehículo"
                 >
-                @error('precio')
+                <p class="mt-1 text-xs text-secondary">Solo letras y números. Máximo 100 caracteres.</p>
+                @error('modelo')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Serie --}}
+            <div class="mb-5">
+                <label for="serie" class="label-main mb-1">
+                    Serie <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                    type="text"
+                    id="serie"
+                    name="serie"
+                    value="{{ old('serie') }}"
+                    maxlength="100"
+                    autocomplete="off"
+                    data-filter="alphanumeric"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('serie') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="N° de serie o chasis"
+                >
+                <p class="mt-1 text-xs text-secondary">Máximo 100 caracteres.</p>
+                @error('serie')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Color --}}
+            <div class="mb-5">
+                <label for="color" class="label-main mb-1">
+                    Color <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                    type="text"
+                    id="color"
+                    name="color"
+                    value="{{ old('color') }}"
+                    maxlength="50"
+                    autocomplete="off"
+                    data-filter="letters"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('color') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="Color del vehículo"
+                >
+                <p class="mt-1 text-xs text-secondary">Solo letras. Máximo 50 caracteres.</p>
+                @error('color')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Motor --}}
+            <div class="mb-6">
+                <label for="motor" class="label-main mb-1">
+                    Motor <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                    type="text"
+                    id="motor"
+                    name="motor"
+                    value="{{ old('motor') }}"
+                    maxlength="100"
+                    autocomplete="off"
+                    data-filter="alphanumeric"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('motor') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="N° de motor"
+                >
+                <p class="mt-1 text-xs text-secondary">Máximo 100 caracteres.</p>
+                @error('motor')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Vin --}}
+            <div class="mb-6">
+                <label for="vin" class="label-main mb-1">
+                    Vin <span class="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                    type="text"
+                    id="vin"
+                    name="vin"
+                    value="{{ old('vin') }}"
+                    maxlength="100"
+                    autocomplete="off"
+                    data-filter="alphanumeric"
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                           {{ $errors->has('vin') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                    placeholder="N° de VIN del vehículo"
+                >
+                <p class="mt-1 text-xs text-secondary">Máximo 100 caracteres.</p>
+                @error('vin')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -121,6 +254,5 @@
     </div>
 
 </div>
-
-@vite('resources/js/vehiculos/create.js')
+@vite('resources/js/vehiculos/validate.js')
 @endsection

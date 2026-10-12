@@ -32,7 +32,7 @@
         <div class="bg-surface rounded-lg border border-main p-5">
             <p class="text-xs font-medium text-secondary uppercase tracking-wider">Por método de pago</p>
             <p class="mt-2 text-sm text-primary">
-                Efectivo: S/ {{ number_format($metodoPago['efectivo'], 2) }} · Yape: S/ {{ number_format($metodoPago['yape'], 2) }} · Izipay: S/ {{ number_format($metodoPago['izipay'], 2) }}
+                {{ implode(' · ', array_map(fn ($codigo) => ($nombresMetodosPagos[$codigo] ?? ucfirst($codigo)).': S/ '.number_format($metodoPago[$codigo], 2), array_keys($metodoPago))) ?: '—' }}
             </p>
         </div>
     </div>
@@ -128,7 +128,7 @@
 </div>
 <script>
     window.reportesIngresos = @json($serie);
-    window.reportesMetodoPago = @json($metodoPago);
+    window.reportesMetodoPago = @json($metodoPagoChart);
 </script>
 @vite(['resources/js/reportes/ingresos.js', 'resources/js/reportes/print.js'])
 @endsection

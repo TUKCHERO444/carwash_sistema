@@ -28,11 +28,11 @@ class Cliente extends Model
     ];
 
     /**
-     * Relación con Automotor (1 cliente posee N vehículos; FK cliente_id).
+     * Relación con Vehiculo (1 cliente posee N vehículos; FK cliente_id).
      */
-    public function automotores(): HasMany
+    public function vehiculos(): HasMany
     {
-        return $this->hasMany(Automotor::class, 'cliente_id', 'id');
+        return $this->hasMany(Vehiculo::class, 'cliente_id', 'id');
     }
 
     /**

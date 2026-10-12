@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Automotor;
 use App\Models\Categoria;
 use App\Models\Marca;
+use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\Servicio;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
+use App\Services\PagoService;
 use App\Services\Reportes\DateRangeFiltro;
 use App\Services\Reportes\ReporteCajaService;
 use App\Services\Reportes\ReporteCambioAceiteService;
@@ -21,6 +23,7 @@ use App\Services\Reportes\ReporteIngresosService;
 use App\Services\Reportes\ReporteInventarioService;
 use App\Services\Reportes\ReporteKardexService;
 use App\Services\Reportes\ReporteLavadosService;
+use App\Services\Reportes\ReporteOperativoService;
 use App\Services\Reportes\ReportePdfService;
 use App\Services\Reportes\ReportePersonalService;
 use App\Services\Reportes\ReporteVehiculoService;
@@ -31,6 +34,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -55,6 +59,7 @@ class ReporteController extends Controller
         private readonly ReporteCajaService $cajaService,
         private readonly ReportePersonalService $personalService,
         private readonly ReporteKardexService $kardexService,
+        private readonly ReporteOperativoService $operativoService,
         private readonly ReporteVehiculoService $vehiculoService,
         private readonly ReporteComprasService $comprasService,
         private readonly ReporteCsvService $csvService,
@@ -108,6 +113,8 @@ class ReporteController extends Controller
             'consolidado' => $this->ingresosService->consolidado($desde, $hasta),
             'serie' => $this->ingresosService->serieDiaria($desde, $hasta),
             'metodoPago' => $this->ingresosService->metodoPago($desde, $hasta),
+            'metodoPagoChart' => $this->chartMetodoPago($this->ingresosService->metodoPago($desde, $hasta)),
+            'nombresMetodosPagos' => MetodoPago::pluck('nombre', 'codigo')->all(),
             'diasTop' => $this->ingresosService->diasTop($desde, $hasta),
             'desde' => $desde->toDateString(),
             'hasta' => $hasta->toDateString(),
@@ -117,14 +124,16 @@ class ReporteController extends Controller
 
     public function ventas(Request $request): View|StreamedResponse|JsonResponse|Response
     {
+        $metodosFiltro = array_merge(MetodoPago::where('activo', true)->pluck('codigo')->all(), ['mixto']);
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'metodo_pago' => ['nullable', 'in:efectivo,yape,izipay,mixto'],
+            'metodo_pago' => ['nullable', 'string', Rule::in($metodosFiltro)],
             'correlativo' => ['nullable', 'string', 'max:50'],
         ]));
 
         [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
         $filtros = $this->filtrosExtras($request, ['user_id', 'metodo_pago', 'correlativo']);
+        $metodosPago = MetodoPago::where('activo', true)->orderBy('orden')->orderBy('id')->get();
 
         if ($request->query('export') === 'csv') {
             return $this->csvService->descargar(
@@ -135,7 +144,7 @@ class ReporteController extends Controller
                     $v->correlativo,
                     $v->created_at?->format('d/m/Y H:i'),
                     $v->user?->name,
-                    $v->metodo_pago,
+                    app(PagoService::class)->resumen($v)['etiqueta'],
                     $v->total,
                 ])
             );
@@ -161,6 +170,7 @@ class ReporteController extends Controller
             'porMetodo' => $this->ventasService->porMetodo($desde, $hasta, $filtros),
             'detalle' => $this->ventasService->detalle($desde, $hasta, $filtros),
             'usuarios' => User::orderBy('name')->get(['id', 'name']),
+            'metodosPago' => $metodosPago,
             'desde' => $desde->toDateString(),
             'hasta' => $hasta->toDateString(),
             'etiqueta' => $etiqueta,
@@ -170,13 +180,13 @@ class ReporteController extends Controller
     public function lavados(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
-            'vehiculo_id' => ['nullable', 'integer', 'exists:vehiculos,id'],
+            'tipo_vehiculo_id' => ['nullable', 'integer', 'exists:tipos_vehiculo,id'],
             'servicio_id' => ['nullable', 'integer', 'exists:servicios,id'],
             'trabajador_id' => ['nullable', 'integer', 'exists:trabajadores,id'],
         ]));
 
         [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
-        $filtros = $this->filtrosExtras($request, ['vehiculo_id', 'servicio_id', 'trabajador_id']);
+        $filtros = $this->filtrosExtras($request, ['tipo_vehiculo_id', 'servicio_id', 'trabajador_id']);
 
         if ($request->query('export') === 'csv') {
             return $this->csvService->descargar(
@@ -186,8 +196,8 @@ class ReporteController extends Controller
                     $l->id,
                     $l->fecha?->format('d/m/Y'),
                     $l->cliente?->nombre_completo,
-                    $l->automotor?->placa,
-                    $l->vehiculo?->nombre,
+                    $l->vehiculo?->placa,
+                    $l->tipoVehiculo?->nombre,
                     $l->servicios->pluck('nombre')->implode(' + '),
                     $l->total,
                     $l->estado,
@@ -216,7 +226,7 @@ class ReporteController extends Controller
             'porServicio' => $this->lavadosService->porServicio($desde, $hasta, $filtros),
             'porTrabajador' => $this->lavadosService->porTrabajador($desde, $hasta, $filtros),
             'detalle' => $this->lavadosService->detalle($desde, $hasta, $filtros),
-            'vehiculos' => Vehiculo::orderBy('nombre')->get(['id', 'nombre']),
+            'tiposVehiculo' => TipoVehiculo::orderBy('nombre')->get(['id', 'nombre']),
             'servicios' => Servicio::orderBy('nombre')->get(['id', 'nombre']),
             'trabajadores' => Trabajador::orderBy('nombre')->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno']),
             'desde' => $desde->toDateString(),
@@ -243,7 +253,7 @@ class ReporteController extends Controller
                     $c->id,
                     $c->created_at?->format('d/m/Y H:i'),
                     $c->cliente?->nombre_completo,
-                    $c->automotor?->placa,
+                    $c->vehiculo?->placa,
                     $c->trabajadores->pluck('nombre_completo')->implode(' + '),
                     $c->productos->pluck('nombre')->implode(' + '),
                     $c->total,
@@ -334,9 +344,9 @@ class ReporteController extends Controller
         if ($request->query('export') === 'csv') {
             return $this->csvService->descargar(
                 $this->nombreArchivo('reporte-clientes'),
-                ['cliente', 'gasto', 'visitas', 'automotores', 'lavados', 'cambio_aceite', 'visitas_por_mes'],
+                ['cliente', 'gasto', 'visitas', 'vehiculos', 'lavados', 'cambio_aceite', 'visitas_por_mes'],
                 $this->clientesService->topClientes($desde, $hasta)->map(fn ($c) => [
-                    $c['nombre'], $c['gasto'], $c['visitas'], $c['automotores'], $c['lavados'], $c['cambio_aceite'], $c['visitas_por_mes'],
+                    $c['nombre'], $c['gasto'], $c['visitas'], $c['vehiculos'], $c['lavados'], $c['cambio_aceite'], $c['visitas_por_mes'],
                 ])
             );
         }
@@ -347,7 +357,7 @@ class ReporteController extends Controller
                 $this->nombreArchivo('reporte-clientes', 'pdf'),
                 [
                     'topClientes' => $this->clientesService->topClientes($desde, $hasta),
-                    'topAutomotores' => $this->clientesService->topAutomotores($desde, $hasta),
+                    'topVehiculos' => $this->clientesService->topVehiculos($desde, $hasta),
                     'frecuencia' => $this->clientesService->detalle($desde, $hasta),
                     'etiqueta' => $etiqueta,
                 ]
@@ -356,7 +366,7 @@ class ReporteController extends Controller
 
         return view('reportes.clientes', [
             'topClientes' => $this->clientesService->topClientes($desde, $hasta),
-            'topAutomotores' => $this->clientesService->topAutomotores($desde, $hasta),
+            'topVehiculos' => $this->clientesService->topVehiculos($desde, $hasta),
             'detalle' => $this->clientesService->detalle($desde, $hasta),
             'desde' => $desde->toDateString(),
             'hasta' => $hasta->toDateString(),
@@ -498,6 +508,62 @@ class ReporteController extends Controller
         ]);
     }
 
+    /**
+     * Reporte operativo: eficiencia y demanda (tiempos, atenciones/día,
+     * trabajadores, servicios, tipos de vehículo, placas y horas pico).
+     * Reutiliza filtros, CSV/PDF e impresión del módulo.
+     */
+    public function operativo(Request $request): View|StreamedResponse|JsonResponse|Response
+    {
+        $datos = $this->validar($request, self::REGLAS_DESDE_HASTA);
+
+        [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
+
+        if ($request->query('export') === 'csv') {
+            return $this->csvService->descargar(
+                $this->nombreArchivo('reporte-operativo'),
+                ['fecha', 'atenciones', 'vehiculos_unicos'],
+                $this->operativoService->filasSerie($desde, $hasta)->map(fn ($f) => [
+                    $f['fecha'],
+                    $f['atenciones'],
+                    $f['vehiculos_unicos'],
+                ])
+            );
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return $this->pdfService->descargar(
+                'reportes.pdf.operativo',
+                $this->nombreArchivo('reporte-operativo', 'pdf'),
+                [
+                    'kpis' => $this->operativoService->kpis($desde, $hasta),
+                    'serie' => $this->operativoService->serieDiaria($desde, $hasta),
+                    'tiempos' => $this->operativoService->tiempos($desde, $hasta),
+                    'porTrabajador' => $this->operativoService->porTrabajador($desde, $hasta),
+                    'porServicio' => $this->operativoService->porServicio($desde, $hasta),
+                    'porTipoVehiculo' => $this->operativoService->porTipoVehiculo($desde, $hasta),
+                    'topPlacas' => $this->operativoService->topPlacas($desde, $hasta),
+                    'porHora' => $this->operativoService->porHora($desde, $hasta),
+                    'etiqueta' => $etiqueta,
+                ]
+            );
+        }
+
+        return view('reportes.operativo', [
+            'kpis' => $this->operativoService->kpis($desde, $hasta),
+            'serie' => $this->operativoService->serieDiaria($desde, $hasta),
+            'tiempos' => $this->operativoService->tiempos($desde, $hasta),
+            'porTrabajador' => $this->operativoService->porTrabajador($desde, $hasta),
+            'porServicio' => $this->operativoService->porServicio($desde, $hasta),
+            'porTipoVehiculo' => $this->operativoService->porTipoVehiculo($desde, $hasta),
+            'topPlacas' => $this->operativoService->topPlacas($desde, $hasta),
+            'porHora' => $this->operativoService->porHora($desde, $hasta),
+            'desde' => $desde->toDateString(),
+            'hasta' => $hasta->toDateString(),
+            'etiqueta' => $etiqueta,
+        ]);
+    }
+
     public function vehiculo(Request $request): View|StreamedResponse|JsonResponse|Response
     {
         $datos = $this->validar($request, array_merge(self::REGLAS_DESDE_HASTA, [
@@ -507,10 +573,10 @@ class ReporteController extends Controller
 
         [$desde, $hasta, $etiqueta] = DateRangeFiltro::aplicar($datos['desde'] ?? null, $datos['hasta'] ?? null);
         $filtros = $this->filtrosExtras($request, ['tipo']);
-        $placa = ! empty($datos['placa']) ? Automotor::normalizarPlaca($datos['placa']) : null;
-        $automotor = $placa ? $this->vehiculoService->buscarAutomotor($placa) : null;
+        $placa = ! empty($datos['placa']) ? Vehiculo::normalizarPlaca($datos['placa']) : null;
+        $vehiculo = $placa ? $this->vehiculoService->buscarVehiculo($placa) : null;
 
-        if ($request->query('export') && ! $automotor) {
+        if ($request->query('export') && ! $vehiculo) {
             throw new HttpResponseException(response()->json([
                 'errors' => ['placa' => ['Debe indicar una placa registrada para exportar el historial.']],
             ], 422));
@@ -538,7 +604,7 @@ class ReporteController extends Controller
                 'reportes.pdf.vehiculo',
                 $this->nombreArchivo('reporte-vehiculo-'.$placa, 'pdf'),
                 [
-                    'automotor' => $automotor,
+                    'vehiculo' => $vehiculo,
                     'kpis' => $this->vehiculoService->kpis($placa, $desde, $hasta, $filtros),
                     'porServicio' => $this->vehiculoService->porServicio($placa, $desde, $hasta, $filtros),
                     'porProducto' => $this->vehiculoService->porProducto($placa, $desde, $hasta, $filtros),
@@ -549,12 +615,12 @@ class ReporteController extends Controller
         }
 
         return view('reportes.vehiculo', [
-            'automotor' => $automotor,
+            'vehiculo' => $vehiculo,
             'placa' => $placa,
-            'kpis' => $automotor ? $this->vehiculoService->kpis($placa, $desde, $hasta, $filtros) : null,
-            'porServicio' => $automotor ? $this->vehiculoService->porServicio($placa, $desde, $hasta, $filtros) : [],
-            'porProducto' => $automotor ? $this->vehiculoService->porProducto($placa, $desde, $hasta, $filtros) : [],
-            'detalle' => $automotor
+            'kpis' => $vehiculo ? $this->vehiculoService->kpis($placa, $desde, $hasta, $filtros) : null,
+            'porServicio' => $vehiculo ? $this->vehiculoService->porServicio($placa, $desde, $hasta, $filtros) : [],
+            'porProducto' => $vehiculo ? $this->vehiculoService->porProducto($placa, $desde, $hasta, $filtros) : [],
+            'detalle' => $vehiculo
                 ? $this->vehiculoService->historialPaginado($placa, $desde, $hasta, $filtros, (int) $request->query('page', 1))
                 : null,
             'desde' => $desde->toDateString(),
@@ -697,5 +763,21 @@ class ReporteController extends Controller
     private function nombreArchivo(string $base, string $ext = 'csv'): string
     {
         return $base.'-'.now()->format('Ymd-His').'.'.$ext;
+    }
+
+    /**
+     * Convierte el mapa codigo=>total en etiquetas/datos para los charts doughnut.
+     *
+     * @param  array<string, float>  $mapa
+     * @return array{labels: list<string>, data: list<float>}
+     */
+    private function chartMetodoPago(array $mapa): array
+    {
+        $nombres = MetodoPago::pluck('nombre', 'codigo')->all();
+
+        return [
+            'labels' => array_map(fn ($codigo) => $nombres[$codigo] ?? ucfirst($codigo), array_keys($mapa)),
+            'data' => array_values(array_map(fn ($monto) => round((float) $monto, 2), $mapa)),
+        ];
     }
 }

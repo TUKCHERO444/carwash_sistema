@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class CambioAceite extends Model
 {
@@ -33,18 +34,13 @@ class CambioAceite extends Model
 
     protected $fillable = [
         'cliente_id',
-        'automotor_id',
-        'trabajador_id',
+        'vehiculo_id',
         'fecha',
         'precio',
         'total',
         'descripcion',
         'foto',
         'user_id',
-        'metodo_pago',
-        'monto_efectivo',
-        'monto_yape',
-        'monto_izipay',
         'caja_id',
         'estado',
         'atencion_inicio_at',
@@ -56,9 +52,6 @@ class CambioAceite extends Model
         'fecha' => 'date',
         'precio' => 'decimal:2',
         'total' => 'decimal:2',
-        'monto_efectivo' => 'decimal:2',
-        'monto_yape' => 'decimal:2',
-        'monto_izipay' => 'decimal:2',
         'atencion_inicio_at' => 'datetime',
         'atencion_fin_at' => 'datetime',
         'tiempo_atencion_minutos' => 'integer',
@@ -73,29 +66,30 @@ class CambioAceite extends Model
     }
 
     /**
-     * Relación con Automotor (vehículo físico atendido).
-     * FK automotor_id apunta a la PK string automotores.placa.
+     * Relación con Vehiculo (vehículo físico atendido).
+     * FK vehiculo_id apunta a la PK string vehiculos.placa.
      */
-    public function automotor(): BelongsTo
+    public function vehiculo(): BelongsTo
     {
-        return $this->belongsTo(Automotor::class, 'automotor_id', 'placa');
+        return $this->belongsTo(Vehiculo::class, 'vehiculo_id', 'placa');
     }
 
     /**
-     * Relación con Trabajador (directa, para compatibilidad con datos existentes)
-     */
-    public function trabajador(): BelongsTo
-    {
-        return $this->belongsTo(Trabajador::class);
-    }
-
-    /**
-     * Relación con Trabajadores (múltiples) a través de cambio_aceite_trabajadores
+     * Relación con Trabajadores (múltiples) a través de cambio_aceite_trabajadores.
+     * Única vía de asignación trabajador↔cambio (sin columna directa).
      */
     public function trabajadores(): BelongsToMany
     {
         return $this->belongsToMany(Trabajador::class, 'cambio_aceite_trabajadores')
             ->withTimestamps();
+    }
+
+    /**
+     * Líneas de pago del ticket (1 simple, N mixto). Suman el total.
+     */
+    public function pagos(): MorphMany
+    {
+        return $this->morphMany(Pago::class, 'pagable');
     }
 
     /**

@@ -106,7 +106,7 @@
                     <td>{{ $lavado->id }}</td>
                     <td>{{ $lavado->fecha ? $lavado->fecha->format('d/m/Y') : '—' }}</td>
                     <td>{{ $lavado->cliente?->nombre_completo ?? '—' }}</td>
-                    <td>{{ $lavado->automotor?->placa ?? '—' }}</td>
+                    <td>{{ $lavado->vehiculo?->placa ?? '—' }}</td>
                     <td>{{ $lavado->vehiculo?->nombre ?? '—' }}</td>
                     <td>{{ $lavado->servicios->pluck('nombre')->implode(' + ') }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($lavado->total, 2) }}</td>

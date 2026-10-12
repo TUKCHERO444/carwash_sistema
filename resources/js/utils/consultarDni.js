@@ -2,7 +2,7 @@
  * Módulo: utils/consultarDni.js
  * Responsabilidad: Autocompletado de nombre y apellidos consultando el DNI
  * (datos locales o API de api.json.pe). Reutilizado por los módulos de
- * clientes y trabajadores. Sigue el patrón de automotores/validate.js —
+ * clientes y trabajadores. Sigue el patrón de vehiculos/validate.js —
  * solo rellena los campos vacíos y nunca bloquea el formulario.
  */
 

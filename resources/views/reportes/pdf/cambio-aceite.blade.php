@@ -84,7 +84,7 @@
                     <td>{{ $cambio->id }}</td>
                     <td>{{ $cambio->created_at ? $cambio->created_at->format('d/m/Y H:i') : '—' }}</td>
                     <td>{{ $cambio->cliente?->nombre_completo ?? '—' }}</td>
-                    <td>{{ $cambio->automotor?->placa ?? '—' }}</td>
+                    <td>{{ $cambio->vehiculo?->placa ?? '—' }}</td>
                     <td>{{ $cambio->trabajadores->pluck('nombre_completo')->implode(' + ') }}</td>
                     <td>{{ $cambio->productos->pluck('nombre')->implode(' + ') }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($cambio->total, 2) }}</td>

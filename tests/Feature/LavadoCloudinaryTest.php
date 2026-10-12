@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Lavado;
 use App\Models\Servicio;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
-use App\Models\Vehiculo;
 use Cloudinary\Api\ApiResponse;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,7 +36,7 @@ class LavadoCloudinaryTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $vehiculo = Vehiculo::factory()->create(['precio' => 50]);
+        $tipoVehiculo = TipoVehiculo::factory()->create(['precio' => 50]);
         $trabajador = Trabajador::factory()->create();
         $servicio = Servicio::factory()->create(['precio' => 20]);
 
@@ -50,7 +50,7 @@ class LavadoCloudinaryTest extends TestCase
         $file = UploadedFile::fake()->create('lavado.jpg', 100);
 
         $data = [
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'placa' => 'ABC-123',
             'fecha' => now()->format('Y-m-d'),
             'foto' => $file,
@@ -78,7 +78,7 @@ class LavadoCloudinaryTest extends TestCase
 
         $oldUrl = 'https://res.cloudinary.com/test/image/upload/v1/old_lavado.jpg';
         $lavado = Lavado::factory()->confirmado()->create(['foto' => $oldUrl]);
-        $vehiculo = Vehiculo::factory()->create();
+        $tipoVehiculo = TipoVehiculo::factory()->create();
         $trabajador = Trabajador::factory()->create();
 
         // Mock Delete
@@ -99,7 +99,7 @@ class LavadoCloudinaryTest extends TestCase
         $file = UploadedFile::fake()->create('new.jpg', 100);
 
         $data = [
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'placa' => 'XYZ-789',
             'fecha' => now()->format('Y-m-d'),
             'foto' => $file,

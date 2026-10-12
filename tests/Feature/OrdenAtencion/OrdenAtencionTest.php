@@ -4,10 +4,10 @@ namespace Tests\Feature\OrdenAtencion;
 
 use App\Models\Caja;
 use App\Models\CambioAceite;
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\Producto;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
@@ -25,7 +25,7 @@ class OrdenAtencionTest extends TestCase
 
     private User $user;
 
-    private Vehiculo $vehiculo;
+    private TipoVehiculo $tipoVehiculo;
 
     private Trabajador $trabajador;
 
@@ -38,7 +38,7 @@ class OrdenAtencionTest extends TestCase
         Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
-        $this->vehiculo = Vehiculo::factory()->create(['precio' => 50]);
+        $this->tipoVehiculo = TipoVehiculo::factory()->create(['precio' => 50]);
         $this->trabajador = Trabajador::factory()->create(['estado' => true]);
         $this->producto = Producto::factory()->create([
             'precio_compra' => 20.00,
@@ -52,13 +52,13 @@ class OrdenAtencionTest extends TestCase
     public function test_store_lavado_registra_inicio_de_atencion(): void
     {
         $this->actingAs($this->user)->post(route('lavados.store'), [
-            'vehiculo_id' => $this->vehiculo->id,
+            'tipo_vehiculo_id' => $this->tipoVehiculo->id,
             'placa' => 'ABC123',
             'fecha' => now()->toDateString(),
             'trabajadores_ids' => [$this->trabajador->id],
         ])->assertRedirect(route('lavados.index'));
 
-        $lavado = Lavado::where('automotor_id', 'ABC123')->firstOrFail();
+        $lavado = Lavado::where('vehiculo_id', 'ABC123')->firstOrFail();
         $this->assertEquals('pendiente', $lavado->estado);
         $this->assertNotNull($lavado->atencion_inicio_at);
         $this->assertNull($lavado->atencion_fin_at);
@@ -76,7 +76,7 @@ class OrdenAtencionTest extends TestCase
             ],
         ])->assertRedirect(route('cambio-aceite.index'));
 
-        $cambio = CambioAceite::where('automotor_id', 'XYZ789')->firstOrFail();
+        $cambio = CambioAceite::where('vehiculo_id', 'XYZ789')->firstOrFail();
         $this->assertNotNull($cambio->atencion_inicio_at);
         $this->assertNull($cambio->atencion_fin_at);
         $this->assertNull($cambio->tiempo_atencion_minutos);
@@ -92,7 +92,7 @@ class OrdenAtencionTest extends TestCase
 
         $this->actingAs($this->user)->post(route('lavados.procesarConfirmacion', $lavado), [
             'placa' => 'ABC123',
-            'vehiculo_id' => $this->vehiculo->id,
+            'tipo_vehiculo_id' => $this->tipoVehiculo->id,
             'fecha' => now()->toDateString(),
             'trabajadores_ids' => [$this->trabajador->id],
             'precio' => 50,
@@ -114,7 +114,6 @@ class OrdenAtencionTest extends TestCase
         $cliente = Cliente::factory()->create();
         $cambio = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 35.00,
@@ -151,9 +150,9 @@ class OrdenAtencionTest extends TestCase
         $cliente = Cliente::factory()->create();
 
         foreach (['AAA111' => 3, 'BBB222' => 2, 'CCC333' => 1] as $placa => $horas) {
-            Automotor::create(['placa' => $placa, 'cliente_id' => $cliente->id]);
+            Vehiculo::create(['placa' => $placa, 'cliente_id' => $cliente->id]);
             $t = Lavado::factory()->create([
-                'automotor_id' => $placa,
+                'vehiculo_id' => $placa,
                 'estado' => 'pendiente',
                 'created_at' => now()->subHours($horas),
                 'atencion_inicio_at' => now()->subHours($horas),
@@ -177,9 +176,9 @@ class OrdenAtencionTest extends TestCase
         $cliente = Cliente::factory()->create();
 
         foreach (['AAA111' => 5, 'BBB222' => 1] as $placa => $horas) {
-            Automotor::create(['placa' => $placa, 'cliente_id' => $cliente->id]);
+            Vehiculo::create(['placa' => $placa, 'cliente_id' => $cliente->id]);
             Lavado::factory()->confirmado()->create([
-                'automotor_id' => $placa,
+                'vehiculo_id' => $placa,
                 'atencion_inicio_at' => now()->subHours($horas + 1),
                 'atencion_fin_at' => now()->subHours($horas),
             ]);

@@ -196,28 +196,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Restaurar montos mixtos guardados
-    if (confirmarMontos.efectivo != null) {
-        const el = document.getElementById('monto_efectivo');
-        if (el) el.value = parseFloat(confirmarMontos.efectivo).toFixed(2);
-    }
-    if (confirmarMontos.yape != null) {
-        const el = document.getElementById('monto_yape');
-        if (el) el.value = parseFloat(confirmarMontos.yape).toFixed(2);
-    }
-    if (confirmarMontos.izipay != null) {
-        const el = document.getElementById('monto_izipay');
-        if (el) el.value = parseFloat(confirmarMontos.izipay).toFixed(2);
-    }
+    Object.entries(confirmarMontos ?? {}).forEach(([codigo, monto]) => {
+        if (monto == null) return;
+        const el = document.getElementById(`monto_${codigo}`);
+        if (el) el.value = parseFloat(monto).toFixed(2);
+    });
 
     // Actualizar UI de método de pago con el valor restaurado
     actualizarUI();
 
+    const idsMontos = () => [...document.querySelectorAll('[data-monto-metodo]')].map(el => el.id);
+
     // Validación de mixto al cambiar montos
-    ['monto_efectivo', 'monto_yape', 'monto_izipay'].forEach(id => {
+    idsMontos().forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', () =>
-                validarMixto(inputTotal, ['monto_efectivo', 'monto_yape', 'monto_izipay'], 'alerta-mixto')
+                validarMixto(inputTotal, idsMontos(), 'alerta-mixto')
             );
         }
     });
@@ -225,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Re-validar mixto cuando el total cambia (evento emitido por initMetodoPago)
     if (inputTotal) {
         inputTotal.addEventListener('mixto:revalidar', () =>
-            validarMixto(inputTotal, ['monto_efectivo', 'monto_yape', 'monto_izipay'], 'alerta-mixto')
+            validarMixto(inputTotal, idsMontos(), 'alerta-mixto')
         );
     }
 

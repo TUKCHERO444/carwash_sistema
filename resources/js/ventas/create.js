@@ -361,10 +361,8 @@ if (typeof document !== 'undefined') {
     function validarMixto() {
         if (getMetodoPago() !== 'mixto') return;
         const total    = parseFloat(inputTotal.value || 0);
-        const efectivo = parseFloat(document.getElementById('monto_efectivo').value || 0);
-        const yape     = parseFloat(document.getElementById('monto_yape').value || 0);
-        const izipay   = parseFloat(document.getElementById('monto_izipay').value || 0);
-        const suma     = +(efectivo + yape + izipay).toFixed(2);
+        const suma = +[...document.querySelectorAll('[data-monto-metodo]')]
+            .reduce((acc, el) => acc + (parseFloat(el.value || 0) || 0), 0).toFixed(2);
         document.getElementById('suma-mixto-display').textContent  = suma.toFixed(2);
         document.getElementById('total-mixto-display').textContent = total.toFixed(2);
         const alerta = document.getElementById('alerta-mixto');
@@ -375,7 +373,7 @@ if (typeof document !== 'undefined') {
         }
     }
 
-    ['monto_efectivo', 'monto_yape', 'monto_izipay'].forEach(id => {
+    [...document.querySelectorAll('[data-monto-metodo]')].map(el => el.id).forEach(id => {
         document.getElementById(id).addEventListener('input', validarMixto);
     });
 

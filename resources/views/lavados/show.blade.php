@@ -40,7 +40,7 @@
             <div>
                 <dt class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Cliente</dt>
                 <dd class="mt-1 text-sm text-primary">
-                    {{ $lavado->automotor->placa ?? 'N/A' }}
+                    {{ $lavado->vehiculo->placa ?? 'N/A' }}
                     @if($lavado->cliente->nombre)
                         — {{ $lavado->cliente->nombre }}
                     @endif
@@ -50,8 +50,8 @@
             <div>
                 <dt class="text-xs font-medium text-text-secondary-dark uppercase tracking-wider">Vehículo</dt>
                 <dd class="mt-1 text-sm text-primary">
-                    {{ $lavado->vehiculo->nombre }}
-                    <span class="text-text-secondary-dark">(S/ {{ number_format($lavado->vehiculo->precio, 2) }})</span>
+                    {{ $lavado->tipoVehiculo->nombre }}
+                    <span class="text-text-secondary-dark">(S/ {{ number_format($lavado->tipoVehiculo->precio, 2) }})</span>
                 </dd>
             </div>
 
@@ -155,31 +155,11 @@
                 </div>
             @endif
             {{-- Método de pago --}}
-            @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
-            <div class="flex items-center gap-4">
+            <div class="flex items-start gap-4">
                 <span class="text-secondary">Método de pago:</span>
-                <span class="text-primary font-medium">{{ $metodosLabel[$lavado->metodo_pago] ?? ucfirst($lavado->metodo_pago) }}</span>
+                @include('pagos._lineas', ['pagable' => $lavado])
             </div>
-            @if($lavado->metodo_pago === 'mixto')
-                @if($lavado->monto_efectivo)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Efectivo:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($lavado->monto_efectivo, 2) }}</span>
-                    </div>
-                @endif
-                @if($lavado->monto_yape)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Yape:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($lavado->monto_yape, 2) }}</span>
-                    </div>
-                @endif
-                @if($lavado->monto_izipay)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Izipay:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($lavado->monto_izipay, 2) }}</span>
-                    </div>
-                @endif
-            @endif
+
         </div>
     </div>
 

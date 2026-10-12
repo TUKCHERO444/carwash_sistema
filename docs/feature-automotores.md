@@ -1,3 +1,5 @@
+> **Nota de renombrado (2026-10-10):** la entidad `automotores`/`Automotor` pasó a llamarse `vehiculos`/`Vehiculo` (vehículo físico) y el catálogo `vehiculos` pasó a `tipos_vehiculo`/`TipoVehiculo`. Ver spec `.kiro/specs/renombrado-tipo-vehiculo/`. Este documento se conserva como historia.
+
 # Feature: Gestión de Automotores (Vehículos Físicos por Cliente)
 
 ## Índice

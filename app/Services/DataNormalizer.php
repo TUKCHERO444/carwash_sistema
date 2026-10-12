@@ -6,8 +6,8 @@ namespace App\Services;
  * Centraliza las reglas de estandarización de datos del sistema.
  *
  * Estas reglas deben coincidir con las validaciones server-side definidas en
- * los controladores (ClienteController, TrabajadorController, VehiculoController,
- * AutomotorController, MarcaController, CategoriaController, ServicioController,
+ * los controladores (ClienteController, TrabajadorController, TipoVehiculoController,
+ * VehiculoController, MarcaController, CategoriaController, ServicioController,
  * ProductoController) y con el `docs/patron-validacion-formularios.md`.
  *
  * Se usa tanto en los seeders (para generar datos válidos desde el inicio) como

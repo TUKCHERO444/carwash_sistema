@@ -134,10 +134,10 @@ if (typeof document !== 'undefined') {
             const rows = tbodyDetalle.querySelectorAll('tr');
             rows.forEach((row, idx) => {
                 if (!items[idx]) return;
-                const selectProducto = row.querySelector('select[name^="detalle["]');
+                const inputProducto = row.querySelector('input[name$="[producto_id]"]');
                 const inputCantidad  = row.querySelector('input[type="number"][min="1"]');
                 const inputCosto     = row.querySelector('input[type="number"][min="0"][step="0.01"]');
-                if (selectProducto) items[idx].producto_id = selectProducto.value;
+                if (inputProducto) items[idx].producto_id = inputProducto.value;
                 if (inputCantidad)  items[idx].cantidad = parseInt(inputCantidad.value, 10) || 1;
                 if (inputCosto)     items[idx].costo_unitario = parseFloat(inputCosto.value) || 0;
                 items[idx].subtotal = calcularSubtotal(items[idx].cantidad, items[idx].costo_unitario);
@@ -264,11 +264,11 @@ if (typeof document !== 'undefined') {
             let mensaje = '';
 
             rows.forEach((row, idx) => {
-                const selectProducto = row.querySelector('select[name^="detalle["]');
+                const inputProducto = row.querySelector('input[name$="[producto_id]"]');
                 const inputCantidad  = row.querySelector('input[type="number"][min="1"]');
                 const inputCosto     = row.querySelector('input[type="number"][min="0"][step="0.01"]');
 
-                if (!selectProducto || !selectProducto.value) {
+                if (!inputProducto || !inputProducto.value) {
                     valido = false;
                     mensaje = `Línea ${idx + 1}: debe seleccionar un producto.`;
                 } else if (!inputCantidad || !inputCantidad.value || parseInt(inputCantidad.value, 10) < 1) {

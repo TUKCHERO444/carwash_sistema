@@ -1,7 +1,7 @@
 @extends('reportes.pdf.base')
 
 @section('titulo', 'Historial de atención por vehículo')
-@section('subtitulo', 'Placa '.$automotor->placa.' · Rango aplicado: '.$etiqueta)
+@section('subtitulo', 'Placa '.$vehiculo->placa.' · Rango aplicado: '.$etiqueta)
 
 @section('contenido')
     <h2>Vehículo</h2>
@@ -9,15 +9,15 @@
         <tr>
             <td>
                 <div class="kpi-label">Placa</div>
-                <div class="kpi-valor">{{ $automotor->placa }}</div>
+                <div class="kpi-valor">{{ $vehiculo->placa }}</div>
             </td>
             <td>
                 <div class="kpi-label">Cliente</div>
-                <div class="kpi-valor">{{ $automotor->cliente?->nombre_completo ?? '—' }}</div>
+                <div class="kpi-valor">{{ $vehiculo->cliente?->nombre_completo ?? '—' }}</div>
             </td>
             <td>
                 <div class="kpi-label">Marca / Modelo</div>
-                <div class="kpi-valor">{{ trim(($automotor->marca ?? '').' '.($automotor->modelo ?? '')) ?: '—' }}</div>
+                <div class="kpi-valor">{{ trim(($vehiculo->marca ?? '').' '.($vehiculo->modelo ?? '')) ?: '—' }}</div>
             </td>
         </tr>
     </table>

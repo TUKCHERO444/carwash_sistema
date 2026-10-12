@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Reportes;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\Servicio;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
@@ -52,18 +52,18 @@ class ReporteLavadosTest extends TestCase
     {
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
-        $vehiculo = Vehiculo::factory()->create();
+        $tipoVehiculo = TipoVehiculo::factory()->create();
         $servicio = Servicio::factory()->create();
         $trabajador = Trabajador::factory()->create();
-        $automotor = Automotor::create([
+        $vehiculo = Vehiculo::create([
             'placa' => 'ABC-123',
             'cliente_id' => $cliente->id,
         ]);
 
         $lavado = $this->lavadoEn([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
-            'automotor_id' => $automotor->placa,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
+            'vehiculo_id' => $vehiculo->placa,
             'user_id' => $usuario->id,
             'total' => 120,
         ]);
@@ -73,8 +73,8 @@ class ReporteLavadosTest extends TestCase
         // Pendiente en rango → fuera del universo
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
-            'automotor_id' => $automotor->placa,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
+            'vehiculo_id' => $vehiculo->placa,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'pendiente',
@@ -89,7 +89,7 @@ class ReporteLavadosTest extends TestCase
         $this->assertEqualsWithDelta(120, $kpis['total'], 0.01);
 
         $porVehiculo = $this->service->porVehiculo($desde, $hasta);
-        $this->assertSame($automotor->placa, $porVehiculo[0]['placa']);
+        $this->assertSame($vehiculo->placa, $porVehiculo[0]['placa']);
 
         $porServicio = $this->service->porServicio($desde, $hasta);
         $this->assertSame($servicio->nombre, $porServicio[0]['nombre']);

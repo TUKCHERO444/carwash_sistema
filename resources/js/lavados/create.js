@@ -21,11 +21,11 @@ let items = []; // [{servicio_id, nombre, precio}]
 // ── Indicador visual de precio estimado ──
 // (no usa recalcularTotales completo — no hay descuento ni total en create)
 function actualizarPrecioDisplay() {
-    const vehiculoSelect = document.getElementById('vehiculo_id');
-    const precioVehiculo = parseFloat(
+    const vehiculoSelect = document.getElementById('tipo_vehiculo_id');
+    const precioTipoVehiculo = parseFloat(
         vehiculoSelect?.options[vehiculoSelect.selectedIndex]?.dataset.precio ?? 0
     );
-    const precio = calcularPrecio(precioVehiculo, items);
+    const precio = calcularPrecio(precioTipoVehiculo, items);
     const display = document.getElementById('precio-display');
     if (display) display.value = precio.toFixed(2);
 
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFotoPreview('foto', 'foto-preview');
 
     // Actualizar precio al cambiar vehículo
-    const vehiculoSelect = document.getElementById('vehiculo_id');
+    const vehiculoSelect = document.getElementById('tipo_vehiculo_id');
     if (vehiculoSelect) {
         vehiculoSelect.addEventListener('change', actualizarPrecioDisplay);
     }

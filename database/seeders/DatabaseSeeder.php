@@ -16,9 +16,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AuthSeeder::class,
+            MetodoPagoSeeder::class,
             ClienteSeeder::class,
-            AutomotorSeeder::class,
             VehiculoSeeder::class,
+            TipoVehiculoSeeder::class,
             TrabajadorSeeder::class,
             MarcaSeeder::class,
             ProveedorSeeder::class,

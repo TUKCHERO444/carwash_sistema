@@ -14,13 +14,13 @@ import Swal from 'sweetalert2';
 /**
  * Calcula el precio base sumando el precio del vehículo y los precios de los servicios.
  *
- * @param {number} precioVehiculo - Precio del vehículo seleccionado.
+ * @param {number} precioTipoVehiculo - Precio del vehículo seleccionado.
  * @param {Array<{precio: number}>} items - Array de servicios con su precio.
  * @returns {number} Precio base (2 decimales).
  */
-export function calcularPrecio(precioVehiculo, items) {
+export function calcularPrecio(precioTipoVehiculo, items) {
     const sumServicios = items.reduce((acc, i) => acc + i.precio, 0);
-    return +(precioVehiculo + sumServicios).toFixed(2);
+    return +(precioTipoVehiculo + sumServicios).toFixed(2);
 }
 
 /**
@@ -398,11 +398,11 @@ export function validarMixto(inputTotal, montoIds, alertaId) {
  */
 export function recalcularTotales(items, vehiculoSelectId, precioId, totalId, toggleDescuentoId, porcentajeId) {
     const vehiculoSelect = document.getElementById(vehiculoSelectId);
-    const precioVehiculo = parseFloat(
+    const precioTipoVehiculo = parseFloat(
         vehiculoSelect?.options[vehiculoSelect.selectedIndex]?.dataset.precio ?? 0
     );
 
-    const precio = calcularPrecio(precioVehiculo, items);
+    const precio = calcularPrecio(precioTipoVehiculo, items);
 
     const precioInput = document.getElementById(precioId);
     if (precioInput) precioInput.value = precio.toFixed(2);

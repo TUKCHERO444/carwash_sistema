@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
+use App\Models\MetodoPago;
+use App\Models\TipoVehiculo;
 use App\Models\User;
 use App\Models\Vehiculo;
 use Faker\Factory as Faker;
@@ -17,7 +18,7 @@ class LavadoSeeder extends Seeder
         $faker = Faker::create('es_ES');
 
         $clienteIds = Cliente::pluck('id')->toArray();
-        $vehiculoIds = Vehiculo::pluck('id')->toArray();
+        $tipoVehiculoIds = TipoVehiculo::pluck('id')->toArray();
         $userIds = User::pluck('id')->toArray();
 
         for ($i = 0; $i < 50; $i++) {
@@ -28,18 +29,27 @@ class LavadoSeeder extends Seeder
                 : $precio;
 
             $clienteId = $faker->randomElement($clienteIds);
-            $automotorPlaca = Automotor::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
+            $vehiculoPlaca = Vehiculo::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
 
-            Lavado::create([
+            $lavado = Lavado::create([
                 'cliente_id' => $clienteId,
-                'automotor_id' => $automotorPlaca,
-                'vehiculo_id' => $faker->randomElement($vehiculoIds),
+                'vehiculo_id' => $vehiculoPlaca,
+                'tipo_vehiculo_id' => $faker->randomElement($tipoVehiculoIds),
                 'fecha' => $faker->dateTimeBetween('-3 months', 'now')->format('Y-m-d'),
                 'foto' => $tieneFoto ? 'fotos/lavado_'.($i + 1).'.jpg' : null,
                 'precio' => $precio,
                 'total' => $total,
                 'user_id' => $faker->randomElement($userIds),
             ]);
+
+            $metodoId = MetodoPago::where('activo', true)->inRandomOrder()->value('id');
+            if ($metodoId) {
+                $lavado->pagos()->create([
+                    'metodo_pago_id' => $metodoId,
+                    'monto' => $total,
+                    'user_id' => $lavado->user_id,
+                ]);
+            }
         }
     }
 }

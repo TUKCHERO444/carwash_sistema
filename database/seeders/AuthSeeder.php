@@ -32,8 +32,8 @@ class AuthSeeder extends Seeder
             'acceso-ventas',
             'acceso-caja',
             'acceso-clientes',
+            'acceso-tipos-vehiculo',
             'acceso-vehiculos',
-            'acceso-automotores',
         ]);
 
         // El rol Cliente solo lleva el permiso puerta de la zona pública.

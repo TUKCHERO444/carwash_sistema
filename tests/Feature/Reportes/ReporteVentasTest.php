@@ -8,6 +8,7 @@ use App\Services\Reportes\ReporteVentasService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\Pagos;
 use Tests\TestCase;
 
 class ReporteVentasTest extends TestCase
@@ -37,14 +38,19 @@ class ReporteVentasTest extends TestCase
 
     private function venta(array $atributos = []): Venta
     {
-        return Venta::create(array_merge([
+        $metodo = $atributos['metodo_pago'] ?? 'efectivo';
+        unset($atributos['metodo_pago']);
+
+        $venta = Venta::create(array_merge([
             'correlativo' => 'V1-00000'.fake()->unique()->numberBetween(1, 999),
             'total' => 100,
-            'metodo_pago' => 'efectivo',
             'user_id' => User::factory()->create()->id,
             'created_at' => now(),
             'updated_at' => now(),
         ], $atributos));
+        Pagos::linea($venta, $metodo, (float) $venta->total);
+
+        return $venta;
     }
 
     public function test_filtros_por_usuario_metodo_y_correlativo(): void

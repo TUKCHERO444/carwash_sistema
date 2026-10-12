@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Automotor;
+use App\Models\Vehiculo;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  * vehículo o aún no está configurada, se devuelve [] y se loguea el incidente,
  * de modo que el flujo de confirmación del ticket nunca se bloquee.
  */
-class AutomotorApiService
+class VehiculoApiService
 {
     /**
      * Busca los datos vehiculares asociados a una placa.
@@ -31,14 +31,14 @@ class AutomotorApiService
      */
     public function buscarPorPlaca(string $placa): array
     {
-        $placa = Automotor::normalizarPlaca($placa);
+        $placa = Vehiculo::normalizarPlaca($placa);
 
         $url = config('services.vehicle_api.url');
         $token = config('services.vehicle_api.token');
 
         if (empty($url) || empty($token)) {
             // API aún no configurada: registrar y devolver fallback.
-            Log::info('AutomotorApiService: API vehicular no configurada, se omite consulta.', ['placa' => $placa]);
+            Log::info('VehiculoApiService: API vehicular no configurada, se omite consulta.', ['placa' => $placa]);
 
             return [];
         }
@@ -50,7 +50,7 @@ class AutomotorApiService
                 ->post($url, ['placa' => $placa]);
 
             if (! $response->ok()) {
-                Log::warning('AutomotorApiService: respuesta no exitosa de la API.', [
+                Log::warning('VehiculoApiService: respuesta no exitosa de la API.', [
                     'placa' => $placa,
                     'status' => $response->status(),
                 ]);
@@ -61,7 +61,7 @@ class AutomotorApiService
             $payload = $response->json();
 
             if (($payload['success'] ?? false) !== true || empty($payload['data'])) {
-                Log::info('AutomotorApiService: vehículo no encontrado en la API.', ['placa' => $placa]);
+                Log::info('VehiculoApiService: vehículo no encontrado en la API.', ['placa' => $placa]);
 
                 return [];
             }
@@ -77,7 +77,7 @@ class AutomotorApiService
                 'vin' => $dato['vin'] ?? null,
             ], fn ($v) => $v !== null && $v !== '');
         } catch (\Throwable $e) {
-            Log::error('AutomotorApiService: no se pudo obtener datos del vehículo.', [
+            Log::error('VehiculoApiService: no se pudo obtener datos del vehículo.', [
                 'placa' => $placa,
                 'error' => $e->getMessage(),
             ]);

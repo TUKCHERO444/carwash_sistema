@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('cambio_aceites', function (Blueprint $table) {
             $table->id();
             $table->foreignId('cliente_id')->constrained('clientes')->onDelete('cascade');
-            $table->foreignId('trabajador_id')->constrained('trabajadores')->onDelete('cascade');
             $table->date('fecha');
             $table->timestamps();
 

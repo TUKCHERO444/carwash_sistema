@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\Vehiculo;
+use App\Models\TipoVehiculo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Vehiculo>
+ * @extends Factory<TipoVehiculo>
  */
-class VehiculoFactory extends Factory
+class TipoVehiculoFactory extends Factory
 {
+    protected $model = TipoVehiculo::class;
+
     /**
      * Define the model's default state.
      *

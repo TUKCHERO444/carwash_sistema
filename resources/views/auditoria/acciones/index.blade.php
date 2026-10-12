@@ -8,7 +8,7 @@
             'servicios' => 'servicios.show',
             'vehiculos' => 'vehiculos.show',
             'clientes' => 'clientes.show',
-            'automotores' => 'automotores.show',
+            'vehiculos' => 'vehiculos.show',
             'ventas' => 'ventas.show',
             'cambio_aceite' => 'cambio-aceite.show',
             'lavados' => 'lavados.show',

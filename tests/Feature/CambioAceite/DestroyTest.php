@@ -50,7 +50,6 @@ class DestroyTest extends TestCase
     {
         $ticket = CambioAceite::create([
             'cliente_id' => $this->cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,
@@ -103,7 +102,6 @@ class DestroyTest extends TestCase
     {
         $ticket = CambioAceite::create([
             'cliente_id' => $this->cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,
@@ -154,7 +152,6 @@ class DestroyTest extends TestCase
 
         $ticket = CambioAceite::create([
             'cliente_id' => $this->cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,

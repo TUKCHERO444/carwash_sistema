@@ -46,18 +46,16 @@ class ReporteCambioAceiteTest extends TestCase
 
         $cambio = CambioAceite::factory()->create([
             'user_id' => $usuario->id,
-            'trabajador_id' => $trabajador->id,
             'estado' => 'confirmado',
             'total' => 120,
             'created_at' => now(),
         ]);
-        $cambio->trabajadores()->attach($trabajador->id);
+        $cambio->trabajadores()->sync([$trabajador->id]);
         $cambio->productos()->attach($aceite->id, ['cantidad' => 2, 'precio' => 50, 'total' => 100]);
         $cambio->productos()->attach($filtro->id, ['cantidad' => 1, 'precio' => 20, 'total' => 20]);
 
         CambioAceite::factory()->create([
             'user_id' => $usuario->id,
-            'trabajador_id' => $trabajador->id,
             'estado' => 'pendiente',
             'total' => 999,
             'created_at' => now(),

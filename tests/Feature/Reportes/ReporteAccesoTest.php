@@ -24,6 +24,7 @@ class ReporteAccesoTest extends TestCase
             'reportes.caja',
             'reportes.personal',
             'reportes.kardex',
+            'reportes.operativo',
             'reportes.vehiculo',
             'reportes.comprasProveedor',
         ];

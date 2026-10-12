@@ -25,11 +25,12 @@ class PermissionSeeder extends Seeder
             'acceso-inventario',
             'acceso-servicios',
             'acceso-contenido-web',
+            'acceso-metodos-pago',
 
             // Operaciones Clientes
-            'acceso-vehiculos',
+            'acceso-tipos-vehiculo',
             'acceso-clientes',
-            'acceso-automotores',
+            'acceso-vehiculos',
 
             // Proveedores
             'acceso-proveedores',

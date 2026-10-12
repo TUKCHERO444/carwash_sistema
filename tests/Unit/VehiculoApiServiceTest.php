@@ -2,21 +2,21 @@
 
 namespace Tests\Unit;
 
-use App\Services\AutomotorApiService;
+use App\Services\VehiculoApiService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-class AutomotorApiServiceTest extends TestCase
+class VehiculoApiServiceTest extends TestCase
 {
-    private AutomotorApiService $service;
+    private VehiculoApiService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service = new AutomotorApiService;
+        $this->service = new VehiculoApiService;
 
         config([
             'services.vehicle_api.url' => 'https://api.json.pe/api/placa',

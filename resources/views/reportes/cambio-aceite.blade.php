@@ -129,7 +129,7 @@
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->id }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->created_at->format('d/m/Y H:i') }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $cambio->cliente?->nombre_completo ?? '—' }}</td>
-                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->automotor?->placa ?? '—' }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->vehiculo?->placa ?? '—' }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->trabajadores->pluck('nombre_completo')->implode(' + ') }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $cambio->productos->pluck('nombre')->implode(' + ') }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($cambio->total, 2) }}</td>

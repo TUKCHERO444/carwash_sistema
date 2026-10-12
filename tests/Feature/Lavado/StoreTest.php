@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Lavado;
 
-use App\Models\Automotor;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
@@ -23,7 +23,7 @@ class StoreTest extends TestCase
 
     private User $user;
 
-    private Vehiculo $vehiculo;
+    private TipoVehiculo $tipoVehiculo;
 
     private Trabajador $trabajador;
 
@@ -34,14 +34,14 @@ class StoreTest extends TestCase
         Permission::firstOrCreate(['name' => 'acceso-ventas', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
         $this->user->givePermissionTo('acceso-ventas');
-        $this->vehiculo = Vehiculo::factory()->create(['precio' => 28000]);
+        $this->tipoVehiculo = TipoVehiculo::factory()->create(['precio' => 28000]);
         $this->trabajador = Trabajador::factory()->create();
     }
 
     private function payloadBase(array $overrides = []): array
     {
         return array_merge([
-            'vehiculo_id' => $this->vehiculo->id,
+            'tipo_vehiculo_id' => $this->tipoVehiculo->id,
             'placa' => 'ABC123',
             'fecha' => now()->toDateString(),
             'trabajadores_ids' => [$this->trabajador->id],
@@ -55,10 +55,10 @@ class StoreTest extends TestCase
 
         $response->assertRedirect(route('lavados.index'));
 
-        $this->assertDatabaseHas('lavados', ['automotor_id' => 'ABC123']);
-        $this->assertDatabaseHas('automotores', ['placa' => 'ABC123']);
+        $this->assertDatabaseHas('lavados', ['vehiculo_id' => 'ABC123']);
+        $this->assertDatabaseHas('vehiculos', ['placa' => 'ABC123']);
         $this->assertDatabaseHas('registros_auditoria', [
-            'auditable_type' => Automotor::class,
+            'auditable_type' => Vehiculo::class,
             'auditable_id' => 'ABC123',
         ]);
     }
@@ -73,7 +73,7 @@ class StoreTest extends TestCase
 
         $response->assertRedirect(route('lavados.index'));
 
-        $this->assertEquals(1, Automotor::where('placa', 'ABC123')->count());
+        $this->assertEquals(1, Vehiculo::where('placa', 'ABC123')->count());
         $this->assertDatabaseCount('lavados', 2);
     }
 }

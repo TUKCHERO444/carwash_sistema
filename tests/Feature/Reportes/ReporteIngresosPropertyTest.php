@@ -170,7 +170,6 @@ class ReporteIngresosPropertyTest extends TestCase
                 $total = mt_rand(10, 900) / 10;
                 $porDia[$fecha]['cambios'] += $total;
                 $cambio = CambioAceite::factory()->create([
-                    'trabajador_id' => Trabajador::factory()->create()->id,
                     'user_id' => $this->usuario->id,
                     'estado' => 'confirmado',
                     'total' => $total,
@@ -190,7 +189,6 @@ class ReporteIngresosPropertyTest extends TestCase
                 'total' => 99999,
             ]);
             $cambio = CambioAceite::factory()->create([
-                'trabajador_id' => Trabajador::factory()->create()->id,
                 'user_id' => $this->usuario->id,
                 'estado' => 'pendiente',
                 'total' => 99999,

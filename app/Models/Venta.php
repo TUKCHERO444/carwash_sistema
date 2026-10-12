@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Venta extends Model
 {
@@ -14,10 +15,6 @@ class Venta extends Model
         'observacion',
         'subtotal',
         'total',
-        'metodo_pago',
-        'monto_efectivo',
-        'monto_yape',
-        'monto_izipay',
         'user_id',
         'caja_id',
     ];
@@ -25,9 +22,6 @@ class Venta extends Model
     protected $casts = [
         'subtotal' => 'decimal:2',
         'total' => 'decimal:2',
-        'monto_efectivo' => 'decimal:2',
-        'monto_yape' => 'decimal:2',
-        'monto_izipay' => 'decimal:2',
     ];
 
     /**
@@ -62,6 +56,14 @@ class Venta extends Model
         return (int) DetalleDevolucionVenta::where('detalle_venta_id', $detalleVentaId)
             ->whereHas('devolucion', fn ($q) => $q->where('venta_id', $this->id))
             ->sum('cantidad');
+    }
+
+    /**
+     * Líneas de pago del ticket (1 simple, N mixto). Suman el total.
+     */
+    public function pagos(): MorphMany
+    {
+        return $this->morphMany(Pago::class, 'pagable');
     }
 
     /**

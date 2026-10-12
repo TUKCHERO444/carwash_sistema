@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\DetalleDevolucionVenta;
 use App\Models\DetalleVenta;
 use App\Models\DevolucionVenta;
+use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\KardexService;
+use App\Services\PagoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +23,7 @@ class DevolucionVentaController extends Controller
     public function __construct(
         private CajaService $cajaService,
         private KardexService $kardexService,
+        private PagoService $pagoService,
     ) {}
 
     /**
@@ -248,23 +251,27 @@ class DevolucionVentaController extends Controller
 
     /**
      * Genera 1..N egresos compensatorios que suman exactamente el total
-     * devuelto, mapeando el método de pago al CHECK de egresos_caja
+     * devuelto, mapeando cada línea de pago al tipo_pago de egresos_caja
      * (efectivo, yape, transferencia, tarjeta).
      */
     private function registrarEgresosCompensatorios(Venta $venta, $caja, DevolucionVenta $devolucion, float $total): void
     {
         $base = "Devolución {$devolucion->correlativo} de {$venta->correlativo} ({$devolucion->motivo})";
 
-        $componentes = match ($venta->metodo_pago) {
-            'efectivo' => [['efectivo', $total]],
-            'yape' => [['yape', $total]],
-            'izipay' => [['tarjeta', $total]],
-            default => $this->prorratearMixto($venta, $total),
-        };
+        $venta->loadMissing('pagos.metodoPago');
+        $componentes = [];
+        foreach ($venta->pagos as $pago) {
+            $componentes[] = [$this->pagoService->tipoEgresoPara($pago->metodoPago?->codigo ?? ''), (float) $pago->monto];
+        }
+        if ($componentes === []) {
+            $componentes = [['efectivo', $total]];
+        } else {
+            $componentes = $this->prorratearLineas($componentes, $total);
+        }
 
         foreach ($componentes as $i => [$tipoPago, $monto]) {
             $descripcion = $base;
-            if ($venta->metodo_pago === 'mixto') {
+            if (count($componentes) > 1) {
                 $descripcion .= " [mixto {$i}/".count($componentes).']';
             }
 
@@ -278,24 +285,19 @@ class DevolucionVentaController extends Controller
     }
 
     /**
-     * Prorratea el total devuelto según el desglose mixto de la venta.
+     * Prorratea el total devuelto según las líneas de pago de la venta.
      * La suma de los egresos es exactamente el total (ajuste en el último).
      *
+     * @param  list<array{0: string, 1: float}>  $componentes
      * @return list<array{0: string, 1: float}>
      */
-    private function prorratearMixto(Venta $venta, float $total): array
+    private function prorratearLineas(array $componentes, float $total): array
     {
-        $desglose = [
-            ['efectivo', (float) ($venta->monto_efectivo ?? 0)],
-            ['yape', (float) ($venta->monto_yape ?? 0)],
-            ['tarjeta', (float) ($venta->monto_izipay ?? 0)],
-        ];
+        $totalPagos = round(array_sum(array_column($componentes, 1)), 2);
 
-        $totalVenta = (float) $venta->total;
+        $activos = array_values(array_filter($componentes, fn ($d) => $d[1] > 0));
 
-        $activos = array_values(array_filter($desglose, fn ($d) => $d[1] > 0));
-
-        if ($totalVenta <= 0 || $activos === []) {
+        if ($totalPagos <= 0 || $activos === []) {
             return [['efectivo', round($total, 2)]];
         }
 
@@ -305,7 +307,7 @@ class DevolucionVentaController extends Controller
             if ($i === count($activos) - 1) {
                 $resultado[] = [$tipoPago, round($total - $acumulado, 2)];
             } else {
-                $parte = round($total * ($monto / $totalVenta), 2);
+                $parte = round($total * ($monto / $totalPagos), 2);
                 $resultado[] = [$tipoPago, $parte];
                 $acumulado += $parte;
             }
@@ -345,13 +347,18 @@ class DevolucionVentaController extends Controller
             'observacion' => "Cambio por devolución {$devolucion->correlativo} de {$ventaOriginal->correlativo}",
             'subtotal' => $subtotal,
             'total' => $subtotal,
-            'metodo_pago' => 'efectivo',
-            'monto_efectivo' => null,
-            'monto_yape' => null,
-            'monto_izipay' => null,
             'user_id' => auth()->id(),
             'caja_id' => $caja->id,
         ]);
+
+        $metodoId = MetodoPago::where('codigo', 'efectivo')->value('id')
+            ?? MetodoPago::where('activo', true)->orderBy('id')->value('id');
+
+        $this->pagoService->guardarLineas($ventaNueva, [[
+            'metodo_pago_id' => $metodoId,
+            'codigo' => 'efectivo',
+            'monto' => $subtotal,
+        ]], auth()->id(), $caja->id);
 
         DetalleVenta::create([
             'venta_id' => $ventaNueva->id,

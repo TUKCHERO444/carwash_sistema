@@ -228,7 +228,6 @@ class KardexTest extends TestCase
 
         $pendiente = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,

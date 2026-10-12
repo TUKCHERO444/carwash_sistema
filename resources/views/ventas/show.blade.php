@@ -114,31 +114,11 @@
                 </div>
             @endif
             {{-- Método de pago --}}
-            @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
-            <div class="flex items-center gap-4">
+            <div class="flex items-start gap-4">
                 <span class="text-secondary">Método de pago:</span>
-                <span class="text-primary font-medium">{{ $metodosLabel[$venta->metodo_pago] ?? ucfirst($venta->metodo_pago) }}</span>
+                @include('pagos._lineas', ['pagable' => $venta])
             </div>
-            @if($venta->metodo_pago === 'mixto')
-                @if($venta->monto_efectivo)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Efectivo:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($venta->monto_efectivo, 2) }}</span>
-                    </div>
-                @endif
-                @if($venta->monto_yape)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Yape:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($venta->monto_yape, 2) }}</span>
-                    </div>
-                @endif
-                @if($venta->monto_izipay)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-text-secondary-dark text-xs">Izipay:</span>
-                        <span class="text-secondary text-xs">S/ {{ number_format($venta->monto_izipay, 2) }}</span>
-                    </div>
-                @endif
-            @endif
+
         </div>
     </div>
 

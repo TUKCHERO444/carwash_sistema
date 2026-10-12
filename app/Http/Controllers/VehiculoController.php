@@ -2,25 +2,48 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cliente;
 use App\Models\Vehiculo;
+use App\Services\VehiculoApiService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class VehiculoController extends Controller
 {
     /**
-     * Regla de validación alfanumérica (letras, números y espacios;
-     * rechaza símbolos).
+     * Regla de placa: 6-7 caracteres alfanuméricos y opcional guion medio.
      */
-    private const ALFANUMERICO_RULE = 'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]+$/u';
+    private const PLACA_RULE = 'regex:/^[A-Z0-9-]{6,7}$/i';
+
+    public function __construct(
+        private VehiculoApiService $vehiculoApiService,
+    ) {}
 
     /**
-     * Display a paginated listing of vehículos.
+     * Solo letras (con acentos españoles y ñ) y espacios internos simples.
+     * Rechaza números, símbolos y espacios dobles.
+     */
+    private const SOLO_LETRAS_RULE = 'regex:/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
+     * Letras, números y espacios internos simples. Rechaza símbolos.
+     */
+    private const ALFANUMERICO_RULE = 'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+)*$/u';
+
+    /**
+     * Alfanumérico para campos que pueden contener guiones/códigos
+     * (serie, motor) además de letras, números y espacios.
+     */
+    private const CODIGO_RULE = 'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ -]+$/u';
+
+    /**
+     * Display a listing of all vehículos ordered by placa.
      */
     public function index(): View
     {
-        $vehiculos = Vehiculo::paginate(10);
+        $vehiculos = Vehiculo::with('cliente')->orderBy('placa')->paginate(10);
 
         return view('vehiculos.index', compact('vehiculos'));
     }
@@ -30,7 +53,9 @@ class VehiculoController extends Controller
      */
     public function create(): View
     {
-        return view('vehiculos.create');
+        $clientes = Cliente::orderBy('nombre')->get();
+
+        return view('vehiculos.create', compact('clientes'));
     }
 
     /**
@@ -39,12 +64,26 @@ class VehiculoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'nombre' => ['required', 'string', 'max:30', self::ALFANUMERICO_RULE],
-            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
-            'precio' => ['required', 'numeric', 'gt:0'],
+            'placa' => ['required', 'string', 'max:7', 'unique:vehiculos,placa', self::ALFANUMERICO_RULE],
+            'cliente_id' => ['required', 'integer', 'exists:clientes,id'],
+            'marca' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'modelo' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'serie' => ['nullable', 'string', 'max:100', self::CODIGO_RULE],
+            'color' => ['nullable', 'string', 'max:50', self::SOLO_LETRAS_RULE],
+            'motor' => ['nullable', 'string', 'max:100', self::CODIGO_RULE],
+            'vin' => ['nullable', 'string', 'max:100', 'unique:vehiculos,vin', self::CODIGO_RULE],
         ]);
 
-        Vehiculo::create($request->only('nombre', 'descripcion', 'precio'));
+        Vehiculo::create([
+            'placa' => Vehiculo::normalizarPlaca($request->placa),
+            'cliente_id' => $request->cliente_id,
+            'marca' => $request->marca,
+            'modelo' => $request->modelo,
+            'serie' => $request->serie,
+            'color' => $request->color,
+            'motor' => $request->motor,
+            'vin' => $request->vin,
+        ]);
 
         return redirect()->route('vehiculos.index')
             ->with('success', 'Vehículo creado correctamente.');
@@ -55,7 +94,9 @@ class VehiculoController extends Controller
      */
     public function edit(Vehiculo $vehiculo): View
     {
-        return view('vehiculos.edit', compact('vehiculo'));
+        $clientes = Cliente::orderBy('nombre')->get();
+
+        return view('vehiculos.edit', compact('vehiculo', 'clientes'));
     }
 
     /**
@@ -64,12 +105,26 @@ class VehiculoController extends Controller
     public function update(Request $request, Vehiculo $vehiculo): RedirectResponse
     {
         $request->validate([
-            'nombre' => ['required', 'string', 'max:30', self::ALFANUMERICO_RULE],
-            'descripcion' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
-            'precio' => ['required', 'numeric', 'gt:0'],
+            'placa' => ['required', 'string', 'max:7', 'unique:vehiculos,placa,'.$vehiculo->placa.',placa', self::ALFANUMERICO_RULE],
+            'cliente_id' => ['required', 'integer', 'exists:clientes,id'],
+            'marca' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'modelo' => ['nullable', 'string', 'max:100', self::ALFANUMERICO_RULE],
+            'serie' => ['nullable', 'string', 'max:100', self::CODIGO_RULE],
+            'color' => ['nullable', 'string', 'max:50', self::SOLO_LETRAS_RULE],
+            'motor' => ['nullable', 'string', 'max:100', self::CODIGO_RULE],
+            'vin' => ['nullable', 'string', 'max:100', 'unique:vehiculos,vin,'.$vehiculo->placa.',placa', self::CODIGO_RULE],
         ]);
 
-        $vehiculo->update($request->only('nombre', 'descripcion', 'precio'));
+        $vehiculo->update([
+            'placa' => Vehiculo::normalizarPlaca($request->placa),
+            'cliente_id' => $request->cliente_id,
+            'marca' => $request->marca,
+            'modelo' => $request->modelo,
+            'serie' => $request->serie,
+            'color' => $request->color,
+            'motor' => $request->motor,
+            'vin' => $request->vin,
+        ]);
 
         return redirect()->route('vehiculos.index')
             ->with('success', 'Vehículo actualizado correctamente.');
@@ -77,18 +132,53 @@ class VehiculoController extends Controller
 
     /**
      * Remove the specified vehículo from the database.
-     * Blocked if the vehículo has associated lavados.
      */
     public function destroy(Vehiculo $vehiculo): RedirectResponse
     {
-        if ($vehiculo->lavados()->exists()) {
-            return redirect()->route('vehiculos.index')
-                ->with('error', 'No se puede eliminar el vehículo porque tiene lavados asociados.');
-        }
-
         $vehiculo->delete();
 
         return redirect()->route('vehiculos.index')
             ->with('success', 'Vehículo eliminado correctamente.');
+    }
+
+    /**
+     * Consulta los datos del vehículo por placa para autocompletar el formulario.
+     *
+     * Prioriza los datos locales si la placa ya está registrada; de lo contrario,
+     * consulta la API vehicular. Si la API no responde, devuelve success true con
+     * solo la placa (nada que autocompletar), sin bloquear el flujo.
+     */
+    public function consultarPlaca(Request $request): JsonResponse
+    {
+        $request->validate([
+            'placa' => ['required', 'string', 'max:7', self::PLACA_RULE],
+        ]);
+
+        $placa = Vehiculo::normalizarPlaca($request->placa);
+
+        $vehiculo = Vehiculo::where('placa', $placa)->first();
+
+        if ($vehiculo) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'placa' => $vehiculo->placa,
+                    'marca' => $vehiculo->marca,
+                    'modelo' => $vehiculo->modelo,
+                    'serie' => $vehiculo->serie,
+                    'color' => $vehiculo->color,
+                    'motor' => $vehiculo->motor,
+                    'vin' => $vehiculo->vin,
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => array_merge(
+                ['placa' => $placa],
+                $this->vehiculoApiService->buscarPorPlaca($placa)
+            ),
+        ]);
     }
 }

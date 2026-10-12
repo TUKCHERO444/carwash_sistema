@@ -6,6 +6,7 @@ use App\Models\CambioAceite;
 use App\Models\Lavado;
 use App\Models\Producto;
 use App\Models\Venta;
+use App\Services\Reportes\ReporteOperativoService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -140,26 +141,26 @@ class DashboardService
     /**
      * Suma consolidada por método de pago en el rango dado.
      *
-     * @return array{ efectivo: float, yape: float, izipay: float }
+     * @return array<string, float> codigo => total (incluye ceros base).
      */
     public function metodoPago(CarbonImmutable $desde, CarbonImmutable $hasta): array
     {
         $resultado = ['efectivo' => 0.0, 'yape' => 0.0, 'izipay' => 0.0];
 
-        $ventas = Venta::whereBetween('created_at', [$desde, $hasta])->get();
+        $ventas = Venta::whereBetween('created_at', [$desde, $hasta])->with('pagos.metodoPago')->get();
         $cambios = CambioAceite::where('estado', 'confirmado')
-            ->whereBetween('created_at', [$desde, $hasta])->get();
+            ->whereBetween('created_at', [$desde, $hasta])->with('pagos.metodoPago')->get();
         $lavados = Lavado::where('estado', 'confirmado')
-            ->whereBetween('fecha', [$desde->toDateString(), $hasta->toDateString()])->get();
+            ->whereBetween('fecha', [$desde->toDateString(), $hasta->toDateString()])->with('pagos.metodoPago')->get();
 
         foreach ([$ventas, $cambios, $lavados] as $registros) {
             foreach ($registros as $registro) {
-                $this->acumularMetodoPago($resultado, $registro->metodo_pago,
-                    (float) $registro->total,
-                    (float) ($registro->monto_efectivo ?? 0),
-                    (float) ($registro->monto_yape ?? 0),
-                    (float) ($registro->monto_izipay ?? 0));
+                $this->acumularMetodoPago($resultado, $registro);
             }
+        }
+
+        foreach ($resultado as $codigo => $monto) {
+            $resultado[$codigo] = round($monto, 2);
         }
 
         return $resultado;
@@ -215,6 +216,29 @@ class DashboardService
     }
 
     /**
+     * Resumen operativo del rango seleccionado (supervisión rápida).
+     *
+     * Reutiliza {@see ReporteOperativoService} para no duplicar las reglas
+     * de universo (solo confirmados) ni las fórmulas de tiempos/vehículos.
+     *
+     * @return array{
+     *   atenciones: int, tiempo_promedio: ?float, vehiculos_unicos: int,
+     *   atenciones_por_dia: float,
+     * }
+     */
+    public function resumenOperativo(CarbonImmutable $desde, CarbonImmutable $hasta): array
+    {
+        $kpis = app(ReporteOperativoService::class)->kpis($desde, $hasta);
+
+        return [
+            'atenciones' => $kpis['atenciones'],
+            'tiempo_promedio' => $kpis['tiempo_promedio'],
+            'vehiculos_unicos' => $kpis['vehiculos_unicos'],
+            'atenciones_por_dia' => $kpis['atenciones_por_dia'],
+        ];
+    }
+
+    /**
      * Convierte el valor de fecha de una fila agregada a texto 'Y-m-d',
      * normalizando objetos DateTime/Carbon (producidos por los casts del modelo).
      */
@@ -262,26 +286,13 @@ class DashboardService
     }
 
     /**
-     * Acumula el total en el medio de pago correspondiente, desglosando
-     * el caso 'mixto' en sus montos parciales.
+     * Acumula las líneas de pago del ticket en el mapa por código de método.
      */
-    private function acumularMetodoPago(array &$resultado, ?string $metodo, float $total,
-        float $montoEfectivo, float $montoYape, float $montoIzipay): void
+    private function acumularMetodoPago(array &$resultado, object $registro): void
     {
-        switch ($metodo) {
-            case 'yape':
-                $resultado['yape'] += $total;
-                break;
-            case 'izipay':
-                $resultado['izipay'] += $total;
-                break;
-            case 'mixto':
-                $resultado['efectivo'] += $montoEfectivo;
-                $resultado['yape'] += $montoYape;
-                $resultado['izipay'] += $montoIzipay;
-                break;
-            default: // efectivo
-                $resultado['efectivo'] += $total;
+        foreach ($registro->pagos as $pago) {
+            $codigo = $pago->metodoPago?->codigo ?? '—';
+            $resultado[$codigo] = ($resultado[$codigo] ?? 0) + (float) $pago->monto;
         }
     }
 }

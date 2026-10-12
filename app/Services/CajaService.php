@@ -6,6 +6,7 @@ use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
+use App\Models\MetodoPago;
 use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
 
@@ -182,7 +183,7 @@ class CajaService
      *   total_egresos  = SUM(egresos_caja.monto)
      *   balance_final  = monto_inicial + total_ingresos - total_egresos
      *
-     * También calcula la distribución por modo de pago para cada fuente de ingreso.
+     * También calcula la distribución por método de pago para cada fuente de ingreso.
      *
      * @return array{
      *   total_ingresos: float,
@@ -191,6 +192,7 @@ class CajaService
      *   monto_efectivo: float,
      *   monto_yape: float,
      *   monto_izipay: float,
+     *   por_metodo: array<string, float>,
      * }
      */
     public function calcularResumen(Caja $caja): array
@@ -214,35 +216,29 @@ class CajaService
         // Balance final
         $balanceFinal = (float) $caja->monto_inicial + $totalIngresosCaja - $totalEgresos;
 
-        // Distribución por modo de pago (ventas + cambios + ingresos confirmados)
-        $montoEfectivo = 0.0;
-        $montoYape = 0.0;
-        $montoIzipay = 0.0;
+        // Distribución por método de pago desde las líneas (ventas + cambios + lavados confirmados).
+        $porMetodo = [];
+        $codigosEfectivo = MetodoPago::where('es_efectivo', true)->pluck('codigo')->all();
 
         $fuentes = [
-            Venta::where('caja_id', $cajaId)->get(),
-            CambioAceite::where('caja_id', $cajaId)->get(),
-            Lavado::where('caja_id', $cajaId)->where('estado', 'confirmado')->get(),
+            Venta::where('caja_id', $cajaId)->with('pagos.metodoPago')->get(),
+            CambioAceite::where('caja_id', $cajaId)->with('pagos.metodoPago')->get(),
+            Lavado::where('caja_id', $cajaId)->where('estado', 'confirmado')->with('pagos.metodoPago')->get(),
         ];
 
         foreach ($fuentes as $registros) {
             foreach ($registros as $registro) {
-                switch ($registro->metodo_pago) {
-                    case 'efectivo':
-                        $montoEfectivo += (float) $registro->total;
-                        break;
-                    case 'yape':
-                        $montoYape += (float) $registro->total;
-                        break;
-                    case 'izipay':
-                        $montoIzipay += (float) $registro->total;
-                        break;
-                    case 'mixto':
-                        $montoEfectivo += (float) ($registro->monto_efectivo ?? 0);
-                        $montoYape += (float) ($registro->monto_yape ?? 0);
-                        $montoIzipay += (float) ($registro->monto_izipay ?? 0);
-                        break;
+                foreach ($registro->pagos as $pago) {
+                    $codigo = $pago->metodoPago?->codigo ?? '—';
+                    $porMetodo[$codigo] = round(($porMetodo[$codigo] ?? 0) + (float) $pago->monto, 2);
                 }
+            }
+        }
+
+        $montoEfectivo = 0.0;
+        foreach ($porMetodo as $codigo => $monto) {
+            if (in_array($codigo, $codigosEfectivo, true)) {
+                $montoEfectivo += $monto;
             }
         }
 
@@ -250,9 +246,10 @@ class CajaService
             'total_ingresos' => $totalIngresosCaja,
             'total_egresos' => $totalEgresos,
             'balance_final' => $balanceFinal,
-            'monto_efectivo' => $montoEfectivo,
-            'monto_yape' => $montoYape,
-            'monto_izipay' => $montoIzipay,
+            'monto_efectivo' => round($montoEfectivo, 2),
+            'monto_yape' => round($porMetodo['yape'] ?? 0, 2),
+            'monto_izipay' => round($porMetodo['izipay'] ?? 0, 2),
+            'por_metodo' => $porMetodo,
             'total_ventas' => (float) $totalVentas,
             'total_cambios' => (float) $totalCambios,
             'total_ingresos_vehiculares' => (float) $totalIngresos,

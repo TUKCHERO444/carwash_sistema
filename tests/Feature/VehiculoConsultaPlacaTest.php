@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\User;
-use App\Services\AutomotorApiService;
+use App\Models\Vehiculo;
+use App\Services\VehiculoApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
-class AutomotorConsultaPlacaTest extends TestCase
+class VehiculoConsultaPlacaTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -22,15 +22,15 @@ class AutomotorConsultaPlacaTest extends TestCase
     {
         parent::setUp();
 
-        Permission::firstOrCreate(['name' => 'acceso-automotores', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-vehiculos', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
-        $this->user->givePermissionTo('acceso-automotores');
+        $this->user->givePermissionTo('acceso-vehiculos');
         $this->cliente = Cliente::factory()->create();
     }
 
     public function test_returns_local_data_when_placa_already_registered(): void
     {
-        Automotor::create([
+        Vehiculo::create([
             'placa' => 'ABC123',
             'cliente_id' => $this->cliente->id,
             'marca' => 'Toyota',
@@ -42,7 +42,7 @@ class AutomotorConsultaPlacaTest extends TestCase
         ]);
 
         $this->actingAs($this->user)
-            ->get(route('automotores.consultarPlaca', ['placa' => 'ABC123']))
+            ->get(route('vehiculos.consultarPlaca', ['placa' => 'ABC123']))
             ->assertOk()
             ->assertJson([
                 'success' => true,
@@ -60,7 +60,7 @@ class AutomotorConsultaPlacaTest extends TestCase
 
     public function test_returns_api_data_when_placa_not_registered(): void
     {
-        $this->mock(AutomotorApiService::class, function ($mock) {
+        $this->mock(VehiculoApiService::class, function ($mock) {
             $mock->shouldReceive('buscarPorPlaca')
                 ->once()
                 ->with('ABC123')
@@ -75,7 +75,7 @@ class AutomotorConsultaPlacaTest extends TestCase
         });
 
         $this->actingAs($this->user)
-            ->get(route('automotores.consultarPlaca', ['placa' => 'abc123']))
+            ->get(route('vehiculos.consultarPlaca', ['placa' => 'abc123']))
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.placa', 'ABC123')
@@ -86,13 +86,13 @@ class AutomotorConsultaPlacaTest extends TestCase
     public function test_requires_a_valid_placa(): void
     {
         $this->actingAs($this->user)
-            ->get(route('automotores.consultarPlaca', ['placa' => 'ABC']))
+            ->get(route('vehiculos.consultarPlaca', ['placa' => 'ABC']))
             ->assertSessionHasErrors('placa');
     }
 
     public function test_unauthenticated_user_is_redirected(): void
     {
-        $this->get(route('automotores.consultarPlaca', ['placa' => 'ABC123']))
+        $this->get(route('vehiculos.consultarPlaca', ['placa' => 'ABC123']))
             ->assertRedirect(route('login'));
     }
 }

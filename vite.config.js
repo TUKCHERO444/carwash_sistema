@@ -35,7 +35,7 @@ export default defineConfig({
                 // Contenido web (panel)
                 'resources/js/contenido-web/edit.js',
                 // Vehiculos
-                'resources/js/vehiculos/create.js',
+                'resources/js/tipos-vehiculo/create.js',
                 // Clientes
                 'resources/js/clientes/validate.js',
                 'resources/js/clientes/index.js',
@@ -53,7 +53,7 @@ export default defineConfig({
                 // Ajustes
                 'resources/js/ajustes/create.js',
                 // Automotores
-                'resources/js/automotores/validate.js',
+                'resources/js/vehiculos/validate.js',
                 // Users
                 'resources/js/users/toggle.js',
                 'resources/js/users/validate.js',
@@ -69,6 +69,7 @@ export default defineConfig({
                 'resources/js/asistencia/index.js',
                 // Reportes
                 'resources/js/reportes/ingresos.js',
+                'resources/js/reportes/operativo.js',
                 'resources/js/reportes/print.js',
                 // Caja
                 'resources/js/caja/cerrar.js',

@@ -4,7 +4,6 @@ use App\Http\Controllers\AccionesAuditoriaController;
 use App\Http\Controllers\AjusteInventarioController;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\AutomotorController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CambioAceiteController;
 use App\Http\Controllers\CategoriaController;
@@ -24,12 +23,14 @@ use App\Http\Controllers\DevolucionVentaController;
 use App\Http\Controllers\KardexController;
 use App\Http\Controllers\LavadoController;
 use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\MetodoPagoController;
 use App\Http\Controllers\PaginaInicioController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\TipoVehiculoController;
 use App\Http\Controllers\TrabajadorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserToggleController;
@@ -256,10 +257,16 @@ Route::middleware(['auth'])->group(function () {
         Route::put('contenido-web', [ContenidoWebController::class, 'update'])->name('contenido-web.update');
     });
 
-    Route::middleware('permission:acceso-vehiculos')->group(function () {
-        Route::resource('vehiculos', VehiculoController::class)
+    Route::middleware('permission:acceso-tipos-vehiculo')->group(function () {
+        Route::resource('tipos-vehiculo', TipoVehiculoController::class)
             ->except(['show'])
-            ->parameters(['vehiculos' => 'vehiculo']);
+            ->parameters(['tipos-vehiculo' => 'tipoVehiculo']);
+    });
+
+    Route::middleware('permission:acceso-metodos-pago')->group(function () {
+        Route::resource('metodos-pago', MetodoPagoController::class)
+            ->except(['show'])
+            ->parameters(['metodos-pago' => 'metodoPago']);
     });
 
     Route::middleware('permission:acceso-clientes')->group(function () {
@@ -274,14 +281,14 @@ Route::middleware(['auth'])->group(function () {
             ->parameters(['clientes' => 'cliente']);
     });
 
-    Route::middleware('permission:acceso-automotores')->group(function () {
+    Route::middleware('permission:acceso-vehiculos')->group(function () {
         // Ajax route — must be registered BEFORE the resource to avoid Route Model Binding conflicts
-        Route::get('/automotores/consultar-placa', [AutomotorController::class, 'consultarPlaca'])
-            ->name('automotores.consultarPlaca');
+        Route::get('/vehiculos/consultar-placa', [VehiculoController::class, 'consultarPlaca'])
+            ->name('vehiculos.consultarPlaca');
 
-        Route::resource('automotores', AutomotorController::class)
+        Route::resource('vehiculos', VehiculoController::class)
             ->except(['show'])
-            ->parameters(['automotores' => 'automotor']);
+            ->parameters(['vehiculos' => 'vehiculo']);
     });
 });
 
@@ -292,9 +299,9 @@ Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
         ->name('clientes.buscar-por-placa');
 
     // Consulta de datos del vehículo por placa para los tickets (local → API).
-    // Ruta bajo 'acceso-ventas' porque 'automotores.consultar-placa' exige
-    // 'acceso-automotores' y los operadores de tickets usan 'acceso-ventas'.
-    Route::get('/consulta-placa-api', [AutomotorController::class, 'consultarPlaca'])
+    // Ruta bajo 'acceso-ventas' porque 'vehiculos.consultar-placa' exige
+    // 'acceso-vehiculos' y los operadores de tickets usan 'acceso-ventas'.
+    Route::get('/consulta-placa-api', [VehiculoController::class, 'consultarPlaca'])
         ->name('tickets.consultarPlacaApi');
 
     Route::get('/ventas/buscar-productos', [VentaController::class, 'buscarProductos'])
@@ -403,6 +410,7 @@ Route::middleware(['auth', 'permission:acceso-reportes'])->prefix('reportes')->n
     Route::get('/caja', [ReporteController::class, 'caja'])->name('caja');
     Route::get('/personal', [ReporteController::class, 'personal'])->name('personal');
     Route::get('/kardex', [ReporteController::class, 'kardex'])->name('kardex');
+    Route::get('/operativo', [ReporteController::class, 'operativo'])->name('operativo');
     Route::get('/vehiculo', [ReporteController::class, 'vehiculo'])->name('vehiculo');
     Route::get('/compras-proveedor', [ReporteController::class, 'comprasProveedor'])->name('comprasProveedor');
 });

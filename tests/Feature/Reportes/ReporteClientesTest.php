@@ -2,12 +2,11 @@
 
 namespace Tests\Feature\Reportes;
 
-use App\Models\Automotor;
 use App\Models\CambioAceite;
 use App\Models\Cliente;
 use App\Models\Lavado;
-use App\Models\Trabajador;
 use App\Models\User;
+use App\Models\Vehiculo;
 use App\Services\Reportes\ReporteClientesService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,7 +53,6 @@ class ReporteClientesTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => Trabajador::factory()->create()->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 200,
@@ -63,7 +61,6 @@ class ReporteClientesTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => Trabajador::factory()->create()->id,
             'user_id' => $usuario->id,
             'estado' => 'pendiente',
             'total' => 999,
@@ -79,22 +76,22 @@ class ReporteClientesTest extends TestCase
         $this->assertSame($cliente->nombre_completo, $top->first()['nombre']);
         $this->assertEqualsWithDelta(250, $top->first()['gasto'], 0.01);
         $this->assertSame(2, $top->first()['visitas']);
-        $this->assertSame(0, $top->first()['automotores']);
+        $this->assertSame(0, $top->first()['vehiculos']);
     }
 
-    public function test_automotores_atendidos_se_desglosa_por_fuentes(): void
+    public function test_vehiculos_atendidos_se_desglosa_por_fuentes(): void
     {
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
 
-        Automotor::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
-        Automotor::create(['placa' => 'BBB002', 'cliente_id' => $cliente->id]);
-        Automotor::create(['placa' => 'CCC003', 'cliente_id' => $cliente->id]);
-        Automotor::create(['placa' => 'DDD004', 'cliente_id' => $cliente->id]);
+        Vehiculo::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
+        Vehiculo::create(['placa' => 'BBB002', 'cliente_id' => $cliente->id]);
+        Vehiculo::create(['placa' => 'CCC003', 'cliente_id' => $cliente->id]);
+        Vehiculo::create(['placa' => 'DDD004', 'cliente_id' => $cliente->id]);
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => 'AAA001',
+            'vehiculo_id' => 'AAA001',
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -103,7 +100,7 @@ class ReporteClientesTest extends TestCase
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => 'BBB002',
+            'vehiculo_id' => 'BBB002',
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -111,8 +108,7 @@ class ReporteClientesTest extends TestCase
         ]);
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => 'BBB002',
-            'trabajador_id' => Trabajador::factory()->create()->id,
+            'vehiculo_id' => 'BBB002',
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 60,
@@ -121,8 +117,7 @@ class ReporteClientesTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => 'CCC003',
-            'trabajador_id' => Trabajador::factory()->create()->id,
+            'vehiculo_id' => 'CCC003',
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 70,
@@ -136,21 +131,21 @@ class ReporteClientesTest extends TestCase
 
         $this->assertCount(1, $top);
         $fila = $top->first();
-        $this->assertSame(3, $fila['automotores']);
+        $this->assertSame(3, $fila['vehiculos']);
         $this->assertSame(2, $fila['lavados']);
         $this->assertSame(2, $fila['cambio_aceite']);
     }
 
-    public function test_automotores_solo_lavado_no_desglosa_cambio(): void
+    public function test_vehiculos_solo_lavado_no_desglosa_cambio(): void
     {
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
 
-        Automotor::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
+        Vehiculo::create(['placa' => 'AAA001', 'cliente_id' => $cliente->id]);
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => 'AAA001',
+            'vehiculo_id' => 'AAA001',
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -164,18 +159,18 @@ class ReporteClientesTest extends TestCase
 
         $this->assertCount(1, $top);
         $fila = $top->first();
-        $this->assertSame(1, $fila['automotores']);
+        $this->assertSame(1, $fila['vehiculos']);
         $this->assertSame(1, $fila['lavados']);
         $this->assertSame(0, $fila['cambio_aceite']);
     }
 
-    public function test_top_automotores_combina_fuentes(): void
+    public function test_top_vehiculos_combina_fuentes(): void
     {
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
         $placa = 'ABC123';
 
-        Automotor::create([
+        Vehiculo::create([
             'placa' => $placa,
             'cliente_id' => $cliente->id,
             'marca' => 'Toyota',
@@ -184,7 +179,7 @@ class ReporteClientesTest extends TestCase
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => $placa,
+            'vehiculo_id' => $placa,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -193,8 +188,7 @@ class ReporteClientesTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => $placa,
-            'trabajador_id' => Trabajador::factory()->create()->id,
+            'vehiculo_id' => $placa,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 160,
@@ -204,7 +198,7 @@ class ReporteClientesTest extends TestCase
         $desde = CarbonImmutable::today()->startOfDay();
         $hasta = CarbonImmutable::today()->endOfDay();
 
-        $top = $this->service->topAutomotores($desde, $hasta);
+        $top = $this->service->topVehiculos($desde, $hasta);
 
         $this->assertCount(1, $top);
         $this->assertSame($placa, $top->first()['placa']);
@@ -227,7 +221,7 @@ class ReporteClientesTest extends TestCase
 
         $respuesta->assertOk();
         $contenido = $respuesta->streamedContent();
-        $this->assertStringContainsString('cliente;gasto;visitas;automotores;lavados;cambio_aceite;visitas_por_mes', $contenido);
+        $this->assertStringContainsString('cliente;gasto;visitas;vehiculos;lavados;cambio_aceite;visitas_por_mes', $contenido);
         $this->assertStringContainsString('80', $contenido);
     }
 }

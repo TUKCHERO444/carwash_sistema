@@ -263,7 +263,7 @@
 
             <div class="data-row">
                 <span class="label">Placa:</span>
-                <span class="value">{{ $lavado->automotor->placa ?? 'N/A' }}</span>
+                <span class="value">{{ $lavado->vehiculo->placa ?? 'N/A' }}</span>
             </div>
 
             @if($lavado->cliente->nombre)
@@ -317,12 +317,12 @@
 
             <div class="data-row">
                 <span class="label">Tipo:</span>
-                <span class="value">{{ $lavado->vehiculo->nombre }}</span>
+                <span class="value">{{ $lavado->tipoVehiculo->nombre }}</span>
             </div>
 
             <div class="data-row">
                 <span class="label">Precio base:</span>
-                <span class="value">S/ {{ number_format($lavado->vehiculo->precio, 2) }}</span>
+                <span class="value">S/ {{ number_format($lavado->tipoVehiculo->precio, 2) }}</span>
             </div>
         </div>
 
@@ -394,7 +394,7 @@
                 {{-- Precio base del vehículo --}}
                 <div class="total-row">
                     <span>Precio base vehículo:</span>
-                    <span>S/ {{ number_format($lavado->vehiculo->precio, 2) }}</span>
+                    <span>S/ {{ number_format($lavado->tipoVehiculo->precio, 2) }}</span>
                 </div>
 
                 {{-- Suma de servicios --}}
@@ -433,31 +433,11 @@
                 @endif
 
                 {{-- Método de pago --}}
-                @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
                 <div class="total-row">
                     <span>Pago:</span>
-                    <span>{{ $metodosLabel[$lavado->metodo_pago] ?? ucfirst($lavado->metodo_pago) }}</span>
+                    @include('pagos._lineas', ['pagable' => $lavado])
                 </div>
-                @if($lavado->metodo_pago === 'mixto')
-                    @if($lavado->monto_efectivo)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Efectivo:</span>
-                            <span>S/ {{ number_format($lavado->monto_efectivo, 2) }}</span>
-                        </div>
-                    @endif
-                    @if($lavado->monto_yape)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Yape:</span>
-                            <span>S/ {{ number_format($lavado->monto_yape, 2) }}</span>
-                        </div>
-                    @endif
-                    @if($lavado->monto_izipay)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Izipay:</span>
-                            <span>S/ {{ number_format($lavado->monto_izipay, 2) }}</span>
-                        </div>
-                    @endif
-                @endif
+
             </div>
         </div>
 

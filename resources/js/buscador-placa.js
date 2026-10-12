@@ -7,7 +7,7 @@
  * 3) "Continuar registro" → colapsa el grupo; el alta la hace el upsert actual al guardar.
  */
 
-/** Normaliza la placa: mayúsculas y sin espacios (igual que Automotor::normalizarPlaca). */
+/** Normaliza la placa: mayúsculas y sin espacios (igual que Vehiculo::normalizarPlaca). */
 export function normalizarPlaca(placa) {
     return String(placa ?? '').toUpperCase().replaceAll(' ', '');
 }
@@ -43,24 +43,24 @@ export function esc(valor) {
         .replaceAll("'", '&#039;');
 }
 
-/** Filas del resumen local (cliente + automotor) sin valores undefined. */
-export function datosResumenLocal(cliente = {}, automotor = {}) {
+/** Filas del resumen local (cliente + vehículo) sin valores undefined. */
+export function datosResumenLocal(cliente = {}, vehiculo = {}) {
     const fila = (clave, valor) => ({
         clave,
         valor: valor === null || valor === undefined || valor === '' ? '—' : String(valor),
     });
 
     return [
-        fila('Placa', automotor.placa ?? cliente.placa),
+        fila('Placa', vehiculo.placa ?? cliente.placa),
         fila('Nombre', cliente.nombre_completo || cliente.nombre),
         fila('DNI', cliente.dni),
         fila('Teléfono', cliente.telefono),
         fila('Lavados', cliente.lavados_count),
         fila('Cambios de aceite', cliente.cambios_aceite_count),
-        fila('Marca', automotor.marca),
-        fila('Modelo', automotor.modelo),
-        fila('Color', automotor.color),
-        fila('Motor', automotor.motor),
+        fila('Marca', vehiculo.marca),
+        fila('Modelo', vehiculo.modelo),
+        fila('Color', vehiculo.color),
+        fila('Motor', vehiculo.motor),
     ];
 }
 
@@ -192,7 +192,7 @@ export function initBuscadorPlaca() {
                 inputPlaca.value = data.cliente.placa || placa;
                 autofillSoloVacios(data.cliente);
                 mostrarEstado('ok', 'Vehículo verificado');
-                container.innerHTML = resumenHtml('Vehículo y cliente verificados', datosResumenLocal(data.cliente, data.automotor));
+                container.innerHTML = resumenHtml('Vehículo y cliente verificados', datosResumenLocal(data.cliente, data.vehiculo));
                 container.classList.remove('hidden');
             } else {
                 busqueda = 'noEncontrada';

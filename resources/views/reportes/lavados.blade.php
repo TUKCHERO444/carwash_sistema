@@ -15,11 +15,11 @@
     {{-- Filtros --}}
     @push('filtros-reporte')
         <div>
-            <label for="vehiculo_id" class="label-main mb-1 inline-block">Vehículo</label>
-            <select id="vehiculo_id" name="vehiculo_id" class="input-main px-3 py-2 border rounded-lg text-sm">
+            <label for="tipo_vehiculo_id" class="label-main mb-1 inline-block">Vehículo</label>
+            <select id="tipo_vehiculo_id" name="tipo_vehiculo_id" class="input-main px-3 py-2 border rounded-lg text-sm">
                 <option value="">Todos</option>
-                @foreach($vehiculos as $vehiculo)
-                    <option value="{{ $vehiculo->id }}" @selected(request('vehiculo_id') == $vehiculo->id)>{{ $vehiculo->nombre }}</option>
+                @foreach($tiposVehiculo as $tipoVehiculo)
+                    <option value="{{ $tipoVehiculo->id }}" @selected(request('tipo_tipo_vehiculo_id') == $tipoVehiculo->id)>{{ $tipoVehiculo->nombre }}</option>
                 @endforeach
             </select>
         </div>
@@ -118,7 +118,7 @@
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->id }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->fecha->format('d/m/Y') }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">{{ $lavado->cliente?->nombre_completo ?? '—' }}</td>
-                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->automotor?->placa ?? '—' }}</td>
+                        <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->vehiculo?->placa ?? '—' }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->vehiculo?->nombre ?? '—' }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">{{ $lavado->servicios->pluck('nombre')->implode(' + ') }}</td>
                         <td class="px-6 py-8 whitespace-nowrap text-sm font-semibold text-primary text-right">S/ {{ number_format($lavado->total, 2) }}</td>

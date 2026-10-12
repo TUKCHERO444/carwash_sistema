@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\User;
+use App\Models\Vehiculo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
-class AutomotorCrudTest extends TestCase
+class VehiculoCrudTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,9 +21,9 @@ class AutomotorCrudTest extends TestCase
     {
         parent::setUp();
 
-        Permission::firstOrCreate(['name' => 'acceso-automotores', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'acceso-vehiculos', 'guard_name' => 'web']);
         $this->user = User::factory()->create();
-        $this->user->givePermissionTo('acceso-automotores');
+        $this->user->givePermissionTo('acceso-vehiculos');
         $this->cliente = Cliente::factory()->create();
     }
 
@@ -41,12 +41,12 @@ class AutomotorCrudTest extends TestCase
         ], $overrides);
     }
 
-    public function test_index_renders_automotores_list(): void
+    public function test_index_renders_vehiculos_list(): void
     {
-        Automotor::create($this->validPayload());
+        Vehiculo::create($this->validPayload());
 
         $this->actingAs($this->user)
-            ->get(route('automotores.index'))
+            ->get(route('vehiculos.index'))
             ->assertOk()
             ->assertSee('ABC123')
             ->assertSee($this->cliente->nombre);
@@ -55,11 +55,11 @@ class AutomotorCrudTest extends TestCase
     public function test_store_creates_automotor_and_redirects(): void
     {
         $response = $this->actingAs($this->user)
-            ->post(route('automotores.store'), $this->validPayload());
+            ->post(route('vehiculos.store'), $this->validPayload());
 
-        $response->assertRedirect(route('automotores.index'));
+        $response->assertRedirect(route('vehiculos.index'));
 
-        $this->assertDatabaseHas('automotores', [
+        $this->assertDatabaseHas('vehiculos', [
             'placa' => 'ABC123',
             'cliente_id' => $this->cliente->id,
             'marca' => 'Toyota',
@@ -70,15 +70,15 @@ class AutomotorCrudTest extends TestCase
     public function test_store_normalizes_placa_to_uppercase(): void
     {
         $this->actingAs($this->user)
-            ->post(route('automotores.store'), $this->validPayload(['placa' => 'abc123']));
+            ->post(route('vehiculos.store'), $this->validPayload(['placa' => 'abc123']));
 
-        $this->assertDatabaseHas('automotores', ['placa' => 'ABC123']);
+        $this->assertDatabaseHas('vehiculos', ['placa' => 'ABC123']);
     }
 
     public function test_store_requires_placa(): void
     {
         $response = $this->actingAs($this->user)
-            ->post(route('automotores.store'), $this->validPayload(['placa' => '']));
+            ->post(route('vehiculos.store'), $this->validPayload(['placa' => '']));
 
         $response->assertSessionHasErrors('placa');
     }
@@ -86,34 +86,45 @@ class AutomotorCrudTest extends TestCase
     public function test_store_requires_cliente(): void
     {
         $response = $this->actingAs($this->user)
-            ->post(route('automotores.store'), $this->validPayload(['cliente_id' => null]));
+            ->post(route('vehiculos.store'), $this->validPayload(['cliente_id' => null]));
 
         $response->assertSessionHasErrors('cliente_id');
     }
 
     public function test_placa_is_unique(): void
     {
-        Automotor::create($this->validPayload());
+        Vehiculo::create($this->validPayload());
 
         $response = $this->actingAs($this->user)
-            ->post(route('automotores.store'), $this->validPayload());
+            ->post(route('vehiculos.store'), $this->validPayload());
 
         $response->assertSessionHasErrors('placa');
-        $this->assertDatabaseCount('automotores', 1);
+        $this->assertDatabaseCount('vehiculos', 1);
+    }
+
+    public function test_vin_is_unique(): void
+    {
+        Vehiculo::create($this->validPayload());
+
+        $response = $this->actingAs($this->user)
+            ->post(route('vehiculos.store'), $this->validPayload(['placa' => 'XYZ999']));
+
+        $response->assertSessionHasErrors('vin');
+        $this->assertDatabaseCount('vehiculos', 1);
     }
 
     public function test_update_modifies_automotor_fields(): void
     {
-        $automotor = Automotor::create($this->validPayload());
+        $vehiculo = Vehiculo::create($this->validPayload());
 
         $this->actingAs($this->user)
-            ->put(route('automotores.update', $automotor), $this->validPayload([
+            ->put(route('vehiculos.update', $vehiculo), $this->validPayload([
                 'marca' => 'Nissan',
                 'modelo' => 'Sentra',
                 'vin' => 'VIN99999',
             ]));
 
-        $this->assertDatabaseHas('automotores', [
+        $this->assertDatabaseHas('vehiculos', [
             'placa' => 'ABC123',
             'marca' => 'Nissan',
             'modelo' => 'Sentra',
@@ -123,18 +134,18 @@ class AutomotorCrudTest extends TestCase
 
     public function test_destroy_deletes_automotor(): void
     {
-        $automotor = Automotor::create($this->validPayload());
+        $vehiculo = Vehiculo::create($this->validPayload());
 
         $this->actingAs($this->user)
-            ->delete(route('automotores.destroy', $automotor))
-            ->assertRedirect(route('automotores.index'));
+            ->delete(route('vehiculos.destroy', $vehiculo))
+            ->assertRedirect(route('vehiculos.index'));
 
-        $this->assertDatabaseMissing('automotores', ['placa' => 'ABC123']);
+        $this->assertDatabaseMissing('vehiculos', ['placa' => 'ABC123']);
     }
 
     public function test_unauthenticated_user_is_redirected(): void
     {
-        $this->get(route('automotores.index'))
+        $this->get(route('vehiculos.index'))
             ->assertRedirect(route('login'));
     }
 
@@ -143,7 +154,7 @@ class AutomotorCrudTest extends TestCase
         $noPerm = User::factory()->create();
 
         $this->actingAs($noPerm)
-            ->get(route('automotores.index'))
+            ->get(route('vehiculos.index'))
             ->assertRedirect(route('dashboard'));
     }
 }

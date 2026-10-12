@@ -16,7 +16,6 @@ class CambioAceiteFactory extends Factory
     {
         return [
             'cliente_id' => Cliente::factory(),
-            'trabajador_id' => Trabajador::factory(),
             'user_id' => User::factory(),
             'fecha' => fake()->date(),
             'precio' => fake()->randomFloat(2, 10, 500),
@@ -24,9 +23,17 @@ class CambioAceiteFactory extends Factory
                 return $attributes['precio'];
             },
             'descripcion' => fake()->optional()->sentence(),
-            'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
             'caja_id' => null,
             'atencion_inicio_at' => now(),
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (CambioAceite $cambio) {
+            if ($cambio->trabajadores()->count() === 0) {
+                $cambio->trabajadores()->attach(Trabajador::factory()->create()->id);
+            }
+        });
     }
 }

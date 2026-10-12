@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\User;
+use App\Models\Vehiculo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -34,7 +34,7 @@ class ClienteResumenLavadosTest extends TestCase
     {
         return Lavado::factory()->confirmado()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => $placa,
+            'vehiculo_id' => $placa,
             'fecha' => $fecha,
         ]);
     }
@@ -42,11 +42,11 @@ class ClienteResumenLavadosTest extends TestCase
     public function test_resumen_cuenta_solo_confirmados_del_cliente(): void
     {
         $cliente = $this->cliente();
-        $auto = Automotor::create(['placa' => 'ABC-123', 'cliente_id' => $cliente->id]);
+        $vehiculo = Vehiculo::create(['placa' => 'ABC-123', 'cliente_id' => $cliente->id]);
 
-        $this->lavadoConfirmado($cliente, now()->subDays(10)->toDateString(), $auto->placa);
+        $this->lavadoConfirmado($cliente, now()->subDays(10)->toDateString(), $vehiculo->placa);
         $this->lavadoConfirmado($cliente, now()->subDays(2)->toDateString());
-        $this->lavadoConfirmado($cliente, now()->subDays(1)->toDateString(), $auto->placa);
+        $this->lavadoConfirmado($cliente, now()->subDays(1)->toDateString(), $vehiculo->placa);
 
         // Ruido: pendiente del mismo cliente y confirmado de otro cliente.
         Lavado::factory()->pendiente()->create(['cliente_id' => $cliente->id]);

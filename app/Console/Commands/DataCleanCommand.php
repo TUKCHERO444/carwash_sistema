@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Trabajador;
+use App\Models\Vehiculo;
 use App\Services\DataNormalizer;
 use Illuminate\Console\Command;
 
@@ -28,7 +28,7 @@ class DataCleanCommand extends Command
     {
         $this->cleanClientes($normalizer);
         $this->cleanTrabajadores($normalizer);
-        $this->cleanAutomotores($normalizer);
+        $this->cleanVehiculos($normalizer);
 
         $this->info('Limpieza de datos completada.');
 
@@ -101,39 +101,39 @@ class DataCleanCommand extends Command
         $this->info("Trabajadores normalizados: {$contador}");
     }
 
-    private function cleanAutomotores(DataNormalizer $normalizer): void
+    private function cleanVehiculos(DataNormalizer $normalizer): void
     {
         $contador = 0;
 
-        Automotor::all()->each(function (Automotor $automotor) use ($normalizer, &$contador) {
+        Vehiculo::all()->each(function (Vehiculo $vehiculo) use ($normalizer, &$contador) {
             $cambios = false;
 
-            $placa = $normalizer->normalizarPlaca($automotor->placa);
-            if ($placa !== $automotor->placa) {
-                $automotor->placa = $placa;
+            $placa = $normalizer->normalizarPlaca($vehiculo->placa);
+            if ($placa !== $vehiculo->placa) {
+                $vehiculo->placa = $placa;
                 $cambios = true;
             }
 
             foreach (['marca', 'modelo', 'serie', 'motor', 'vin'] as $campo) {
-                $limpio = $normalizer->normalizarAlfanumerico($automotor->{$campo});
-                if ($limpio !== $automotor->{$campo}) {
-                    $automotor->{$campo} = $limpio;
+                $limpio = $normalizer->normalizarAlfanumerico($vehiculo->{$campo});
+                if ($limpio !== $vehiculo->{$campo}) {
+                    $vehiculo->{$campo} = $limpio;
                     $cambios = true;
                 }
             }
 
-            $color = $normalizer->normalizarNombre($automotor->color);
-            if ($color !== $automotor->color) {
-                $automotor->color = $color;
+            $color = $normalizer->normalizarNombre($vehiculo->color);
+            if ($color !== $vehiculo->color) {
+                $vehiculo->color = $color;
                 $cambios = true;
             }
 
             if ($cambios) {
-                $automotor->save();
+                $vehiculo->save();
                 $contador++;
             }
         });
 
-        $this->info("Automotores normalizados: {$contador}");
+        $this->info("Vehículos normalizados: {$contador}");
     }
 }

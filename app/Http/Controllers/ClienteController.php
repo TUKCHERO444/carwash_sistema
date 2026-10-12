@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
+use App\Models\Vehiculo;
 use App\Services\DniApiService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -80,7 +80,7 @@ class ClienteController extends Controller
      *
      * Solo el nombre es obligatorio. DNI, apellidos y teléfono son opcionales
      * (el DNI ya es nullable en BD). La placa se elimina de clientes y se
-     * gestiona ahora a través de automotores.
+     * gestiona ahora a través de vehículos.
      *
      * En update(), el DNI se excluye a sí mismo de la comprobación unique.
      */
@@ -104,7 +104,7 @@ class ClienteController extends Controller
      *
      * Checks independientes (en orden):
      *   1. $cliente->lavados()->exists()   → redirect + flash 'error'
-     *   2. $cliente->automotores()->exists() → redirect + flash 'error'
+     *   2. $cliente->vehiculos()->exists() → redirect + flash 'error'
      *   3. $cliente->cambioAceites()->exists() → redirect + flash 'error'
      *   Si ninguno aplica → delete() + redirect + flash 'success'
      */
@@ -115,9 +115,9 @@ class ClienteController extends Controller
                 ->with('error', 'No se puede eliminar el cliente porque tiene lavados asociados.');
         }
 
-        if ($cliente->automotores()->exists()) {
+        if ($cliente->vehiculos()->exists()) {
             return redirect()->route('clientes.index')
-                ->with('error', 'No se puede eliminar el cliente porque tiene automotores asociados.');
+                ->with('error', 'No se puede eliminar el cliente porque tiene vehículos asociados.');
         }
 
         if ($cliente->cambioAceites()->exists()) {
@@ -132,8 +132,8 @@ class ClienteController extends Controller
     }
 
     /**
-     * Busca el automotor por placa y devuelve los datos del cliente asociado
-     * y sus conteos de servicios (usa automotores, no clientes.placa).
+     * Busca el vehículo por placa y devuelve los datos del cliente asociado
+     * y sus conteos de servicios (usa vehiculos, no clientes.placa).
      */
     public function buscarPorPlaca(Request $request): JsonResponse
     {
@@ -143,21 +143,21 @@ class ClienteController extends Controller
             return response()->json(['success' => false, 'error' => 'Placa no proporcionada'], 400);
         }
 
-        $placa = Automotor::normalizarPlaca($placa);
+        $placa = Vehiculo::normalizarPlaca($placa);
 
-        $automotor = Automotor::with('cliente')->where('placa', $placa)->first();
+        $vehiculo = Vehiculo::with('cliente')->where('placa', $placa)->first();
 
-        if (! $automotor || ! $automotor->cliente) {
+        if (! $vehiculo || ! $vehiculo->cliente) {
             return response()->json(['success' => false]);
         }
 
-        $cliente = $automotor->cliente;
+        $cliente = $vehiculo->cliente;
 
         return response()->json([
             'success' => true,
             'cliente' => [
                 'id' => $cliente->id,
-                'placa' => $automotor->placa,
+                'placa' => $vehiculo->placa,
                 'nombre' => $cliente->nombre,
                 'nombre_completo' => $cliente->nombre_completo,
                 'dni' => $cliente->dni,
@@ -165,12 +165,12 @@ class ClienteController extends Controller
                 'lavados_count' => $cliente->lavados()->count(),
                 'cambios_aceite_count' => $cliente->cambioAceites()->count(),
             ],
-            'automotor' => [
-                'placa' => $automotor->placa,
-                'marca' => $automotor->marca,
-                'modelo' => $automotor->modelo,
-                'color' => $automotor->color,
-                'motor' => $automotor->motor,
+            'vehiculo' => [
+                'placa' => $vehiculo->placa,
+                'marca' => $vehiculo->marca,
+                'modelo' => $vehiculo->modelo,
+                'color' => $vehiculo->color,
+                'motor' => $vehiculo->motor,
             ],
         ]);
     }
@@ -187,15 +187,15 @@ class ClienteController extends Controller
         $total = (clone $confirmados)->count();
 
         $ultimo = (clone $confirmados)
-            ->with(['automotor:placa,marca,modelo', 'vehiculo:id,nombre'])
+            ->with(['vehiculo:placa,marca,modelo', 'tipoVehiculo:id,nombre'])
             ->orderByDesc('fecha')
             ->orderByDesc('id')
             ->first();
 
         $vehiculos = (clone $confirmados)
-            ->whereNotNull('automotor_id')
-            ->selectRaw('automotor_id as placa, COUNT(*) as lavados')
-            ->groupBy('automotor_id')
+            ->whereNotNull('vehiculo_id')
+            ->selectRaw('vehiculo_id as placa, COUNT(*) as lavados')
+            ->groupBy('vehiculo_id')
             ->orderByDesc('lavados')
             ->get()
             ->map(fn ($fila) => [
@@ -216,8 +216,8 @@ class ClienteController extends Controller
                 'total_lavados' => $total,
                 'ultimo_lavado' => $ultimo ? [
                     'fecha' => $ultimo->fecha?->format('d/m/Y'),
-                    'placa' => $ultimo->automotor?->placa,
-                    'vehiculo' => $ultimo->vehiculo?->nombre,
+                    'placa' => $ultimo->vehiculo?->placa,
+                    'tipo_vehiculo' => $ultimo->tipoVehiculo?->nombre,
                 ] : null,
                 'vehiculos' => $vehiculos,
             ],

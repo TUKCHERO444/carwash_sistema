@@ -49,7 +49,6 @@ class ConfirmarTest extends TestCase
 
         $this->pendiente = CambioAceite::create([
             'cliente_id' => $this->cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,
@@ -98,7 +97,6 @@ class ConfirmarTest extends TestCase
     {
         $confirmado = CambioAceite::create([
             'cliente_id' => $this->cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 70.00,
@@ -181,8 +179,12 @@ class ConfirmarTest extends TestCase
         $this->assertDatabaseHas('cambio_aceites', [
             'id' => $this->pendiente->id,
             'estado' => 'confirmado',
-            'metodo_pago' => 'efectivo',
             'caja_id' => $caja->id,
+        ]);
+        $this->assertDatabaseHas('pagos', [
+            'pagable_type' => CambioAceite::class,
+            'pagable_id' => $this->pendiente->id,
+            'monto' => 70.00,
         ]);
     }
 

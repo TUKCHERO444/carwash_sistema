@@ -41,7 +41,7 @@ class RoleController extends Controller
             if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) {
                 return 'Inventario y Servicios';
             }
-            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes') || str_contains($perm->name, 'automotores')) {
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'tipos-vehiculo') || str_contains($perm->name, 'clientes')) {
                 return 'Clientes y Vehículos';
             }
             if (str_contains($perm->name, 'ventas')) {
@@ -94,7 +94,7 @@ class RoleController extends Controller
             if (str_contains($perm->name, 'inventario') || str_contains($perm->name, 'servicios')) {
                 return 'Inventario y Servicios';
             }
-            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'clientes') || str_contains($perm->name, 'automotores')) {
+            if (str_contains($perm->name, 'vehiculos') || str_contains($perm->name, 'tipos-vehiculo') || str_contains($perm->name, 'clientes')) {
                 return 'Clientes y Vehículos';
             }
             if (str_contains($perm->name, 'ventas')) {

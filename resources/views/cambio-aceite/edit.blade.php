@@ -52,7 +52,7 @@
                     required
                     maxlength="7"
                     data-filter="alphanumeric"
-                    value="{{ old('placa', $cambioAceite->automotor->placa ?? '') }}"
+                    value="{{ old('placa', $cambioAceite->vehiculo->placa ?? '') }}"
                     placeholder="Ej: ABC-123"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('placa') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
@@ -380,56 +380,7 @@
                     @enderror
                 </div>
 
-                {{-- ── Método de pago ── --}}
-                <div>
-                    <label class="label-main mb-2">
-                        Método de pago <span class="text-red-500">*</span>
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                        @foreach(['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'] as $val => $label)
-                            <label class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors
-                                          metodo-pago-option {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-main hover:border-gray-400' }}">
-                                <input type="radio" name="metodo_pago" value="{{ $val }}"
-                                       class="hidden metodo-pago-radio"
-                                       {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'checked' : '' }}>
-                                <span class="text-sm font-medium {{ old('metodo_pago', $cambioAceite->metodo_pago ?? 'efectivo') === $val ? 'text-blue-700 dark:text-blue-400' : 'text-secondary' }}">
-                                    {{ $label }}
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                    @error('metodo_pago')
-                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- Campos mixto --}}
-                <div id="bloque-mixto" class="hidden space-y-3">
-                    <p class="text-xs text-secondary">Ingresa los montos por método (al menos uno). La suma debe igualar el total.</p>
-                    <div id="alerta-mixto" class="hidden px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-400 text-xs">
-                        La suma de los montos (<span id="suma-mixto-display">0.00</span>) no coincide con el total (<span id="total-mixto-display">0.00</span>).
-                    </div>
-                    <div>
-                        <label for="monto_efectivo" class="block text-xs font-medium text-secondary mb-1">Efectivo (S/)</label>
-                        <input type="number" id="monto_efectivo" name="monto_efectivo" step="0.01" min="0"
-                               value="{{ old('monto_efectivo', $cambioAceite->monto_efectivo) }}" placeholder="0.00"
-                               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-main">
-                    </div>
-                    <div>
-                        <label for="monto_yape" class="block text-xs font-medium text-secondary mb-1">Yape (S/)</label>
-                        <input type="number" id="monto_yape" name="monto_yape" step="0.01" min="0"
-                               value="{{ old('monto_yape', $cambioAceite->monto_yape) }}" placeholder="0.00"
-                               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-main">
-                    </div>
-                    <div>
-                        <label for="monto_izipay" class="block text-xs font-medium text-secondary mb-1">Izipay (S/)</label>
-                        <input type="number" id="monto_izipay" name="monto_izipay" step="0.01" min="0"
-                               value="{{ old('monto_izipay', $cambioAceite->monto_izipay) }}" placeholder="0.00"
-                               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-main">
-                    </div>
-                </div>
-
-            </div>
+                                @include('pagos._form', ['metodosPago' => $metodosPago, 'metodoActual' => old('metodo_pago', $resumenPagos['mixto'] ? 'mixto' : ($resumenPagos['codigo'] ?? 'efectivo')), 'montos' => $resumenPagos['montos']])
 
             {{-- ── Submit ── --}}
             <div class="flex items-center gap-3 mt-6">
@@ -457,8 +408,8 @@
 {{-- Bloque de inicialización de datos (único <script> permitido en la vista) --}}
 <script>
     window.productosExistentes    = @json($productosExistentes);
-    window.cambioAceiteMetodoPago = @json($cambioAceite->metodo_pago ?? 'efectivo');
-    window.cambioAceiteMontos     = @json($cambioAceiteMontos);
+    window.cambioAceiteMetodoPago = @json(old('metodo_pago', $resumenPagos['mixto'] ? 'mixto' : ($resumenPagos['codigo'] ?? 'efectivo')));
+    window.cambioAceiteMontos     = @json($resumenPagos['montos']);
 </script>
 @vite('resources/js/cambio-aceite/edit.js')
 <script>

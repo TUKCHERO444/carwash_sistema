@@ -98,31 +98,11 @@
                 </div>
             @endif
             {{-- Método de pago --}}
-            @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
             <div class="flex justify-between">
                 <span class="text-secondary">Pago:</span>
-                <span class="text-primary">{{ $metodosLabel[$venta->metodo_pago] ?? ucfirst($venta->metodo_pago) }}</span>
+                @include('pagos._lineas', ['pagable' => $venta])
             </div>
-            @if($venta->metodo_pago === 'mixto')
-                @if($venta->monto_efectivo)
-                    <div class="flex justify-between text-xs text-text-secondary-dark pl-2">
-                        <span>Efectivo:</span>
-                        <span>S/ {{ number_format($venta->monto_efectivo, 2) }}</span>
-                    </div>
-                @endif
-                @if($venta->monto_yape)
-                    <div class="flex justify-between text-xs text-text-secondary-dark pl-2">
-                        <span>Yape:</span>
-                        <span>S/ {{ number_format($venta->monto_yape, 2) }}</span>
-                    </div>
-                @endif
-                @if($venta->monto_izipay)
-                    <div class="flex justify-between text-xs text-text-secondary-dark pl-2">
-                        <span>Izipay:</span>
-                        <span>S/ {{ number_format($venta->monto_izipay, 2) }}</span>
-                    </div>
-                @endif
-            @endif
+
         </div>
 
         {{-- Observation --}}

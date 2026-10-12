@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Lavado extends Model
 {
@@ -30,18 +31,14 @@ class Lavado extends Model
 
     protected $fillable = [
         'cliente_id',
-        'automotor_id',
         'vehiculo_id',
+        'tipo_vehiculo_id',
         'fecha',
         'estado',
         'precio',
         'total',
         'foto',
         'user_id',
-        'metodo_pago',
-        'monto_efectivo',
-        'monto_yape',
-        'monto_izipay',
         'caja_id',
         'atencion_inicio_at',
         'atencion_fin_at',
@@ -52,9 +49,6 @@ class Lavado extends Model
         'fecha' => 'date',
         'precio' => 'decimal:2',
         'total' => 'decimal:2',
-        'monto_efectivo' => 'decimal:2',
-        'monto_yape' => 'decimal:2',
-        'monto_izipay' => 'decimal:2',
         'atencion_inicio_at' => 'datetime',
         'atencion_fin_at' => 'datetime',
         'tiempo_atencion_minutos' => 'integer',
@@ -69,20 +63,28 @@ class Lavado extends Model
     }
 
     /**
-     * Relación con Automotor (vehículo físico atendido).
-     * FK automotor_id apunta a la PK string automotores.placa.
-     */
-    public function automotor(): BelongsTo
-    {
-        return $this->belongsTo(Automotor::class, 'automotor_id', 'placa');
-    }
-
-    /**
-     * Relación con Vehiculo
+     * Relación con Vehiculo (vehículo físico atendido).
+     * FK vehiculo_id apunta a la PK string vehiculos.placa.
      */
     public function vehiculo(): BelongsTo
     {
-        return $this->belongsTo(Vehiculo::class);
+        return $this->belongsTo(Vehiculo::class, 'vehiculo_id', 'placa');
+    }
+
+    /**
+     * Relación con TipoVehiculo (categoría de servicio con precio).
+     */
+    public function tipoVehiculo(): BelongsTo
+    {
+        return $this->belongsTo(TipoVehiculo::class, 'tipo_vehiculo_id');
+    }
+
+    /**
+     * Líneas de pago del ticket (1 simple, N mixto). Suman el total.
+     */
+    public function pagos(): MorphMany
+    {
+        return $this->morphMany(Pago::class, 'pagable');
     }
 
     /**

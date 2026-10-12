@@ -102,13 +102,17 @@ function initMetodoPago() {
     const pagos = window.reportesMetodoPago;
     if (!canvas || !pagos) return;
 
+    const labels = pagos.labels ?? [];
+    const data = pagos.data ?? [];
+    const palette = ['#10b981', '#8b5cf6', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6'];
+
     new Chart(canvas, {
         type: 'doughnut',
         data: {
-            labels: ['Efectivo', 'Yape', 'Izipay'],
+            labels,
             datasets: [{
-                data: [pagos.efectivo, pagos.yape, pagos.izipay],
-                backgroundColor: ['#10b981', '#8b5cf6', '#3b82f6'],
+                data,
+                backgroundColor: labels.map((_, i) => palette[i % palette.length]),
                 borderWidth: 0,
             }],
         },

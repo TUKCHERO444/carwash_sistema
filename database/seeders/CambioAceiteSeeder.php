@@ -2,11 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Automotor;
 use App\Models\CambioAceite;
 use App\Models\Cliente;
+use App\Models\MetodoPago;
 use App\Models\Trabajador;
 use App\Models\User;
+use App\Models\Vehiculo;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 
@@ -30,18 +31,32 @@ class CambioAceiteSeeder extends Seeder
                 : $precio;
 
             $clienteId = $faker->randomElement($clienteIds);
-            $automotorPlaca = Automotor::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
+            $vehiculoPlaca = Vehiculo::where('cliente_id', $clienteId)->inRandomOrder()->value('placa');
 
-            CambioAceite::create([
+            $cambio = CambioAceite::create([
                 'cliente_id' => $clienteId,
-                'automotor_id' => $automotorPlaca,
-                'trabajador_id' => $faker->randomElement($trabajadoresActivos),
+                'vehiculo_id' => $vehiculoPlaca,
                 'fecha' => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
                 'precio' => $precio,
                 'total' => $total,
                 'descripcion' => $faker->optional(0.4)->sentence(),
                 'user_id' => $faker->randomElement($userIds),
             ]);
+
+            if (! empty($trabajadoresActivos)) {
+                $cambio->trabajadores()->attach(
+                    $faker->randomElements($trabajadoresActivos, min(count($trabajadoresActivos), $faker->numberBetween(1, 2)))
+                );
+            }
+
+            $metodoId = MetodoPago::where('activo', true)->inRandomOrder()->value('id');
+            if ($metodoId) {
+                $cambio->pagos()->create([
+                    'metodo_pago_id' => $metodoId,
+                    'monto' => $total,
+                    'user_id' => $cambio->user_id,
+                ]);
+            }
         }
     }
 }

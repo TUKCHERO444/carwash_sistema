@@ -88,7 +88,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium">
-                                {{ $lavado->automotor->placa ?? 'N/A' }}
+                                {{ $lavado->vehiculo->placa ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
                                 {{ $lavado->created_at?->format('d/m H:i') ?? '—' }}

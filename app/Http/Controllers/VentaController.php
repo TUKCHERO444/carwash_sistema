@@ -8,6 +8,8 @@ use App\Models\Venta;
 use App\Services\AuditService;
 use App\Services\CajaService;
 use App\Services\KardexService;
+use App\Services\PagoService;
+use App\Services\TotalesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,8 @@ class VentaController extends Controller
     public function __construct(
         private CajaService $cajaService,
         private KardexService $kardexService,
+        private PagoService $pagoService,
+        private TotalesService $totalesService,
     ) {}
 
     /**
@@ -36,7 +40,9 @@ class VentaController extends Controller
      */
     public function create(): View
     {
-        return view('ventas.create');
+        $metodosPago = $this->pagoService->metodosActivos();
+
+        return view('ventas.create', compact('metodosPago'));
     }
 
     /**
@@ -76,25 +82,31 @@ class VentaController extends Controller
             return back()->with('error_caja', true);
         }
 
-        $request->validate([
+        $request->validate(array_merge([
             'observacion' => ['nullable', 'string', 'max:500'],
             'subtotal' => ['required', 'numeric', 'min:0'],
             'total' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
-            'monto_yape' => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
             'productos' => ['required', 'array', 'min:1'],
             'productos.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
             'productos.*.precio_unitario' => ['required', 'numeric', 'gt:0'],
             'productos.*.subtotal' => ['required', 'numeric', 'min:0'],
-        ], [
+        ], $this->pagoService->reglas()), [
             'productos.required' => 'Debe agregar al menos un producto a la venta.',
             'productos.min' => 'Debe agregar al menos un producto a la venta.',
         ]);
 
-        foreach ($request->productos as $item) {
+        $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+
+        // Coherencia aritmética (patrón Compras): los subtotales de línea se
+        // recalculan en el servidor; subtotal y total de cabecera deben
+        // cuadrar con el detalle (el total admite descuento/facturación).
+        $lineas = $this->totalesService->normalizarLineas($request->productos, 'precio_unitario', 'subtotal');
+        $suma = $this->totalesService->suma($lineas, 'subtotal');
+        $this->totalesService->validarIgualdad((float) $request->subtotal, $suma, 'subtotal');
+        $this->totalesService->validarCabecera((float) $request->total, $suma);
+
+        foreach ($lineas as $item) {
             $producto = Producto::findOrFail($item['producto_id']);
             if ($item['cantidad'] > $producto->stock) {
                 return back()->withErrors([
@@ -104,24 +116,24 @@ class VentaController extends Controller
         }
 
         $venta = null;
-        DB::transaction(function () use ($request, $caja, &$venta) {
+        $lineasPago = $lineasPago ?? [];
+        $pagoService = $this->pagoService;
+        DB::transaction(function () use ($request, $caja, &$venta, $lineasPago, $pagoService, $lineas, $suma) {
             $nextId = (Venta::max('id') ?? 0) + 1;
             $correlativo = 'VTA-'.str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
             $venta = Venta::create([
                 'correlativo' => $correlativo,
                 'observacion' => $request->observacion,
-                'subtotal' => $request->subtotal,
+                'subtotal' => $suma,
                 'total' => $request->total,
-                'metodo_pago' => $request->metodo_pago,
-                'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
-                'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                 'user_id' => auth()->id(),
                 'caja_id' => $caja->id,
             ]);
 
-            foreach ($request->productos as $item) {
+            $pagoService->guardarLineas($venta, $lineasPago, auth()->id(), $caja->id);
+
+            foreach ($lineas as $item) {
                 DetalleVenta::create([
                     'venta_id' => $venta->id,
                     'producto_id' => $item['producto_id'],
@@ -155,7 +167,7 @@ class VentaController extends Controller
      */
     public function show(Venta $venta): View
     {
-        $venta->load('user', 'detalles.producto', 'devoluciones.detalles', 'devoluciones.user', 'devoluciones.ventaNueva');
+        $venta->load('user', 'detalles.producto', 'devoluciones.detalles', 'devoluciones.user', 'devoluciones.ventaNueva', 'pagos.metodoPago');
 
         return view('ventas.show', compact('venta'));
     }
@@ -165,7 +177,7 @@ class VentaController extends Controller
      */
     public function ticket(Venta $venta): View
     {
-        $venta->load('user', 'detalles.producto');
+        $venta->load('user', 'detalles.producto', 'pagos.metodoPago');
 
         return view('ventas.ticket', compact('venta'));
     }
@@ -190,6 +202,8 @@ class VentaController extends Controller
             $correlativo = $venta->correlativo;
 
             DB::transaction(function () use ($venta, $correlativo) {
+                $venta->pagos()->delete();
+
                 foreach ($venta->detalles as $detalle) {
                     $producto = Producto::find($detalle->producto_id);
                     $stockAntes = $producto->stock;

@@ -41,27 +41,27 @@
 
             {{-- ── Vehículo ── --}}
             <div class="mb-5">
-                <label for="vehiculo_id" class="label-main mb-1">
+                <label for="tipo_vehiculo_id" class="label-main mb-1">
                     Vehículo <span class="text-red-500">*</span>
                 </label>
                 <select
-                    id="vehiculo_id"
-                    name="vehiculo_id"
+                    id="tipo_vehiculo_id"
+                    name="tipo_vehiculo_id"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                           {{ $errors->has('vehiculo_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
+                           {{ $errors->has('tipo_vehiculo_id') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                 >
                     <option value="" data-precio="0">-- Seleccione un vehículo --</option>
-                    @foreach($vehiculos as $vehiculo)
+                    @foreach($tiposVehiculo as $tipoVehiculo)
                         <option
-                            value="{{ $vehiculo->id }}"
-                            data-precio="{{ $vehiculo->precio }}"
-                            {{ old('vehiculo_id') == $vehiculo->id ? 'selected' : '' }}
+                            value="{{ $tipoVehiculo->id }}"
+                            data-precio="{{ $tipoVehiculo->precio }}"
+                            {{ old('tipo_vehiculo_id') == $tipoVehiculo->id ? 'selected' : '' }}
                         >
-                            {{ $vehiculo->nombre }} — S/ {{ number_format($vehiculo->precio, 2) }}
+                            {{ $tipoVehiculo->nombre }} — S/ {{ number_format($tipoVehiculo->precio, 2) }}
                         </option>
                     @endforeach
                 </select>
-                @error('vehiculo_id')
+                @error('tipo_vehiculo_id')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
             </div>

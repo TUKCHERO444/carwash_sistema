@@ -82,7 +82,6 @@ class ReporteClientesPropertyTest extends TestCase
                     } else {
                         CambioAceite::factory()->create([
                             'cliente_id' => $cliente->id,
-                            'trabajador_id' => Trabajador::factory()->create()->id,
                             'user_id' => $this->usuario->id,
                             'estado' => 'confirmado',
                             'total' => $total,

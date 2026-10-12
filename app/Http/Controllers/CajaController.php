@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Caja;
 use App\Models\EgresoCaja;
+use App\Models\MetodoPago;
 use App\Models\Trabajador;
 use App\Services\AuditService;
 use App\Services\CajaService;
@@ -26,19 +27,20 @@ class CajaController extends Controller
 
         if ($caja) {
             $caja->load([
-                'ventas',
-                'cambioAceites',
-                'lavados' => fn ($q) => $q->where('estado', 'confirmado'),
+                'ventas.pagos.metodoPago',
+                'cambioAceites.pagos.metodoPago',
+                'lavados' => fn ($q) => $q->where('estado', 'confirmado')->with('pagos.metodoPago'),
                 'egresos',
             ]);
         }
 
         $resumen = $caja ? $this->cajaService->calcularResumen($caja) : null;
         $efectivoEsperado = $caja ? $this->cajaService->calcularEfectivoEsperado($caja) : null;
+        $nombresMetodos = MetodoPago::pluck('nombre', 'codigo')->all();
         $categoriasGasto = EgresoCaja::categoriasManuales();
         $trabajadores = $caja ? Trabajador::orderBy('nombre')->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno']) : collect();
 
-        return view('caja.panel', compact('caja', 'resumen', 'efectivoEsperado', 'categoriasGasto', 'trabajadores'));
+        return view('caja.panel', compact('caja', 'resumen', 'efectivoEsperado', 'categoriasGasto', 'trabajadores', 'nombresMetodos'));
     }
 
     /**
@@ -185,9 +187,11 @@ class CajaController extends Controller
      */
     public function detalle(Caja $caja): View
     {
-        $caja->load('user', 'arqueoUser', 'egresos.user');
+        $caja->load('user', 'arqueoUser', 'egresos.user', 'ventas.pagos.metodoPago', 'cambioAceites.pagos.metodoPago');
+        $caja->load(['lavados' => fn ($q) => $q->with('pagos.metodoPago')]);
         $resumen = $this->cajaService->calcularResumen($caja);
+        $nombresMetodos = MetodoPago::pluck('nombre', 'codigo')->all();
 
-        return view('caja.detalle', compact('caja', 'resumen'));
+        return view('caja.detalle', compact('caja', 'resumen', 'nombresMetodos'));
     }
 }

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\AjusteInventario;
 use App\Models\Asistencia;
-use App\Models\Automotor;
 use App\Models\Caja;
 use App\Models\CambioAceite;
 use App\Models\CambioProducto;
@@ -23,10 +22,12 @@ use App\Models\DevolucionVenta;
 use App\Models\EgresoCaja;
 use App\Models\Lavado;
 use App\Models\Marca;
+use App\Models\MetodoPago;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use App\Models\RegistroAuditoria;
 use App\Models\Servicio;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Vehiculo;
@@ -50,9 +51,10 @@ class AuditService
         ContenidoWeb::class,
         Marca::class,
         Servicio::class,
-        Vehiculo::class,
+        TipoVehiculo::class,
+        MetodoPago::class,
         Cliente::class,
-        Automotor::class,
+        Vehiculo::class,
         Venta::class,
         DevolucionVenta::class,
         CambioAceite::class,
@@ -106,9 +108,10 @@ class AuditService
         ContenidoWeb::class => 'contenido_web',
         Marca::class => 'marcas',
         Servicio::class => 'servicios',
-        Vehiculo::class => 'vehiculos',
+        TipoVehiculo::class => 'tipos-vehiculo',
+        MetodoPago::class => 'metodos-pago',
         Cliente::class => 'clientes',
-        Automotor::class => 'automotores',
+        Vehiculo::class => 'vehiculos',
         Venta::class => 'ventas',
         DevolucionVenta::class => 'ventas',
         CambioAceite::class => 'cambio_aceite',

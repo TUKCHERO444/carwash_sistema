@@ -17,6 +17,11 @@ export function initBusquedaProductos({ inputId, resultadosId, hiddenInputId, on
 
     if (!inputBuscar || !resultadosDiv || !hiddenInput) return;
 
+    // Nombre de la función global saneado: hiddenInputId puede contener guiones
+    // (p.ej. "producto-id-0"), que son inválidos en notación de punto y se
+    // interpretarían como resta en el onclick inline.
+    const fnName = `seleccionarProducto_${hiddenInputId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+
     let debounceTimer;
 
     inputBuscar.addEventListener('input', function () {
@@ -57,7 +62,7 @@ export function initBusquedaProductos({ inputId, resultadosId, hiddenInputId, on
 
         resultadosDiv.innerHTML = productos.map(p => `
             <div class="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                 onclick="window.seleccionarProducto_${hiddenInputId}(${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio_compra}, ${p.stock})">
+                 onclick="window['${fnName}'](${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio_compra}, ${p.stock})">
                 <div class="text-sm text-primary font-medium">${p.nombre}</div>
                 <div class="text-xs text-secondary">Stock: ${p.stock} | Costo: S/ ${parseFloat(p.precio_compra).toFixed(2)}</div>
             </div>
@@ -70,7 +75,7 @@ export function initBusquedaProductos({ inputId, resultadosId, hiddenInputId, on
     }
 
     // Función global para seleccionar un producto
-    window[`seleccionarProducto_${hiddenInputId}`] = function (id, nombre, precioCompra, stock) {
+    window[fnName] = function (id, nombre, precioCompra, stock) {
         hiddenInput.value = id;
         inputBuscar.value = nombre;
         ocultarResultados();

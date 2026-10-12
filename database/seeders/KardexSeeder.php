@@ -91,7 +91,7 @@ class KardexSeeder extends Seeder
         }
 
         // 3. Salidas por cambio de aceite confirmado
-        $cambios = CambioAceite::where('estado', 'confirmado')->with('automotor')->get();
+        $cambios = CambioAceite::where('estado', 'confirmado')->with('vehiculo')->get();
         foreach ($cambios as $cambio) {
             foreach ($cambio->productos as $productoMod) {
                 $producto = $productos->firstWhere('id', $productoMod->id);
@@ -101,7 +101,7 @@ class KardexSeeder extends Seeder
                 $prev = $this->ultimoStock($producto->id);
                 $cantidad = $productoMod->pivot->cantidad;
                 $stockDespues = max(0, $prev - $cantidad);
-                $origenId = $cambio->automotor?->placa ?? 'N/A';
+                $origenId = $cambio->vehiculo?->placa ?? 'N/A';
 
                 $this->movimiento(
                     $producto,

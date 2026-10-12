@@ -62,7 +62,6 @@ class TablasPendientesConfirmadosTest extends TestCase
 
         $pendiente = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 50.00,
@@ -72,7 +71,6 @@ class TablasPendientesConfirmadosTest extends TestCase
 
         $confirmado = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 80.00,
@@ -129,7 +127,6 @@ class TablasPendientesConfirmadosTest extends TestCase
 
         $pendiente = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 60.00,
@@ -173,7 +170,6 @@ class TablasPendientesConfirmadosTest extends TestCase
 
         $pendiente = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 50.00,
@@ -183,7 +179,6 @@ class TablasPendientesConfirmadosTest extends TestCase
 
         $confirmado = CambioAceite::create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $this->trabajador->id,
             'user_id' => $this->user->id,
             'fecha' => now()->toDateString(),
             'precio' => 80.00,

@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ingresos', function (Blueprint $table) {
-            $table->string('automotor_id', 7)->nullable()->after('cliente_id');
-            $table->foreign('automotor_id')->references('placa')->on('automotores')->onDelete('set null');
+            $table->string('vehiculo_id', 7)->nullable()->after('cliente_id');
+            $table->foreign('vehiculo_id')->references('placa')->on('vehiculos')->onDelete('set null');
         });
 
         Schema::table('cambio_aceites', function (Blueprint $table) {
-            $table->string('automotor_id', 7)->nullable()->after('cliente_id');
-            $table->foreign('automotor_id')->references('placa')->on('automotores')->onDelete('set null');
+            $table->string('vehiculo_id', 7)->nullable()->after('cliente_id');
+            $table->foreign('vehiculo_id')->references('placa')->on('vehiculos')->onDelete('set null');
         });
     }
 
@@ -28,13 +28,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('ingresos', function (Blueprint $table) {
-            $table->dropForeign(['automotor_id']);
-            $table->dropColumn('automotor_id');
+            $table->dropForeign(['vehiculo_id']);
+            $table->dropColumn('vehiculo_id');
         });
 
         Schema::table('cambio_aceites', function (Blueprint $table) {
-            $table->dropForeign(['automotor_id']);
-            $table->dropColumn('automotor_id');
+            $table->dropForeign(['vehiculo_id']);
+            $table->dropColumn('vehiculo_id');
         });
     }
 };

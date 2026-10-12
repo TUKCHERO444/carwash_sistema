@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Cuenta;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\CustomerUserLink;
 use App\Models\User;
+use App\Models\Vehiculo;
 use Database\Seeders\AuthSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -35,7 +35,7 @@ class CuentaVehiculosTest extends TestCase
 
         $cliente = Cliente::create(['nombre' => 'Dueño', 'dni' => null, 'telefono' => null]);
         CustomerUserLink::create(['user_id' => $user->id, 'cliente_id' => $cliente->id, 'estado' => 'ACTIVO']);
-        $vehiculo = Automotor::create(['placa' => $placa, 'cliente_id' => $cliente->id, 'marca' => 'Toyota']);
+        $vehiculo = Vehiculo::create(['placa' => $placa, 'cliente_id' => $cliente->id, 'marca' => 'Toyota']);
 
         return [$user, $vehiculo];
     }

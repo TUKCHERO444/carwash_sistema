@@ -4,10 +4,6 @@
 @section('subtitulo', 'Rango aplicado: '.$etiqueta)
 
 @section('contenido')
-    @php
-        $labelsMetodo = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'];
-    @endphp
-
     <table class="kpis">
         <tr>
             <td>
@@ -59,7 +55,7 @@
         <tbody>
             @forelse($porMetodo as $fila)
                 <tr>
-                    <td>{{ $labelsMetodo[$fila['metodo']] ?? ucfirst($fila['metodo']) }}</td>
+                    <td>{{ $fila['nombre'] ?? ucfirst($fila['metodo']) }}</td>
                     <td class="derecha">{{ $fila['operaciones'] }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($fila['total'], 2) }}</td>
                 </tr>
@@ -86,7 +82,7 @@
                     <td>{{ $venta->correlativo }}</td>
                     <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
                     <td>{{ $venta->user?->name ?? '—' }}</td>
-                    <td>{{ $labelsMetodo[$venta->metodo_pago] ?? ucfirst($venta->metodo_pago) }}</td>
+                    <td>{{ $venta->pagos->count() > 1 ? 'Mixto' : ($venta->pagos->first()?->metodoPago?->nombre ?? '—') }}</td>
                     <td class="derecha resaltado">S/ {{ number_format($venta->total, 2) }}</td>
                 </tr>
             @empty

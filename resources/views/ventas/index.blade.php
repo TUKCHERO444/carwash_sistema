@@ -78,19 +78,7 @@
                                 S/ {{ number_format($venta->total, 2) }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap">
-                                 @php
-                                    $colores = [
-                                        'efectivo' => 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-                                        'yape'     => 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
-                                        'izipay'   => 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-                                        'mixto'    => 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                                    ];
-                                    $labels  = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto'];
-                                    $metodo  = $venta->metodo_pago ?? 'efectivo';
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $colores[$metodo] ?? 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-secondary-dark' }}">
-                                    {{ $labels[$metodo] ?? ucfirst($metodo) }}
-                                </span>
+                                 @include('pagos._etiqueta', ['pagable' => $venta])
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 {{-- Ver detalle --}}

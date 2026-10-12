@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Lavado;
 use App\Models\Servicio;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
-use App\Models\Vehiculo;
 use App\Services\AuditService;
 use App\Services\CajaService;
-use App\Services\ClienteAutomotorService;
+use App\Services\ClienteVehiculoService;
+use App\Services\PagoService;
 use App\Services\TiempoAtencionService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\JsonResponse;
@@ -42,8 +43,8 @@ class LavadoController extends Controller
     private const TELEFONO_RULE = 'regex:/^[0-9]{9}$/';
 
     /**
-     * Reglas validación del cliente que persisten en Cliente/Automotor.
-     * Deben coincidir con el patrón estándar de ClienteController/AutomotorController.
+     * Reglas validación del cliente que persisten en Cliente/Vehiculo.
+     * Deben coincidir con el patrón estándar de ClienteController/VehiculoController.
      */
     private function clienteRules(): array
     {
@@ -57,12 +58,13 @@ class LavadoController extends Controller
 
     public function __construct(
         private CajaService $cajaService,
-        private ClienteAutomotorService $clienteAutomotorService,
+        private ClienteVehiculoService $clienteVehiculoService,
+        private PagoService $pagoService,
     ) {}
 
     public function index(): View
     {
-        $lavados = Lavado::with(['cliente', 'vehiculo', 'trabajadores'])
+        $lavados = Lavado::with(['cliente', 'vehiculo', 'tipoVehiculo', 'trabajadores', 'pagos.metodoPago'])
             ->pendientes()
             ->colaAtencion()
             ->paginate(10);
@@ -72,7 +74,7 @@ class LavadoController extends Controller
 
     public function confirmados(): View
     {
-        $lavados = Lavado::with(['cliente', 'vehiculo', 'trabajadores'])
+        $lavados = Lavado::with(['cliente', 'vehiculo', 'tipoVehiculo', 'trabajadores', 'pagos.metodoPago'])
             ->confirmados()
             ->culminadosPorAtencion()
             ->paginate(10);
@@ -87,9 +89,11 @@ class LavadoController extends Controller
                 ->with('info', 'Este lavado ya fue confirmado.');
         }
 
-        $lavado->load(['cliente', 'vehiculo', 'trabajadores', 'servicios']);
-        $vehiculos = Vehiculo::orderBy('nombre')->get();
+        $lavado->load(['cliente', 'vehiculo', 'tipoVehiculo', 'trabajadores', 'servicios']);
+        $tiposVehiculo = TipoVehiculo::orderBy('nombre')->get();
         $trabajadores = Trabajador::where('estado', true)->orderBy('nombre')->get();
+        $metodosPago = $this->pagoService->metodosActivos();
+        $resumenPagos = $this->pagoService->resumen($lavado);
 
         $serviciosData = $lavado->servicios->map(fn ($s) => [
             'id' => $s->id,
@@ -97,13 +101,9 @@ class LavadoController extends Controller
             'precio' => (float) $s->precio,
         ])->values()->all();
 
-        $montosData = [
-            'efectivo' => $lavado->monto_efectivo,
-            'yape' => $lavado->monto_yape,
-            'izipay' => $lavado->monto_izipay,
-        ];
+        $montosData = $resumenPagos['montos'];
 
-        return view('lavados.confirmar', compact('lavado', 'vehiculos', 'trabajadores', 'serviciosData', 'montosData'));
+        return view('lavados.confirmar', compact('lavado', 'tiposVehiculo', 'trabajadores', 'serviciosData', 'montosData', 'metodosPago', 'resumenPagos'));
     }
 
     public function procesarConfirmacion(Request $request, Lavado $lavado): RedirectResponse
@@ -113,8 +113,8 @@ class LavadoController extends Controller
             return back()->with('error_caja', true);
         }
 
-        $request->validate(array_merge($this->clienteRules(), [
-            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+        $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [
+            'tipo_vehiculo_id' => ['required', 'integer', 'exists:tipos_vehiculo,id'],
             'fecha' => ['required', 'date'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'trabajadores_ids' => ['required', 'array', 'min:1'],
@@ -123,10 +123,6 @@ class LavadoController extends Controller
             'servicios.*.servicio_id' => ['required', 'integer', 'exists:servicios,id'],
             'precio' => ['required', 'numeric', 'min:0'],
             'total' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
-            'monto_yape' => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
         ]), [
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al lavado.',
             'trabajadores_ids.min' => 'Debe asignar al menos un trabajador al lavado.',
@@ -134,10 +130,12 @@ class LavadoController extends Controller
             'foto.max' => 'La imagen no puede superar 5 MB.',
         ]);
 
+        $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+
         try {
-            DB::transaction(function () use ($request, $caja, $lavado) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id, true);
+            DB::transaction(function () use ($request, $caja, $lavado, $lineasPago) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id, true);
 
                 $foto = $lavado->foto;
                 if ($request->hasFile('foto')) {
@@ -169,22 +167,20 @@ class LavadoController extends Controller
 
                 $lavado->update([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'vehiculo_id' => $request->vehiculo_id,
+                    'vehiculo_id' => $vehiculo->placa,
+                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                     'fecha' => $request->fecha,
                     'precio' => $request->precio,
                     'total' => $request->total,
                     'foto' => $foto,
-                    'metodo_pago' => $request->metodo_pago,
-                    'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
-                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                     'estado' => 'confirmado',
                     'caja_id' => $caja->id,
                     'atencion_inicio_at' => $inicioAtencion,
                     'atencion_fin_at' => $cierre['atencion_fin_at'],
                     'tiempo_atencion_minutos' => $cierre['tiempo_atencion_minutos'],
                 ]);
+
+                $this->pagoService->guardarLineas($lavado, $lineasPago, auth()->id(), $caja->id);
 
                 $lavado->trabajadores()->sync($request->trabajadores_ids);
                 $servicioIds = collect($request->servicios ?? [])->pluck('servicio_id')->filter()->all();
@@ -201,10 +197,10 @@ class LavadoController extends Controller
 
     public function create(): View
     {
-        $vehiculos = Vehiculo::all();
+        $tiposVehiculo = TipoVehiculo::all();
         $trabajadores = Trabajador::where('estado', true)->get();
 
-        return view('lavados.create', compact('vehiculos', 'trabajadores'));
+        return view('lavados.create', compact('tiposVehiculo', 'trabajadores'));
     }
 
     public function buscarServicios(Request $request): JsonResponse
@@ -222,7 +218,7 @@ class LavadoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate(array_merge($this->clienteRules(), [
-            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+            'tipo_vehiculo_id' => ['required', 'integer', 'exists:tipos_vehiculo,id'],
             'fecha' => ['required', 'date'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'trabajadores_ids' => ['required', 'array', 'min:1'],
@@ -239,8 +235,8 @@ class LavadoController extends Controller
         $lavado = null;
         try {
             DB::transaction(function () use ($request, &$lavado) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
                 $foto = null;
                 if ($request->hasFile('foto')) {
@@ -248,16 +244,16 @@ class LavadoController extends Controller
                     $foto = $result['secure_url'];
                 }
 
-                // Calcular precio server-side: precio vehículo + suma precios servicios
-                $vehiculo = Vehiculo::findOrFail($request->vehiculo_id);
+                // Calcular precio server-side: precio tipo vehículo + suma precios servicios
+                $tipoVehiculo = TipoVehiculo::findOrFail($request->tipo_vehiculo_id);
                 $servicioIds = collect($request->servicios ?? [])->pluck('servicio_id')->filter()->all();
                 $sumServicios = Servicio::whereIn('id', $servicioIds)->sum('precio');
-                $precio = $vehiculo->precio + $sumServicios;
+                $precio = $tipoVehiculo->precio + $sumServicios;
 
                 $lavado = Lavado::create([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'vehiculo_id' => $request->vehiculo_id,
+                    'vehiculo_id' => $vehiculo->placa,
+                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                     'fecha' => $request->fecha,
                     'precio' => $precio,
                     'total' => $precio,
@@ -281,7 +277,7 @@ class LavadoController extends Controller
 
     public function show(Lavado $lavado): View
     {
-        $lavado->load(['cliente', 'vehiculo', 'user', 'trabajadores', 'servicios']);
+        $lavado->load(['cliente', 'vehiculo', 'tipoVehiculo', 'user', 'trabajadores', 'servicios', 'pagos.metodoPago']);
 
         return view('lavados.show', compact('lavado'));
     }
@@ -289,7 +285,7 @@ class LavadoController extends Controller
     public function edit(Lavado $lavado): View
     {
         $lavado->load(['cliente', 'trabajadores', 'servicios']);
-        $vehiculos = Vehiculo::all();
+        $tiposVehiculo = TipoVehiculo::all();
         $trabajadores = Trabajador::where('estado', true)->get();
 
         $serviciosExistentes = $lavado->servicios->map(fn ($s) => [
@@ -298,19 +294,17 @@ class LavadoController extends Controller
             'precio' => (float) $s->precio,
         ])->values()->all();
 
-        $lavadoMontos = [
-            'efectivo' => $lavado->monto_efectivo,
-            'yape' => $lavado->monto_yape,
-            'izipay' => $lavado->monto_izipay,
-        ];
+        $lavadoMontos = $this->pagoService->resumen($lavado)['montos'];
+        $resumenPagos = $this->pagoService->resumen($lavado);
+        $metodosPago = $this->pagoService->metodosActivos();
 
-        return view('lavados.edit', compact('lavado', 'vehiculos', 'trabajadores', 'serviciosExistentes', 'lavadoMontos'));
+        return view('lavados.edit', compact('lavado', 'tiposVehiculo', 'trabajadores', 'serviciosExistentes', 'lavadoMontos', 'metodosPago', 'resumenPagos'));
     }
 
     public function update(Request $request, Lavado $lavado): RedirectResponse
     {
-        $request->validate(array_merge($this->clienteRules(), [
-            'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+        $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [
+            'tipo_vehiculo_id' => ['required', 'integer', 'exists:tipos_vehiculo,id'],
             'fecha' => ['required', 'date'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'trabajadores_ids' => ['required', 'array', 'min:1'],
@@ -319,10 +313,6 @@ class LavadoController extends Controller
             'servicios.*.servicio_id' => ['required', 'integer', 'exists:servicios,id'],
             'precio' => ['required', 'numeric', 'min:0'],
             'total' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
-            'monto_yape' => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
         ]), [
             'trabajadores_ids.required' => 'Debe asignar al menos un trabajador al lavado.',
             'trabajadores_ids.min' => 'Debe asignar al menos un trabajador al lavado.',
@@ -331,9 +321,11 @@ class LavadoController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request, $lavado) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
+            $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+
+            DB::transaction(function () use ($request, $lavado, $lineasPago) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
                 $foto = $lavado->foto;
                 if ($request->hasFile('foto')) {
@@ -357,17 +349,15 @@ class LavadoController extends Controller
 
                 $lavado->update([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'vehiculo_id' => $request->vehiculo_id,
+                    'vehiculo_id' => $vehiculo->placa,
+                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                     'fecha' => $request->fecha,
                     'precio' => $request->precio,
                     'total' => $request->total,
                     'foto' => $foto,
-                    'metodo_pago' => $request->metodo_pago,
-                    'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
-                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                 ]);
+
+                $this->pagoService->guardarLineas($lavado, $lineasPago, auth()->id(), $lavado->caja_id);
 
                 $lavado->trabajadores()->sync($request->trabajadores_ids);
                 $servicioIds = collect($request->servicios ?? [])->pluck('servicio_id')->filter()->all();
@@ -403,6 +393,7 @@ class LavadoController extends Controller
                     Storage::disk('public')->delete($lavado->foto);
                 }
             }
+            $lavado->pagos()->delete();
             $lavado->delete();
 
             return redirect()->route('lavados.index')
@@ -415,7 +406,7 @@ class LavadoController extends Controller
 
     public function ticket(Lavado $lavado): View
     {
-        $lavado->load(['cliente', 'vehiculo', 'user', 'trabajadores', 'servicios']);
+        $lavado->load(['cliente', 'vehiculo', 'tipoVehiculo', 'user', 'trabajadores', 'servicios', 'pagos.metodoPago']);
 
         return view('lavados.ticket', compact('lavado'));
     }

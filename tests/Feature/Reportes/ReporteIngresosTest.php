@@ -5,14 +5,15 @@ namespace Tests\Feature\Reportes;
 use App\Models\CambioAceite;
 use App\Models\Cliente;
 use App\Models\Lavado;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
-use App\Models\Vehiculo;
 use App\Models\Venta;
 use App\Services\Reportes\ReporteIngresosService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\Pagos;
 use Tests\TestCase;
 
 class ReporteIngresosTest extends TestCase
@@ -44,7 +45,7 @@ class ReporteIngresosTest extends TestCase
     {
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
-        $vehiculo = Vehiculo::factory()->create();
+        $tipoVehiculo = TipoVehiculo::factory()->create();
         $trabajador = Trabajador::factory()->create();
 
         Venta::create([
@@ -57,7 +58,7 @@ class ReporteIngresosTest extends TestCase
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -66,7 +67,7 @@ class ReporteIngresosTest extends TestCase
 
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'pendiente',
@@ -75,7 +76,6 @@ class ReporteIngresosTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 200,
@@ -84,7 +84,6 @@ class ReporteIngresosTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'pendiente',
             'total' => 999,
@@ -119,7 +118,6 @@ class ReporteIngresosTest extends TestCase
 
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 20,
@@ -145,26 +143,22 @@ class ReporteIngresosTest extends TestCase
     {
         $usuario = User::factory()->create();
 
-        Venta::create([
+        $venta = Venta::create([
             'correlativo' => 'V0003',
             'total' => 60,
             'user_id' => $usuario->id,
-            'metodo_pago' => 'yape',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        Pagos::linea($venta, 'yape', 60);
 
-        CambioAceite::factory()->create([
-            'trabajador_id' => Trabajador::factory()->create()->id,
+        $cambio = CambioAceite::factory()->create([
             'user_id' => $usuario->id,
             'total' => 100,
-            'metodo_pago' => 'mixto',
-            'monto_efectivo' => 40,
-            'monto_yape' => 60,
-            'monto_izipay' => 0,
             'estado' => 'confirmado',
             'created_at' => now(),
         ]);
+        Pagos::mixto($cambio, ['efectivo' => 40, 'yape' => 60]);
 
         $desde = CarbonImmutable::today()->startOfDay();
         $hasta = CarbonImmutable::today()->endOfDay();

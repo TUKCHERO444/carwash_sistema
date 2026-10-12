@@ -23,10 +23,7 @@ class ReporteCambioAceiteService
             ->whereBetween('cambio_aceites.created_at', [$desde, $hasta]);
 
         if (! empty($filtros['trabajador_id'])) {
-            $query->where(function (Builder $q) use ($filtros) {
-                $q->where('trabajador_id', $filtros['trabajador_id'])
-                    ->orWhereHas('trabajadores', fn (Builder $p) => $p->where('trabajadores.id', $filtros['trabajador_id']));
-            });
+            $query->whereHas('trabajadores', fn (Builder $q) => $q->where('trabajadores.id', $filtros['trabajador_id']));
         }
 
         if (! empty($filtros['producto_id'])) {
@@ -109,7 +106,7 @@ class ReporteCambioAceiteService
     public function detalle(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = [], int $perPage = 10): LengthAwarePaginator
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'automotor:placa,marca,modelo', 'trabajadores:id,nombre,apellido_paterno,apellido_materno', 'productos:id,nombre'])
+            ->with(['cliente:id,nombre,apellido_paterno,apellido_materno', 'vehiculo:placa,marca,modelo', 'trabajadores:id,nombre,apellido_paterno,apellido_materno', 'productos:id,nombre'])
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }
@@ -117,7 +114,7 @@ class ReporteCambioAceiteService
     public function detalleColeccion(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): Collection
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with(['cliente', 'automotor', 'trabajadores', 'productos:id,nombre'])
+            ->with(['cliente', 'vehiculo', 'trabajadores', 'productos:id,nombre'])
             ->orderByDesc('created_at')
             ->get();
     }

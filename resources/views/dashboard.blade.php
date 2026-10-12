@@ -65,6 +65,31 @@
         </div>
     </div>
 
+    {{-- Operativa del período --}}
+    <div>
+        <div class="flex items-baseline justify-between mb-3">
+            <h2 class="text-base font-semibold text-primary">Operativa del período</h2>
+            <a href="{{ route('reportes.operativo') }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Ver reporte operativo</a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="bg-surface border border-main rounded-xl p-5 shadow-sm">
+                <p class="text-sm text-secondary">Atenciones (lavados + cambios)</p>
+                <p class="text-2xl font-bold text-primary mt-1">{{ number_format($operativo['atenciones']) }}</p>
+                <p class="text-xs text-secondary mt-1">{{ number_format($operativo['atenciones_por_dia'], 1) }} por día</p>
+            </div>
+            <div class="bg-surface border border-main rounded-xl p-5 shadow-sm">
+                <p class="text-sm text-secondary">Tiempo prom. de atención</p>
+                <p class="text-2xl font-bold text-primary mt-1">{{ $operativo['tiempo_promedio'] !== null ? number_format($operativo['tiempo_promedio'], 0).' min' : '—' }}</p>
+                <p class="text-xs text-secondary mt-1">Solo tickets con tiempo registrado</p>
+            </div>
+            <div class="bg-surface border border-main rounded-xl p-5 shadow-sm">
+                <p class="text-sm text-secondary">Vehículos únicos</p>
+                <p class="text-2xl font-bold text-primary mt-1">{{ number_format($operativo['vehiculos_unicos']) }}</p>
+                <p class="text-xs text-secondary mt-1">Placas distintas (sin contar “Sin placa”)</p>
+            </div>
+        </div>
+    </div>
+
     {{-- Gráficos --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="bg-surface border border-main rounded-xl p-5 shadow-sm lg:col-span-2">
@@ -76,7 +101,7 @@
         <div class="bg-surface border border-main rounded-xl p-5 shadow-sm">
             <h2 class="text-base font-semibold text-primary mb-4">Método de pago</h2>
             <div class="h-72">
-                <canvas id="chart-metodo-pago" data-pagos="{{ json_encode($metodoPago) }}"></canvas>
+                <canvas id="chart-metodo-pago" data-pagos="{{ json_encode($metodoPagoChart) }}"></canvas>
             </div>
         </div>
     </div>

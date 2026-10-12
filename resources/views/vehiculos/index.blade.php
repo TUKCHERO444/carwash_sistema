@@ -39,13 +39,19 @@
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Nombre
+                            Placa
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Descripción
+                            Cliente
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Precio
+                            Marca
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Modelo
+                        </th>
+                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
+                            Color
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Acciones
@@ -55,18 +61,24 @@
                 <tbody class="bg-surface divide-y divide-main">
                     @foreach($vehiculos as $vehiculo)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
-                                {{ $vehiculo->nombre }}
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium uppercase">
+                                {{ $vehiculo->placa }}
                             </td>
                             <td class="px-6 py-8 text-sm text-secondary">
-                                {{ $vehiculo->descripcion ?? '—' }}
+                                {{ $vehiculo->cliente?->nombre_completo ?? '—' }}
                             </td>
-                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                S/ {{ number_format($vehiculo->precio, 2) }}
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $vehiculo->marca ?? '—' }}
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $vehiculo->modelo ?? '—' }}
+                            </td>
+                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                {{ $vehiculo->color ?? '—' }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
                                 <a href="{{ route('vehiculos.edit', $vehiculo) }}"
-                                   aria-label="Editar vehículo {{ $vehiculo->nombre }}"
+                                   aria-label="Editar vehículo {{ $vehiculo->placa }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -79,8 +91,8 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            aria-label="Eliminar vehículo {{ $vehiculo->nombre }}"
-                                            data-confirm="¿Estás seguro de que deseas eliminar este vehículo?"
+                                            aria-label="Eliminar vehículo {{ $vehiculo->placa }}"
+                                            data-confirm="¿Estás seguro de eliminar este vehículo?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

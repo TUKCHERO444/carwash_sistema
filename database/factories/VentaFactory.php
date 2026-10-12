@@ -19,7 +19,6 @@ class VentaFactory extends Factory
             'total' => function (array $attributes) {
                 return $attributes['subtotal'];
             },
-            'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
             'user_id' => User::factory(),
             'caja_id' => null,
         ];

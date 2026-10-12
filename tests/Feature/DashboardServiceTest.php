@@ -6,13 +6,14 @@ use App\Models\CambioAceite;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\Producto;
+use App\Models\TipoVehiculo;
 use App\Models\Trabajador;
 use App\Models\User;
-use App\Models\Vehiculo;
 use App\Models\Venta;
 use App\Services\DashboardService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Pagos;
 use Tests\TestCase;
 
 class DashboardServiceTest extends TestCase
@@ -34,7 +35,7 @@ class DashboardServiceTest extends TestCase
 
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
-        $vehiculo = Vehiculo::factory()->create();
+        $tipoVehiculo = TipoVehiculo::factory()->create();
         $trabajador = Trabajador::factory()->create();
 
         // Venta del día de hoy
@@ -49,7 +50,7 @@ class DashboardServiceTest extends TestCase
         // Lavado confirmado hoy que SÍ cuenta
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'confirmado',
@@ -59,7 +60,7 @@ class DashboardServiceTest extends TestCase
         // Lavado pendiente hoy que NO cuenta
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'user_id' => $usuario->id,
             'fecha' => now()->toDateString(),
             'estado' => 'pendiente',
@@ -69,7 +70,6 @@ class DashboardServiceTest extends TestCase
         // Cambio de aceite confirmado hoy que SÍ cuenta
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 200,
@@ -79,7 +79,6 @@ class DashboardServiceTest extends TestCase
         // Cambio de aceite pendiente hoy que NO cuenta
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'pendiente',
             'total' => 999,
@@ -103,7 +102,7 @@ class DashboardServiceTest extends TestCase
 
         $usuario = User::factory()->create();
         $cliente = Cliente::factory()->create();
-        $vehiculo = Vehiculo::factory()->create();
+        $tipoVehiculo = TipoVehiculo::factory()->create();
         $trabajador = Trabajador::factory()->create();
 
         // Venta hace 3 días (usa created_at)
@@ -120,7 +119,6 @@ class DashboardServiceTest extends TestCase
         // Cambio confirmado hace 3 días (usa created_at)
         CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'total' => 50,
@@ -130,7 +128,7 @@ class DashboardServiceTest extends TestCase
         // Lavado confirmado hace 3 días (usa fecha date)
         Lavado::factory()->create([
             'cliente_id' => $cliente->id,
-            'vehiculo_id' => $vehiculo->id,
+            'tipo_vehiculo_id' => $tipoVehiculo->id,
             'user_id' => $usuario->id,
             'fecha' => now()->subDays(3)->toDateString(),
             'estado' => 'confirmado',
@@ -157,26 +155,24 @@ class DashboardServiceTest extends TestCase
         $cliente = Cliente::factory()->create();
         $trabajador = Trabajador::factory()->create();
 
-        Venta::create([
+        $venta = Venta::create([
             'correlativo' => 'V0003',
             'total' => 60,
             'user_id' => $usuario->id,
-            'metodo_pago' => 'yape',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        Pagos::linea($venta, 'yape', 60);
 
-        CambioAceite::factory()->create([
-            'cliente_id' => $cliente->id, 'trabajador_id' => $trabajador->id,
-            'user_id' => $usuario->id, 'total' => 100,
-            'metodo_pago' => 'mixto', 'monto_efectivo' => 40, 'monto_yape' => 60, 'monto_izipay' => 0,
+        $cambio = CambioAceite::factory()->create([
+            'cliente_id' => $cliente->id, 'user_id' => $usuario->id, 'total' => 100,
             'estado' => 'confirmado', 'created_at' => now(),
         ]);
+        Pagos::mixto($cambio, ['efectivo' => 40, 'yape' => 60]);
 
         CambioAceite::factory()->create([
-            'cliente_id' => $cliente->id, 'trabajador_id' => $trabajador->id,
-            'user_id' => $usuario->id, 'total' => 999,
-            'metodo_pago' => 'efectivo', 'estado' => 'pendiente', 'created_at' => now(),
+            'cliente_id' => $cliente->id, 'user_id' => $usuario->id, 'total' => 999,
+            'estado' => 'pendiente', 'created_at' => now(),
         ]);
 
         $desde = CarbonImmutable::today()->startOfDay();
@@ -215,7 +211,6 @@ class DashboardServiceTest extends TestCase
         // Cambio de aceite usa 2 aceites y 1 filtro
         $cambio = CambioAceite::factory()->create([
             'cliente_id' => $cliente->id,
-            'trabajador_id' => $trabajador->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
         ]);

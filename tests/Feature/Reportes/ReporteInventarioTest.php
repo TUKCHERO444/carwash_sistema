@@ -6,7 +6,6 @@ use App\Models\CambioAceite;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
-use App\Models\Trabajador;
 use App\Models\User;
 use App\Models\Venta;
 use App\Services\Reportes\ReporteInventarioService;
@@ -60,7 +59,6 @@ class ReporteInventarioTest extends TestCase
         ]);
 
         $cambio = CambioAceite::factory()->create([
-            'trabajador_id' => Trabajador::factory()->create()->id,
             'user_id' => $usuario->id,
             'estado' => 'confirmado',
             'created_at' => now(),

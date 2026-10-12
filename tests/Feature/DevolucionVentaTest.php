@@ -13,6 +13,7 @@ use App\Models\Venta;
 use App\Services\KardexService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\Pagos;
 use Tests\TestCase;
 
 class DevolucionVentaTest extends TestCase
@@ -50,10 +51,6 @@ class DevolucionVentaTest extends TestCase
             'correlativo' => 'VTA-'.str_pad((Venta::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT),
             'subtotal' => 0,
             'total' => 0,
-            'metodo_pago' => $metodoPago,
-            'monto_efectivo' => $montos['efectivo'] ?? null,
-            'monto_yape' => $montos['yape'] ?? null,
-            'monto_izipay' => $montos['izipay'] ?? null,
             'user_id' => $this->user->id,
             'caja_id' => $caja->id,
         ]);
@@ -76,6 +73,12 @@ class DevolucionVentaTest extends TestCase
         }
 
         $venta->update(['subtotal' => round($total, 2), 'total' => round($total, 2)]);
+
+        if ($metodoPago === 'mixto') {
+            Pagos::mixto($venta, $montos);
+        } else {
+            Pagos::linea($venta, $metodoPago, $total);
+        }
 
         return $venta->fresh();
     }
@@ -202,7 +205,7 @@ class DevolucionVentaTest extends TestCase
         $producto = $this->producto(10);
         $venta = Venta::create([
             'correlativo' => 'VTA-0001', 'subtotal' => 70, 'total' => 70,
-            'metodo_pago' => 'efectivo', 'user_id' => $this->user->id, 'caja_id' => null,
+            'user_id' => $this->user->id, 'caja_id' => null,
         ]);
         DetalleVenta::create([
             'venta_id' => $venta->id, 'producto_id' => $producto->id,

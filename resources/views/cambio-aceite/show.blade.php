@@ -69,7 +69,7 @@
             <div>
                 <dt class="text-xs font-medium text-secondary uppercase tracking-wider">Cliente</dt>
                 <dd class="mt-1 text-sm text-primary">
-                    {{ $cambioAceite->automotor->placa ?? 'N/A' }}
+                    {{ $cambioAceite->vehiculo->placa ?? 'N/A' }}
                     @if($cambioAceite->cliente->nombre)
                         — {{ $cambioAceite->cliente->nombre }}
                     @endif
@@ -179,31 +179,11 @@
                 </div>
             @endif
             {{-- Método de pago --}}
-            @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
-            <div class="flex items-center gap-4">
+            <div class="flex items-start gap-4">
                 <span class="text-secondary">Método de pago:</span>
-                <span class="text-primary font-medium">{{ $metodosLabel[$cambioAceite->metodo_pago] ?? ucfirst($cambioAceite->metodo_pago) }}</span>
+                @include('pagos._lineas', ['pagable' => $cambioAceite])
             </div>
-            @if($cambioAceite->metodo_pago === 'mixto')
-                @if($cambioAceite->monto_efectivo)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-secondary text-xs">Efectivo:</span>
-                        <span class="text-primary text-xs">S/ {{ number_format($cambioAceite->monto_efectivo, 2) }}</span>
-                    </div>
-                @endif
-                @if($cambioAceite->monto_yape)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-secondary text-xs">Yape:</span>
-                        <span class="text-primary text-xs">S/ {{ number_format($cambioAceite->monto_yape, 2) }}</span>
-                    </div>
-                @endif
-                @if($cambioAceite->monto_izipay)
-                    <div class="flex items-center gap-4 pl-4">
-                        <span class="text-secondary text-xs">Izipay:</span>
-                        <span class="text-primary text-xs">S/ {{ number_format($cambioAceite->monto_izipay, 2) }}</span>
-                    </div>
-                @endif
-            @endif
+
         </div>
     </div>
 

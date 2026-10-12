@@ -27,7 +27,11 @@ class ReporteVentasService
         }
 
         if (! empty($filtros['metodo_pago'])) {
-            $query->where('metodo_pago', $filtros['metodo_pago']);
+            if ($filtros['metodo_pago'] === 'mixto') {
+                $query->has('pagos', '>', 1);
+            } else {
+                $query->whereHas('pagos.metodoPago', fn (Builder $q) => $q->where('codigo', $filtros['metodo_pago']));
+            }
         }
 
         if (! empty($filtros['correlativo'])) {
@@ -76,17 +80,23 @@ class ReporteVentasService
     }
 
     /**
-     * @return array<int, array{ metodo:string, total:float, operaciones:int }>
+     * @return array<int, array{ metodo:string, nombre:string, total:float, operaciones:int }>
      */
     public function porMetodo(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): array
     {
         return $this->base($desde, $hasta, $filtros)
-            ->selectRaw('ventas.metodo_pago, SUM(ventas.total) as total, COUNT(*) as operaciones')
-            ->groupBy('ventas.metodo_pago')
+            ->selectRaw('metodos_pago.codigo as metodo, metodos_pago.nombre as nombre, SUM(pagos.monto) as total, COUNT(DISTINCT ventas.id) as operaciones')
+            ->join('pagos', function ($join) {
+                $join->on('pagos.pagable_id', '=', 'ventas.id')
+                    ->where('pagos.pagable_type', 'App\\Models\\Venta');
+            })
+            ->join('metodos_pago', 'metodos_pago.id', '=', 'pagos.metodo_pago_id')
+            ->groupBy('metodos_pago.codigo', 'metodos_pago.nombre')
             ->orderByDesc('total')
             ->get()
             ->map(fn ($fila) => [
-                'metodo' => (string) $fila->metodo_pago,
+                'metodo' => (string) $fila->metodo,
+                'nombre' => (string) $fila->nombre,
                 'total' => round((float) $fila->total, 2),
                 'operaciones' => (int) $fila->operaciones,
             ])
@@ -97,7 +107,7 @@ class ReporteVentasService
     public function detalle(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = [], int $perPage = 10): LengthAwarePaginator
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with('user:id,name')
+            ->with(['user:id,name', 'pagos.metodoPago'])
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }
@@ -105,7 +115,7 @@ class ReporteVentasService
     public function detalleColeccion(CarbonImmutable $desde, CarbonImmutable $hasta, array $filtros = []): Collection
     {
         return $this->base($desde, $hasta, $filtros)
-            ->with('user:id,name')
+            ->with(['user:id,name', 'pagos.metodoPago'])
             ->orderByDesc('created_at')
             ->get();
     }

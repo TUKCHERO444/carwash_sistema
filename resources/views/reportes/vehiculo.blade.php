@@ -30,7 +30,7 @@
     @endpush
     @include('reportes.partials.filtros', ['ruta' => 'reportes.vehiculo'])
 
-    @if(! $automotor)
+    @if(! $vehiculo)
         <div class="bg-surface rounded-lg border border-main p-12 text-center">
             <p class="text-sm text-secondary">
                 @if($placa)
@@ -46,19 +46,19 @@
             <div class="flex flex-wrap items-center gap-x-8 gap-y-3">
                 <div>
                     <p class="text-xs font-medium text-secondary uppercase tracking-wider">Placa</p>
-                    <p class="mt-1 text-xl font-bold text-primary">{{ $automotor->placa }}</p>
+                    <p class="mt-1 text-xl font-bold text-primary">{{ $vehiculo->placa }}</p>
                 </div>
                 <div>
                     <p class="text-xs font-medium text-secondary uppercase tracking-wider">Cliente</p>
-                    <p class="mt-1 text-sm text-primary">{{ $automotor->cliente?->nombre_completo ?? '—' }}</p>
+                    <p class="mt-1 text-sm text-primary">{{ $vehiculo->cliente?->nombre_completo ?? '—' }}</p>
                 </div>
                 <div>
                     <p class="text-xs font-medium text-secondary uppercase tracking-wider">Marca / Modelo</p>
-                    <p class="mt-1 text-sm text-primary">{{ trim(($automotor->marca ?? '').' '.($automotor->modelo ?? '')) ?: '—' }}</p>
+                    <p class="mt-1 text-sm text-primary">{{ trim(($vehiculo->marca ?? '').' '.($vehiculo->modelo ?? '')) ?: '—' }}</p>
                 </div>
                 <div>
                     <p class="text-xs font-medium text-secondary uppercase tracking-wider">Color</p>
-                    <p class="mt-1 text-sm text-primary">{{ $automotor->color ?? '—' }}</p>
+                    <p class="mt-1 text-sm text-primary">{{ $vehiculo->color ?? '—' }}</p>
                 </div>
             </div>
         </div>

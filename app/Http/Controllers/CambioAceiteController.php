@@ -9,9 +9,11 @@ use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Services\AuditService;
 use App\Services\CajaService;
-use App\Services\ClienteAutomotorService;
+use App\Services\ClienteVehiculoService;
 use App\Services\KardexService;
+use App\Services\PagoService;
 use App\Services\TiempoAtencionService;
+use App\Services\TotalesService;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -44,8 +46,8 @@ class CambioAceiteController extends Controller
     private const TELEFONO_RULE = 'regex:/^[0-9]{9}$/';
 
     /**
-     * Reglas validación del cliente que persisten en Cliente/Automotor.
-     * Deben coincidir con el patrón estándar de ClienteController/AutomotorController.
+     * Reglas validación del cliente que persisten en Cliente/Vehiculo.
+     * Deben coincidir con el patrón estándar de ClienteController/VehiculoController.
      */
     private function clienteRules(): array
     {
@@ -59,8 +61,10 @@ class CambioAceiteController extends Controller
 
     public function __construct(
         private CajaService $cajaService,
-        private ClienteAutomotorService $clienteAutomotorService,
+        private ClienteVehiculoService $clienteVehiculoService,
         private KardexService $kardexService,
+        private PagoService $pagoService,
+        private TotalesService $totalesService,
     ) {}
 
     /**
@@ -69,7 +73,7 @@ class CambioAceiteController extends Controller
      */
     public function index(): View
     {
-        $cambioAceites = CambioAceite::with(['cliente', 'trabajadores'])
+        $cambioAceites = CambioAceite::with(['cliente', 'trabajadores', 'pagos.metodoPago'])
             ->pendientes()
             ->colaAtencion()
             ->paginate(10);
@@ -120,10 +124,13 @@ class CambioAceiteController extends Controller
             }
         }
 
+        // Coherencia aritmética (patrón Compras): totales de línea recalculados.
+        $lineasDetalle = $this->totalesService->normalizarLineas($request->productos);
+
         try {
-            DB::transaction(function () use ($request) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
+            DB::transaction(function () use ($request, $lineasDetalle) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
                 $foto = null;
                 if ($request->hasFile('foto')) {
@@ -132,13 +139,11 @@ class CambioAceiteController extends Controller
                 }
 
                 // Calcular precio en servidor (no confiar en el cliente)
-                $precio = collect($request->productos)
-                    ->sum(fn ($p) => $p['cantidad'] * $p['precio']);
+                $precio = $this->totalesService->suma($lineasDetalle);
 
                 $cambioAceite = CambioAceite::create([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'trabajador_id' => $request->trabajadores_ids[0],
+                    'vehiculo_id' => $vehiculo->placa,
                     'fecha' => $request->fecha,
                     'precio' => $precio,
                     'total' => $precio,
@@ -151,7 +156,7 @@ class CambioAceiteController extends Controller
 
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
 
-                foreach ($request->productos as $item) {
+                foreach ($lineasDetalle as $item) {
                     CambioProducto::create([
                         'cambio_aceite_id' => $cambioAceite->id,
                         'producto_id' => $item['producto_id'],
@@ -186,7 +191,7 @@ class CambioAceiteController extends Controller
 
     public function show(CambioAceite $cambioAceite): View
     {
-        $cambioAceite->load(['cliente', 'trabajadores', 'user', 'productos']);
+        $cambioAceite->load(['cliente', 'trabajadores', 'user', 'productos', 'pagos.metodoPago']);
 
         return view('cambio-aceite.show', compact('cambioAceite'));
     }
@@ -206,18 +211,16 @@ class CambioAceiteController extends Controller
 
         $trabajadoresAsignados = $cambioAceite->trabajadores->pluck('id')->toArray();
 
-        $cambioAceiteMontos = [
-            'efectivo' => $cambioAceite->monto_efectivo,
-            'yape' => $cambioAceite->monto_yape,
-            'izipay' => $cambioAceite->monto_izipay,
-        ];
+        $cambioAceiteMontos = $this->pagoService->resumen($cambioAceite)['montos'];
+        $resumenPagos = $this->pagoService->resumen($cambioAceite);
+        $metodosPago = $this->pagoService->metodosActivos();
 
-        return view('cambio-aceite.edit', compact('cambioAceite', 'trabajadores', 'productosExistentes', 'cambioAceiteMontos', 'trabajadoresAsignados'));
+        return view('cambio-aceite.edit', compact('cambioAceite', 'trabajadores', 'productosExistentes', 'cambioAceiteMontos', 'trabajadoresAsignados', 'metodosPago', 'resumenPagos'));
     }
 
     public function update(Request $request, CambioAceite $cambioAceite): RedirectResponse
     {
-        $request->validate(array_merge($this->clienteRules(), [
+        $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -225,10 +228,6 @@ class CambioAceiteController extends Controller
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'precio' => ['required', 'numeric', 'min:0'],
             'total' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
-            'monto_yape' => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
             'productos' => ['required', 'array', 'min:1'],
             'productos.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -254,10 +253,19 @@ class CambioAceiteController extends Controller
             }
         }
 
+        $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+
+        // Coherencia aritmética (patrón Compras): líneas recalculadas;
+        // el precio base iguala la suma y el total admite descuento/facturación.
+        $lineasDetalle = $this->totalesService->normalizarLineas($request->productos);
+        $sumaDetalle = $this->totalesService->suma($lineasDetalle);
+        $this->totalesService->validarIgualdad((float) $request->precio, $sumaDetalle, 'precio');
+        $this->totalesService->validarCabecera((float) $request->total, $sumaDetalle);
+
         try {
-            DB::transaction(function () use ($request, $cambioAceite) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
+            DB::transaction(function () use ($request, $cambioAceite, $lineasPago, $lineasDetalle, $sumaDetalle) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
@@ -281,21 +289,18 @@ class CambioAceiteController extends Controller
 
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'trabajador_id' => $request->trabajadores_ids[0],
+                    'vehiculo_id' => $vehiculo->placa,
                     'fecha' => $request->fecha,
-                    'precio' => $request->precio,
+                    'precio' => $sumaDetalle,
                     'total' => $request->total,
                     'descripcion' => $request->descripcion,
                     'foto' => $foto,
-                    'metodo_pago' => $request->metodo_pago,
-                    'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
-                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                 ]);
 
                 // Sincronizar trabajadores
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
+
+                $this->pagoService->guardarLineas($cambioAceite, $lineasPago, auth()->id(), $cambioAceite->caja_id);
 
                 // Cargar productos con pivot para restaurar stock
                 $cambioAceite->load('productos');
@@ -313,12 +318,12 @@ class CambioAceiteController extends Controller
                         $productoAnterior->pivot->cantidad,
                         $stockAntes,
                         'cambio_aceite',
-                        $automotor->placa
+                        $vehiculo->placa
                     );
                 }
 
                 $syncData = [];
-                foreach ($request->productos as $item) {
+                foreach ($lineasDetalle as $item) {
                     $syncData[$item['producto_id']] = [
                         'cantidad' => $item['cantidad'],
                         'precio' => $item['precio'],
@@ -328,7 +333,7 @@ class CambioAceiteController extends Controller
                 $cambioAceite->productos()->sync($syncData);
 
                 // Decrementar stock con los nuevos productos (nueva salida)
-                foreach ($request->productos as $item) {
+                foreach ($lineasDetalle as $item) {
                     $producto = Producto::find($item['producto_id']);
                     $stockAntes = $producto->stock;
 
@@ -340,7 +345,7 @@ class CambioAceiteController extends Controller
                         $item['cantidad'],
                         $stockAntes,
                         'cambio_aceite',
-                        $automotor->placa
+                        $vehiculo->placa
                     );
                 }
             });
@@ -375,7 +380,7 @@ class CambioAceiteController extends Controller
                 }
             }
 
-            $placa = $cambioAceite->automotor_id;
+            $placa = $cambioAceite->vehiculo_id;
 
             DB::transaction(function () use ($cambioAceite, $placa) {
                 // El stock solo se descuenta al confirmar el ticket. Restaurar
@@ -402,6 +407,7 @@ class CambioAceiteController extends Controller
                     }
                 }
 
+                $cambioAceite->pagos()->delete();
                 $cambioAceite->delete();
             });
 
@@ -415,7 +421,7 @@ class CambioAceiteController extends Controller
 
     public function ticket(CambioAceite $cambioAceite): View
     {
-        $cambioAceite->load(['cliente', 'trabajadores', 'user', 'productos']);
+        $cambioAceite->load(['cliente', 'trabajadores', 'user', 'productos', 'pagos.metodoPago']);
 
         return view('cambio-aceite.ticket', compact('cambioAceite'));
     }
@@ -428,7 +434,7 @@ class CambioAceiteController extends Controller
      */
     public function confirmados(): View
     {
-        $cambioAceites = CambioAceite::with(['cliente', 'trabajador'])
+        $cambioAceites = CambioAceite::with(['cliente', 'trabajadores', 'pagos.metodoPago'])
             ->confirmados()
             ->culminadosPorAtencion()
             ->paginate(10);
@@ -462,18 +468,18 @@ class CambioAceiteController extends Controller
 
         $trabajadoresAsignados = $cambioAceite->trabajadores->pluck('id')->toArray();
 
-        $montosData = [
-            'efectivo' => $cambioAceite->monto_efectivo,
-            'yape' => $cambioAceite->monto_yape,
-            'izipay' => $cambioAceite->monto_izipay,
-        ];
+        $montosData = $this->pagoService->resumen($cambioAceite)['montos'];
+        $resumenPagos = $this->pagoService->resumen($cambioAceite);
+        $metodosPago = $this->pagoService->metodosActivos();
 
         return view('cambio-aceite.confirmar', compact(
             'cambioAceite',
             'trabajadores',
             'productosData',
             'montosData',
-            'trabajadoresAsignados'
+            'trabajadoresAsignados',
+            'metodosPago',
+            'resumenPagos'
         ));
     }
 
@@ -490,7 +496,7 @@ class CambioAceiteController extends Controller
             return back()->with('error_caja', true);
         }
 
-        $request->validate(array_merge($this->clienteRules(), [
+        $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
             'fecha' => ['required', 'date'],
@@ -498,10 +504,6 @@ class CambioAceiteController extends Controller
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
             'precio' => ['required', 'numeric', 'min:0'],
             'total' => ['required', 'numeric', 'gt:0'],
-            'metodo_pago' => ['required', 'in:efectivo,yape,izipay,mixto'],
-            'monto_efectivo' => ['nullable', 'numeric', 'min:0'],
-            'monto_yape' => ['nullable', 'numeric', 'min:0'],
-            'monto_izipay' => ['nullable', 'numeric', 'min:0'],
             'productos' => ['required', 'array', 'min:1'],
             'productos.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
             'productos.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -527,10 +529,19 @@ class CambioAceiteController extends Controller
             }
         }
 
+        $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+
+        // Coherencia aritmética (patrón Compras): líneas recalculadas;
+        // el precio base iguala la suma y el total admite descuento/facturación.
+        $lineasDetalle = $this->totalesService->normalizarLineas($request->productos);
+        $sumaDetalle = $this->totalesService->suma($lineasDetalle);
+        $this->totalesService->validarIgualdad((float) $request->precio, $sumaDetalle, 'precio');
+        $this->totalesService->validarCabecera((float) $request->total, $sumaDetalle);
+
         try {
-            DB::transaction(function () use ($request, $caja, $cambioAceite) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id, true);
+            DB::transaction(function () use ($request, $caja, $cambioAceite, $lineasPago, $lineasDetalle, $sumaDetalle) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id, true);
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
@@ -562,17 +573,12 @@ class CambioAceiteController extends Controller
 
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'trabajador_id' => $request->trabajadores_ids[0],
+                    'vehiculo_id' => $vehiculo->placa,
                     'fecha' => $request->fecha,
-                    'precio' => $request->precio,
+                    'precio' => $sumaDetalle,
                     'total' => $request->total,
                     'descripcion' => $request->descripcion,
                     'foto' => $foto,
-                    'metodo_pago' => $request->metodo_pago,
-                    'monto_efectivo' => $request->metodo_pago === 'mixto' ? $request->monto_efectivo : null,
-                    'monto_yape' => $request->metodo_pago === 'mixto' ? $request->monto_yape : null,
-                    'monto_izipay' => $request->metodo_pago === 'mixto' ? $request->monto_izipay : null,
                     'estado' => 'confirmado',
                     'caja_id' => $caja->id,
                     'atencion_inicio_at' => $inicioAtencion,
@@ -583,11 +589,13 @@ class CambioAceiteController extends Controller
                 // Sincronizar trabajadores en pivote
                 $cambioAceite->trabajadores()->sync($request->trabajadores_ids);
 
+                $this->pagoService->guardarLineas($cambioAceite, $lineasPago, auth()->id(), $caja->id);
+
                 // Sincronizar productos con valores finales y decrementar stock nuevo.
                 // Este es el ÚNICO punto donde el cambio de aceite descuenta inventario:
                 // se registra la salida en el Kardex por cada producto con la placa como origen.
                 $syncData = [];
-                foreach ($request->productos as $item) {
+                foreach ($lineasDetalle as $item) {
                     $syncData[$item['producto_id']] = [
                         'cantidad' => $item['cantidad'],
                         'precio' => $item['precio'],
@@ -604,7 +612,7 @@ class CambioAceiteController extends Controller
                         $item['cantidad'],
                         $stockAntes,
                         'cambio_aceite',
-                        $automotor->placa
+                        $vehiculo->placa
                     );
                 }
                 $cambioAceite->productos()->sync($syncData);
@@ -657,9 +665,12 @@ class CambioAceiteController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $cambioAceite) {
-                $cliente = $this->clienteAutomotorService->obtenerCliente($request);
-                $automotor = $this->clienteAutomotorService->obtenerAutomotor($request->placa, $cliente->id);
+            // Coherencia aritmética (patrón Compras): líneas recalculadas.
+            $lineasDetalle = $this->totalesService->normalizarLineas($request->productos);
+
+            DB::transaction(function () use ($request, $cambioAceite, $lineasDetalle) {
+                $cliente = $this->clienteVehiculoService->obtenerCliente($request);
+                $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
                 $foto = $cambioAceite->foto;
                 if ($request->hasFile('foto')) {
@@ -682,15 +693,13 @@ class CambioAceiteController extends Controller
                 }
 
                 // Recalcular precio en servidor
-                $precio = collect($request->productos)
-                    ->sum(fn ($p) => $p['cantidad'] * $p['precio']);
+                $precio = $this->totalesService->suma($lineasDetalle);
 
                 app(AuditService::class)->anotarAccion('actualizar ticket');
 
                 $cambioAceite->update([
                     'cliente_id' => $cliente->id,
-                    'automotor_id' => $automotor->placa,
-                    'trabajador_id' => $request->trabajadores_ids[0],
+                    'vehiculo_id' => $vehiculo->placa,
                     'fecha' => $request->fecha,
                     'precio' => $precio,
                     'total' => $precio,
@@ -704,7 +713,7 @@ class CambioAceiteController extends Controller
 
                 // Sincronizar productos sin tocar stock (el pendiente no descuenta)
                 $syncData = [];
-                foreach ($request->productos as $item) {
+                foreach ($lineasDetalle as $item) {
                     $syncData[$item['producto_id']] = [
                         'cantidad' => $item['cantidad'],
                         'precio' => $item['precio'],

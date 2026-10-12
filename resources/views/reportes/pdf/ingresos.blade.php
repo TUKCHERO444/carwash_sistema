@@ -29,9 +29,11 @@
             <td>
                 <div class="kpi-label">Método de pago</div>
                 <div class="kpi-valor" style="font-size: 9pt; font-weight: normal;">
-                    Efectivo: S/ {{ number_format($metodoPago['efectivo'], 2) }}<br>
-                    Yape: S/ {{ number_format($metodoPago['yape'], 2) }}<br>
-                    Izipay: S/ {{ number_format($metodoPago['izipay'], 2) }}
+                    @forelse($metodoPago as $codigoMetodo => $montoMetodo)
+                        {{ ucfirst($codigoMetodo) }}: S/ {{ number_format($montoMetodo, 2) }}<br>
+                    @empty
+                        —
+                    @endforelse
                 </div>
             </td>
         </tr>

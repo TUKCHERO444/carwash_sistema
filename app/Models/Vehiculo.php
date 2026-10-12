@@ -2,29 +2,47 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Vehiculo extends Model
 {
-    use HasFactory;
+    /**
+     * Vehículo físico del cliente.
+     * Clave primaria: placa (string), sin autoincremento.
+     */
+    protected $table = 'vehiculos';
+
+    protected $primaryKey = 'placa';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
-        'precio',
-    ];
-
-    protected $casts = [
-        'precio' => 'decimal:2',
+        'placa',
+        'cliente_id',
+        'marca',
+        'modelo',
+        'serie',
+        'color',
+        'motor',
+        'vin',
     ];
 
     /**
-     * Relación con Lavado
+     * Relación con Cliente (1:N -> 1 vehículo pertenece a 1 cliente)
      */
-    public function lavados(): HasMany
+    public function cliente(): BelongsTo
     {
-        return $this->hasMany(Lavado::class);
+        return $this->belongsTo(Cliente::class);
+    }
+
+    /**
+     * Normaliza la placa a mayúsculas y sin espacios.
+     */
+    public static function normalizarPlaca(?string $placa): string
+    {
+        return strtoupper(str_replace(' ', '', (string) $placa));
     }
 }

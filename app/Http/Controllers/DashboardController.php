@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MetodoPago;
 use App\Services\DashboardService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -45,15 +46,23 @@ class DashboardController extends Controller
         }
 
         $resumen = $this->dashboardService->resumenGeneral();
+        $operativo = $this->dashboardService->resumenOperativo($desde, $hasta);
         $serie = $this->dashboardService->ingresosPorDia($dias);
         $metodoPago = $this->dashboardService->metodoPago($desde, $hasta);
+        $nombresMetodos = MetodoPago::pluck('nombre', 'codigo')->all();
+        $metodoPagoChart = [
+            'labels' => array_map(fn ($codigo) => $nombresMetodos[$codigo] ?? ucfirst($codigo), array_keys($metodoPago)),
+            'data' => array_values($metodoPago),
+        ];
         $topProductos = $this->dashboardService->topProductos(5);
         $stockBajo = $this->dashboardService->productosStockBajo(5);
 
         return view('dashboard', compact(
             'resumen',
+            'operativo',
             'serie',
             'metodoPago',
+            'metodoPagoChart',
             'topProductos',
             'stockBajo',
             'periodo'

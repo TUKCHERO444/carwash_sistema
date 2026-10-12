@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Reportes;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\Lavado;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use App\Models\User;
+use App\Models\Vehiculo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -42,18 +42,19 @@ class ReportePdfExportTest extends TestCase
             'reportes.caja' => null,
             'reportes.personal' => ['mes' => now()->format('Y-m')],
             'reportes.kardex' => null,
+            'reportes.operativo' => null,
             'reportes.vehiculo' => ['placa' => 'PDF-001'],
             'reportes.comprasProveedor' => null,
         ];
     }
 
-    private function sembrarAutomotorParaPdf(): void
+    private function sembrarVehiculoParaPdf(): void
     {
         $cliente = Cliente::factory()->create();
-        $auto = Automotor::create(['placa' => 'PDF-001', 'cliente_id' => $cliente->id]);
+        $vehiculo = Vehiculo::create(['placa' => 'PDF-001', 'cliente_id' => $cliente->id]);
         Lavado::factory()->confirmado()->create([
             'cliente_id' => $cliente->id,
-            'automotor_id' => $auto->placa,
+            'vehiculo_id' => $vehiculo->placa,
             'fecha' => now()->toDateString(),
             'total' => 40,
         ]);
@@ -62,7 +63,7 @@ class ReportePdfExportTest extends TestCase
     // Feature: exportación PDF de reportes, Property {2}
     public function test_exportar_pdf_por_cada_modulo_de_reporte(): void
     {
-        $this->sembrarAutomotorParaPdf();
+        $this->sembrarVehiculoParaPdf();
 
         foreach ($this->rutasPdf() as $ruta => $parametros) {
             $this->actingAs($this->usuarioConPermiso());

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
 use App\Models\User;
-use App\Services\AutomotorApiService;
+use App\Models\Vehiculo;
+use App\Services\VehiculoApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -38,7 +38,7 @@ class TicketsConsultaPlacaApiTest extends TestCase
 
     public function test_buscar_por_placa_returns_client_and_vehicle_with_dni(): void
     {
-        Automotor::create([
+        Vehiculo::create([
             'placa' => 'ABC123',
             'cliente_id' => $this->cliente->id,
             'marca' => 'Toyota',
@@ -60,7 +60,7 @@ class TicketsConsultaPlacaApiTest extends TestCase
                     'lavados_count' => 0,
                     'cambios_aceite_count' => 0,
                 ],
-                'automotor' => [
+                'vehiculo' => [
                     'placa' => 'ABC123',
                     'marca' => 'Toyota',
                     'modelo' => 'Corolla',
@@ -80,7 +80,7 @@ class TicketsConsultaPlacaApiTest extends TestCase
 
     public function test_consultar_placa_api_returns_local_data_when_automotor_exists(): void
     {
-        Automotor::create([
+        Vehiculo::create([
             'placa' => 'ABC123',
             'cliente_id' => $this->cliente->id,
             'marca' => 'Toyota',
@@ -110,7 +110,7 @@ class TicketsConsultaPlacaApiTest extends TestCase
 
     public function test_consultar_placa_api_returns_api_data_when_placa_not_registered(): void
     {
-        $this->mock(AutomotorApiService::class, function ($mock) {
+        $this->mock(VehiculoApiService::class, function ($mock) {
             $mock->shouldReceive('buscarPorPlaca')
                 ->once()
                 ->with('ABC123')
@@ -135,7 +135,7 @@ class TicketsConsultaPlacaApiTest extends TestCase
 
     public function test_consultar_placa_api_never_blocks_when_api_is_down(): void
     {
-        $this->mock(AutomotorApiService::class, function ($mock) {
+        $this->mock(VehiculoApiService::class, function ($mock) {
             $mock->shouldReceive('buscarPorPlaca')
                 ->once()
                 ->with('ABC123')

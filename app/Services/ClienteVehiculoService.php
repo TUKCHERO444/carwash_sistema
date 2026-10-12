@@ -2,20 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\Automotor;
 use App\Models\Cliente;
+use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 
 /**
  * Lógica compartida del flujo de tickets (lavado / cambio de aceite):
- * creación del cliente "solo con nombre" y gestión/upsert del automotor.
+ * creación del cliente "solo con nombre" y gestión/upsert del vehículo.
  *
  * Centraliza el código que antes duplicaba Cliente::updateOrCreate(['placa' => ...])
  * en LavadoController y CambioAceiteController.
  */
-class ClienteAutomotorService
+class ClienteVehiculoService
 {
-    public function __construct(private AutomotorApiService $automotorApiService) {}
+    public function __construct(private VehiculoApiService $vehiculoApiService) {}
 
     /**
      * Obtiene o crea el cliente a partir de los datos del ticket.
@@ -48,18 +48,18 @@ class ClienteAutomotorService
     }
 
     /**
-     * Obtiene (upsert) el automotor por placa y lo vincula al cliente.
+     * Obtiene (upsert) el vehículo por placa y lo vincula al cliente.
      *
      * @param  bool  $conApi  Si es true, enriquece con datos de la API vehicular (confirmación).
      */
-    public function obtenerAutomotor(string $placa, int $clienteId, bool $conApi = false): Automotor
+    public function obtenerVehiculo(string $placa, int $clienteId, bool $conApi = false): Vehiculo
     {
-        $placa = Automotor::normalizarPlaca($placa);
+        $placa = Vehiculo::normalizarPlaca($placa);
 
         $datos = ['cliente_id' => $clienteId];
 
         if ($conApi) {
-            $apiDatos = $this->automotorApiService->buscarPorPlaca($placa);
+            $apiDatos = $this->vehiculoApiService->buscarPorPlaca($placa);
             foreach (['marca', 'modelo', 'serie', 'color', 'motor', 'vin'] as $campo) {
                 if (! empty($apiDatos[$campo])) {
                     $datos[$campo] = $apiDatos[$campo];
@@ -67,14 +67,14 @@ class ClienteAutomotorService
             }
         }
 
-        $automotor = Automotor::where('placa', $placa)->first();
+        $vehiculo = Vehiculo::where('placa', $placa)->first();
 
-        if ($automotor) {
-            $automotor->update($datos);
+        if ($vehiculo) {
+            $vehiculo->update($datos);
 
-            return $automotor;
+            return $vehiculo;
         }
 
-        return Automotor::create(array_merge(['placa' => $placa], $datos));
+        return Vehiculo::create(array_merge(['placa' => $placa], $datos));
     }
 }

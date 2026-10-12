@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reporte de clientes y automotores: gasto consolidado (lavados confirmados
+ * Reporte de clientes y vehículos: gasto consolidado (lavados confirmados
  * + cambios confirmados), visitas y frecuencia mensual.
  */
 class ReporteClientesService
@@ -50,12 +50,12 @@ class ReporteClientesService
     }
 
     /**
-     * Automotores distintos atendidos por cliente en el rango (lavados
+     * Vehículos distintos atendidos por cliente en el rango (lavados
      * confirmados + cambios confirmados), con desglose por fuente.
      *
      * @return array<int, array{ lavados:int, cambio_aceite:int, atendidos:int }> keyed por cliente_id.
      */
-    private function automotoresPorCliente(CarbonImmutable $desde, CarbonImmutable $hasta): array
+    private function vehiculosPorCliente(CarbonImmutable $desde, CarbonImmutable $hasta): array
     {
         $mapa = [];
 
@@ -63,51 +63,51 @@ class ReporteClientesService
             ->whereDate('fecha', '>=', $desde->toDateString())
             ->whereDate('fecha', '<=', $hasta->toDateString())
             ->whereNotNull('cliente_id')
-            ->whereNotNull('automotor_id')
-            ->selectRaw('cliente_id as id, COUNT(DISTINCT automotor_id) as automotores')
+            ->whereNotNull('vehiculo_id')
+            ->selectRaw('cliente_id as id, COUNT(DISTINCT vehiculo_id) as vehiculos')
             ->groupBy('cliente_id')
             ->get() as $fila) {
-            $mapa[(int) $fila->id]['lavados'] = (int) $fila->automotores;
+            $mapa[(int) $fila->id]['lavados'] = (int) $fila->vehiculos;
         }
 
         foreach (CambioAceite::where('estado', 'confirmado')
             ->whereBetween('created_at', [$desde, $hasta])
             ->whereNotNull('cliente_id')
-            ->whereNotNull('automotor_id')
-            ->selectRaw('cliente_id as id, COUNT(DISTINCT automotor_id) as automotores')
+            ->whereNotNull('vehiculo_id')
+            ->selectRaw('cliente_id as id, COUNT(DISTINCT vehiculo_id) as vehiculos')
             ->groupBy('cliente_id')
             ->get() as $fila) {
-            $mapa[(int) $fila->id]['cambio_aceite'] = (int) $fila->automotores;
+            $mapa[(int) $fila->id]['cambio_aceite'] = (int) $fila->vehiculos;
         }
 
         foreach (DB::table(function ($query) use ($desde, $hasta) {
-            $query->selectRaw('cliente_id as id, automotor_id as placa')
+            $query->selectRaw('cliente_id as id, vehiculo_id as placa')
                 ->from('lavados')
                 ->where('estado', 'confirmado')
                 ->whereDate('fecha', '>=', $desde->toDateString())
                 ->whereDate('fecha', '<=', $hasta->toDateString())
                 ->whereNotNull('cliente_id')
-                ->whereNotNull('automotor_id');
+                ->whereNotNull('vehiculo_id');
             $query->union(
                 DB::table('cambio_aceites')
-                    ->selectRaw('cliente_id as id, automotor_id as placa')
+                    ->selectRaw('cliente_id as id, vehiculo_id as placa')
                     ->where('estado', 'confirmado')
                     ->whereBetween('created_at', [$desde, $hasta])
                     ->whereNotNull('cliente_id')
-                    ->whereNotNull('automotor_id')
+                    ->whereNotNull('vehiculo_id')
             );
         }, 'operaciones')
-            ->selectRaw('id, COUNT(*) as automotores')
+            ->selectRaw('id, COUNT(*) as vehiculos')
             ->groupBy('id')
             ->get() as $fila) {
-            $mapa[(int) $fila->id]['atendidos'] = (int) $fila->automotores;
+            $mapa[(int) $fila->id]['atendidos'] = (int) $fila->vehiculos;
         }
 
         return $mapa;
     }
 
     /**
-     * @return Collection<int, array{ cliente_id:int, nombre:string, gasto:float, visitas:int, automotores:int, lavados:int, cambio_aceite:int, visitas_por_mes:float }>
+     * @return Collection<int, array{ cliente_id:int, nombre:string, gasto:float, visitas:int, vehiculos:int, lavados:int, cambio_aceite:int, visitas_por_mes:float }>
      */
     public function topClientes(CarbonImmutable $desde, CarbonImmutable $hasta, int $limite = 20): Collection
     {
@@ -117,15 +117,15 @@ class ReporteClientesService
             return collect();
         }
 
-        $automotores = $this->automotoresPorCliente($desde, $hasta);
+        $vehiculosData = $this->vehiculosPorCliente($desde, $hasta);
         $clientes = Cliente::whereIn('id', array_keys($porCliente))->get();
 
         $meses = $this->mesesEnRango($desde, $hasta);
 
         return $clientes
-            ->map(function (Cliente $cliente) use ($porCliente, $automotores, $meses) {
+            ->map(function (Cliente $cliente) use ($porCliente, $vehiculosData, $meses) {
                 $datos = $porCliente[$cliente->id];
-                $datosAuto = $automotores[$cliente->id] ?? ['lavados' => 0, 'cambio_aceite' => 0, 'atendidos' => 0];
+                $datosAuto = $vehiculosData[$cliente->id] ?? ['lavados' => 0, 'cambio_aceite' => 0, 'atendidos' => 0];
                 $visitas = $datos['visitas'];
 
                 return [
@@ -133,7 +133,7 @@ class ReporteClientesService
                     'nombre' => $cliente->nombre_completo ?: ('Cliente #'.$cliente->id),
                     'gasto' => round($datos['gasto'], 2),
                     'visitas' => $visitas,
-                    'automotores' => $datosAuto['atendidos'] ?? 0,
+                    'vehiculos' => $datosAuto['atendidos'] ?? 0,
                     'lavados' => $datosAuto['lavados'] ?? 0,
                     'cambio_aceite' => $datosAuto['cambio_aceite'] ?? 0,
                     'visitas_por_mes' => round($visitas / $meses, 2),
@@ -147,25 +147,25 @@ class ReporteClientesService
     /**
      * @return Collection<int, array{ placa:string, marca:string, modelo:string, cliente:string, visitas:int, ingresos:float }>
      */
-    public function topAutomotores(CarbonImmutable $desde, CarbonImmutable $hasta, int $limite = 20): Collection
+    public function topVehiculos(CarbonImmutable $desde, CarbonImmutable $hasta, int $limite = 20): Collection
     {
         $visitados = [];
 
         foreach (Lavado::where('estado', 'confirmado')
             ->whereDate('fecha', '>=', $desde->toDateString())
             ->whereDate('fecha', '<=', $hasta->toDateString())
-            ->whereNotNull('automotor_id')
-            ->selectRaw('automotor_id as placa, SUM(total) as total, COUNT(*) as visitas')
-            ->groupBy('automotor_id')
+            ->whereNotNull('vehiculo_id')
+            ->selectRaw('vehiculo_id as placa, SUM(total) as total, COUNT(*) as visitas')
+            ->groupBy('vehiculo_id')
             ->get() as $fila) {
             $visitados[(string) $fila->placa] = ['ingresos' => (float) $fila->total, 'visitas' => (int) $fila->visitas];
         }
 
         foreach (CambioAceite::where('estado', 'confirmado')
             ->whereBetween('created_at', [$desde, $hasta])
-            ->whereNotNull('automotor_id')
-            ->selectRaw('automotor_id as placa, SUM(total) as total, COUNT(*) as visitas')
-            ->groupBy('automotor_id')
+            ->whereNotNull('vehiculo_id')
+            ->selectRaw('vehiculo_id as placa, SUM(total) as total, COUNT(*) as visitas')
+            ->groupBy('vehiculo_id')
             ->get() as $fila) {
             $actual = $visitados[(string) $fila->placa]['ingresos'] ?? 0.0;
             $visitados[(string) $fila->placa] = [
@@ -178,10 +178,10 @@ class ReporteClientesService
             return collect();
         }
 
-        return DB::table('automotores')
+        return DB::table('vehiculos')
             ->whereIn('placa', array_keys($visitados))
-            ->leftJoin('clientes', 'clientes.id', '=', 'automotores.cliente_id')
-            ->get(['automotores.placa', 'automotores.marca', 'automotores.modelo', 'clientes.nombre', 'clientes.apellido_paterno', 'clientes.apellido_materno'])
+            ->leftJoin('clientes', 'clientes.id', '=', 'vehiculos.cliente_id')
+            ->get(['vehiculos.placa', 'vehiculos.marca', 'vehiculos.modelo', 'clientes.nombre', 'clientes.apellido_paterno', 'clientes.apellido_materno'])
             ->map(function ($fila) use ($visitados) {
                 $datos = $visitados[$fila->placa];
 
@@ -204,14 +204,14 @@ class ReporteClientesService
     }
 
     /**
-     * Detalle paginado de clientes con gasto/visitas/automotores en el rango.
+     * Detalle paginado de clientes con gasto/visitas/vehiculos en el rango.
      */
     public function detalle(CarbonImmutable $desde, CarbonImmutable $hasta, int $perPage = 10): LengthAwarePaginator
     {
         $porCliente = $this->operacionesPorCliente($desde, $hasta);
         $meses = $this->mesesEnRango($desde, $hasta);
 
-        $pagina = Cliente::withCount('automotores')
+        $pagina = Cliente::withCount('vehiculos')
             ->orderBy('created_at')
             ->paginate($perPage);
 
@@ -224,7 +224,7 @@ class ReporteClientesService
                 'nombre' => $cliente->nombre_completo ?: ('Cliente #'.$cliente->id),
                 'gasto' => round($datos['gasto'], 2),
                 'visitas' => $visitas,
-                'automotores' => (int) $cliente->automotores_count,
+                'vehiculos' => (int) $cliente->vehiculos_count,
                 'visitas_por_mes' => round($visitas / $meses, 2),
             ];
         });

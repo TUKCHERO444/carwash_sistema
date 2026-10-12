@@ -9,6 +9,7 @@ use App\Models\Venta;
 use App\Services\CajaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+use Tests\Support\Pagos;
 use Tests\TestCase;
 
 class CajaArqueoTest extends TestCase
@@ -42,14 +43,16 @@ class CajaArqueoTest extends TestCase
 
     private function venta(Caja $caja, float $total, string $metodo = 'efectivo'): Venta
     {
-        return Venta::create([
+        $venta = Venta::create([
             'correlativo' => 'VTA-'.str_pad((Venta::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT),
             'subtotal' => $total,
             'total' => $total,
-            'metodo_pago' => $metodo,
             'user_id' => $this->user->id,
             'caja_id' => $caja->id,
         ]);
+        Pagos::linea($venta, $metodo, $total);
+
+        return $venta;
     }
 
     public function test_cerrar_exige_efectivo_contado(): void

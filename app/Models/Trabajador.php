@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Trabajador extends Model
 {
@@ -59,11 +58,11 @@ class Trabajador extends Model
     ];
 
     /**
-     * Relación con CambioAceite
+     * Relación con CambioAceite a través de cambio_aceite_trabajadores (N:N).
      */
-    public function cambioAceites(): HasMany
+    public function cambioAceites(): BelongsToMany
     {
-        return $this->hasMany(CambioAceite::class);
+        return $this->belongsToMany(CambioAceite::class, 'cambio_aceite_trabajadores')->withTimestamps();
     }
 
     /**

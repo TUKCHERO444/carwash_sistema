@@ -238,7 +238,7 @@
 
             <div class="data-row">
                 <span class="label">Placa:</span>
-                <span class="value">{{ $cambioAceite->automotor->placa ?? 'N/A' }}</span>
+                <span class="value">{{ $cambioAceite->vehiculo->placa ?? 'N/A' }}</span>
             </div>
 
             @if($cambioAceite->cliente->nombre)
@@ -378,31 +378,11 @@
                 @endif
 
                 {{-- Método de pago --}}
-                @php $metodosLabel = ['efectivo' => 'Efectivo', 'yape' => 'Yape', 'izipay' => 'Izipay', 'mixto' => 'Mixto']; @endphp
                 <div class="total-row">
                     <span>Pago:</span>
-                    <span>{{ $metodosLabel[$cambioAceite->metodo_pago] ?? ucfirst($cambioAceite->metodo_pago) }}</span>
+                    @include('pagos._lineas', ['pagable' => $cambioAceite])
                 </div>
-                @if($cambioAceite->metodo_pago === 'mixto')
-                    @if($cambioAceite->monto_efectivo)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Efectivo:</span>
-                            <span>S/ {{ number_format($cambioAceite->monto_efectivo, 2) }}</span>
-                        </div>
-                    @endif
-                    @if($cambioAceite->monto_yape)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Yape:</span>
-                            <span>S/ {{ number_format($cambioAceite->monto_yape, 2) }}</span>
-                        </div>
-                    @endif
-                    @if($cambioAceite->monto_izipay)
-                        <div class="total-row" style="font-size:11px; color:#555; padding-left:8px;">
-                            <span>Izipay:</span>
-                            <span>S/ {{ number_format($cambioAceite->monto_izipay, 2) }}</span>
-                        </div>
-                    @endif
-                @endif
+
             </div>
         </div>
 

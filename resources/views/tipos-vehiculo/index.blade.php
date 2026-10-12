@@ -17,21 +17,21 @@
 
     {{-- Header --}}
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark">Automotores</h1>
-        <a href="{{ route('automotores.create') }}"
-           aria-label="Crear automotor"
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark">Tipos de vehículo</h1>
+        <a href="{{ route('tipos-vehiculo.create') }}"
+           aria-label="Crear tipo de vehículo"
            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Crear automotor
+            Crear tipo de vehículo
         </a>
     </div>
 
     {{-- Table or empty state --}}
-    @if($automotores->isEmpty())
+    @if($tiposVehiculo->isEmpty())
         <div class="text-center py-12 text-gray-500 text-sm">
-            No hay automotores registrados.
+            No hay tipos de vehículo registrados.
         </div>
     @else
         <div class="bg-surface rounded-lg border border-main overflow-x-auto transition-colors duration-300">
@@ -39,19 +39,13 @@
                 <thead class="bg-gray-50 dark:bg-slate-800/50">
                     <tr>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Placa
+                            Nombre
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Cliente
+                            Descripción
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Marca
-                        </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Modelo
-                        </th>
-                        <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
-                            Color
+                            Precio
                         </th>
                         <th scope="col" class="px-6 py-6 text-left text-xs font-medium text-gray-500 dark:text-text-secondary-dark uppercase tracking-wider">
                             Acciones
@@ -59,26 +53,20 @@
                     </tr>
                 </thead>
                 <tbody class="bg-surface divide-y divide-main">
-                    @foreach($automotores as $automotor)
+                    @foreach($tiposVehiculo as $tipoVehiculo)
                         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-primary font-medium uppercase">
-                                {{ $automotor->placa }}
+                             <td class="px-6 py-8 whitespace-nowrap text-sm text-primary">
+                                {{ $tipoVehiculo->nombre }}
                             </td>
                             <td class="px-6 py-8 text-sm text-secondary">
-                                {{ $automotor->cliente?->nombre_completo ?? '—' }}
+                                {{ $tipoVehiculo->descripcion ?? '—' }}
                             </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $automotor->marca ?? '—' }}
-                            </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $automotor->modelo ?? '—' }}
-                            </td>
-                            <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
-                                {{ $automotor->color ?? '—' }}
+                             <td class="px-6 py-8 whitespace-nowrap text-sm text-secondary">
+                                S/ {{ number_format($tipoVehiculo->precio, 2) }}
                             </td>
                             <td class="px-6 py-8 whitespace-nowrap text-sm flex items-center gap-2">
-                                <a href="{{ route('automotores.edit', $automotor) }}"
-                                   aria-label="Editar automotor {{ $automotor->placa }}"
+                                <a href="{{ route('tipos-vehiculo.edit', $tipoVehiculo) }}"
+                                   aria-label="Editar tipo de vehículo {{ $tipoVehiculo->nombre }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-text-primary-dark text-xs font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -87,12 +75,12 @@
                                     Editar
                                 </a>
 
-                                <form method="POST" action="{{ route('automotores.destroy', $automotor) }}" class="inline">
+                                <form method="POST" action="{{ route('tipos-vehiculo.destroy', $tipoVehiculo) }}" class="inline">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            aria-label="Eliminar automotor {{ $automotor->placa }}"
-                                            data-confirm="¿Estás seguro de eliminar este automotor?"
+                                            aria-label="Eliminar tipo de vehículo {{ $tipoVehiculo->nombre }}"
+                                            data-confirm="¿Estás seguro de que deseas eliminar este tipo de vehículo?"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -110,7 +98,7 @@
 
         {{-- Pagination --}}
         <div class="mt-4">
-            {{ $automotores->links() }}
+            {{ $tiposVehiculo->links() }}
         </div>
     @endif
 

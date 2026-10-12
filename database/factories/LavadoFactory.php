@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Models\Cliente;
 use App\Models\Lavado;
+use App\Models\TipoVehiculo;
 use App\Models\User;
-use App\Models\Vehiculo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class LavadoFactory extends Factory
@@ -16,7 +16,7 @@ class LavadoFactory extends Factory
     {
         return [
             'cliente_id' => Cliente::factory(),
-            'vehiculo_id' => Vehiculo::factory(),
+            'tipo_vehiculo_id' => TipoVehiculo::factory(),
             'user_id' => User::factory(),
             'fecha' => fake()->date(),
             'precio' => 0,
@@ -40,7 +40,6 @@ class LavadoFactory extends Factory
             'estado' => 'confirmado',
             'precio' => fake()->randomFloat(2, 10, 500),
             'total' => fake()->randomFloat(2, 10, 500),
-            'metodo_pago' => fake()->randomElement(['efectivo', 'yape', 'izipay']),
             'atencion_inicio_at' => now()->subMinutes(45),
             'atencion_fin_at' => now(),
             'tiempo_atencion_minutos' => 45,
