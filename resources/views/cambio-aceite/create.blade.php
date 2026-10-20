@@ -39,6 +39,9 @@
                 </div>
             @enderror
 
+            {{-- Errores de validación sin campo propio (p. ej. productos.1.cantidad) --}}
+            @include('partials.errores-validacion', ['excluir' => ['productos', 'placa', 'nombre', 'dni', 'telefono', 'fecha', 'descripcion', 'foto', 'trabajadores_ids']])
+
             {{-- ── Placa ── --}}
             <div class="mb-5">
                 <label for="placa" class="block text-sm font-medium text-gray-700 mb-1">

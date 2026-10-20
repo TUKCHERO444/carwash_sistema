@@ -108,6 +108,13 @@ class LavadoController extends Controller
 
     public function procesarConfirmacion(Request $request, Lavado $lavado): RedirectResponse
     {
+        // Guarda anti doble-confirmación: reenviar el formulario (doble clic,
+        // refresh POST) no debe repetir el registro del pago ni la auditoría.
+        if ($lavado->estado === 'confirmado') {
+            return redirect()->route('lavados.confirmados')
+                ->with('info', 'Este lavado ya fue confirmado.');
+        }
+
         $caja = $this->cajaService->getCajaActiva();
         if (! $caja) {
             return back()->with('error_caja', true);
@@ -190,6 +197,8 @@ class LavadoController extends Controller
             return redirect()->route('lavados.index')
                 ->with('success', 'Lavado confirmado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo confirmar el lavado. Intente nuevamente.');
         }
@@ -270,6 +279,8 @@ class LavadoController extends Controller
             return redirect()->route('lavados.index')
                 ->with('success', 'Lavado registrado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo registrar el lavado. Intente nuevamente.');
         }
@@ -320,9 +331,11 @@ class LavadoController extends Controller
             'foto.max' => 'La imagen no puede superar 5 MB.',
         ]);
 
-        try {
-            $lineasPago = $this->pagoService->validar($request, (float) $request->total);
+        // Fuera del try: sus mensajes específicos (p. ej. suma de pagos mixtos)
+        // deben llegar como errores de validación visibles, no al catch genérico.
+        $lineasPago = $this->pagoService->validar($request, (float) $request->total);
 
+        try {
             DB::transaction(function () use ($request, $lavado, $lineasPago) {
                 $cliente = $this->clienteVehiculoService->obtenerCliente($request);
                 $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
@@ -372,6 +385,8 @@ class LavadoController extends Controller
             return redirect()->route('lavados.show', $lavado)
                 ->with('success', 'Lavado actualizado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo actualizar el lavado. Intente nuevamente.');
         }
@@ -399,6 +414,8 @@ class LavadoController extends Controller
             return redirect()->route('lavados.index')
                 ->with('success', 'Lavado eliminado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return redirect()->route('lavados.index')
                 ->with('error', 'No se pudo eliminar el lavado. Intente nuevamente.');
         }

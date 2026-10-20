@@ -170,6 +170,8 @@ class CambioAceiteController extends Controller
             return redirect()->route('cambio-aceite.index')
                 ->with('success', 'Ticket de cambio de aceite registrado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo registrar el cambio de aceite. Intente nuevamente.');
         }
@@ -243,9 +245,14 @@ class CambioAceiteController extends Controller
         $cambioAceite->load('productos');
         $oldStockMap = $cambioAceite->productos->pluck('pivot.cantidad', 'id')->toArray();
 
+        // Regla de stock: un ticket pendiente nunca ha descontado inventario,
+        // por lo que la disponibilidad es el stock real. Solo un ticket ya
+        // confirmado "reserva" su cantidad anterior descontada.
+        $esConfirmado = $cambioAceite->estado === 'confirmado';
+
         foreach ($request->productos as $item) {
             $producto = Producto::findOrFail($item['producto_id']);
-            $availableStock = $producto->stock + ($oldStockMap[$item['producto_id']] ?? 0);
+            $availableStock = $producto->stock + ($esConfirmado ? ($oldStockMap[$item['producto_id']] ?? 0) : 0);
             if ($item['cantidad'] > $availableStock) {
                 return back()->withErrors([
                     "productos.{$item['producto_id']}.cantidad" => "La cantidad de \"{$producto->nombre}\" ({$item['cantidad']}) excede el stock disponible ({$availableStock}).",
@@ -263,7 +270,7 @@ class CambioAceiteController extends Controller
         $this->totalesService->validarCabecera((float) $request->total, $sumaDetalle);
 
         try {
-            DB::transaction(function () use ($request, $cambioAceite, $lineasPago, $lineasDetalle, $sumaDetalle) {
+            DB::transaction(function () use ($request, $cambioAceite, $lineasPago, $lineasDetalle, $sumaDetalle, $esConfirmado) {
                 $cliente = $this->clienteVehiculoService->obtenerCliente($request);
                 $vehiculo = $this->clienteVehiculoService->obtenerVehiculo($request->placa, $cliente->id);
 
@@ -305,21 +312,27 @@ class CambioAceiteController extends Controller
                 // Cargar productos con pivot para restaurar stock
                 $cambioAceite->load('productos');
 
-                // Restaurar stock de los productos anteriores (movimiento de entrada compensatorio)
-                foreach ($cambioAceite->productos as $productoAnterior) {
-                    $producto = Producto::find($productoAnterior->id);
-                    $stockAntes = $producto->stock;
+                // Regla de stock: solo un ticket confirmado tiene inventario
+                // descontado. Un pendiente nunca descontó, así que restaurar/
+                // decrementar aquí duplicaría el movimiento y dejaría el stock
+                // negativo (bug de la edición de tickets).
+                if ($esConfirmado) {
+                    // Restaurar stock de los productos anteriores (movimiento de entrada compensatorio)
+                    foreach ($cambioAceite->productos as $productoAnterior) {
+                        $producto = Producto::find($productoAnterior->id);
+                        $stockAntes = $producto->stock;
 
-                    Producto::where('id', $productoAnterior->id)
-                        ->increment('stock', $productoAnterior->pivot->cantidad);
+                        Producto::where('id', $productoAnterior->id)
+                            ->increment('stock', $productoAnterior->pivot->cantidad);
 
-                    $this->kardexService->registrarEntrada(
-                        $producto,
-                        $productoAnterior->pivot->cantidad,
-                        $stockAntes,
-                        'cambio_aceite',
-                        $vehiculo->placa
-                    );
+                        $this->kardexService->registrarEntrada(
+                            $producto,
+                            $productoAnterior->pivot->cantidad,
+                            $stockAntes,
+                            'cambio_aceite',
+                            $vehiculo->placa
+                        );
+                    }
                 }
 
                 $syncData = [];
@@ -332,27 +345,31 @@ class CambioAceiteController extends Controller
                 }
                 $cambioAceite->productos()->sync($syncData);
 
-                // Decrementar stock con los nuevos productos (nueva salida)
-                foreach ($lineasDetalle as $item) {
-                    $producto = Producto::find($item['producto_id']);
-                    $stockAntes = $producto->stock;
+                if ($esConfirmado) {
+                    // Decrementar stock con los nuevos productos (nueva salida)
+                    foreach ($lineasDetalle as $item) {
+                        $producto = Producto::find($item['producto_id']);
+                        $stockAntes = $producto->stock;
 
-                    Producto::where('id', $item['producto_id'])
-                        ->decrement('stock', $item['cantidad']);
+                        Producto::where('id', $item['producto_id'])
+                            ->decrement('stock', $item['cantidad']);
 
-                    $this->kardexService->registrarSalida(
-                        $producto,
-                        $item['cantidad'],
-                        $stockAntes,
-                        'cambio_aceite',
-                        $vehiculo->placa
-                    );
+                        $this->kardexService->registrarSalida(
+                            $producto,
+                            $item['cantidad'],
+                            $stockAntes,
+                            'cambio_aceite',
+                            $vehiculo->placa
+                        );
+                    }
                 }
             });
 
             return redirect()->route('cambio-aceite.show', $cambioAceite)
                 ->with('success', 'Cambio de aceite actualizado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo actualizar el cambio de aceite. Intente nuevamente.');
         }
@@ -414,6 +431,8 @@ class CambioAceiteController extends Controller
             return redirect()->route('cambio-aceite.index')
                 ->with('success', 'Ticket eliminado y stock restaurado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return redirect()->route('cambio-aceite.confirmar', $cambioAceite)
                 ->with('error', 'No se pudo eliminar el ticket. Intente nuevamente.');
         }
@@ -487,10 +506,18 @@ class CambioAceiteController extends Controller
      * Procesa la confirmación del pago.
      * Valida caja activa + campos de pago.
      * Actualiza estado a 'confirmado', sincroniza cambio_productos.
+     * Es el único punto donde se descuenta stock (con disponibilidad = stock real).
      * Redirige a cambio-aceite.index con mensaje de éxito.
      */
     public function procesarConfirmacion(Request $request, CambioAceite $cambioAceite): RedirectResponse
     {
+        // Guarda anti doble-confirmación: reenviar el formulario (doble clic,
+        // refresh POST) no debe repetir el descuento de stock ni el pago.
+        if ($cambioAceite->estado === 'confirmado') {
+            return redirect()->route('cambio-aceite.confirmados')
+                ->with('info', 'Este cambio de aceite ya fue confirmado.');
+        }
+
         $caja = $this->cajaService->getCajaActiva();
         if (! $caja) {
             return back()->with('error_caja', true);
@@ -517,11 +544,13 @@ class CambioAceiteController extends Controller
         ]);
 
         $cambioAceite->load('productos');
-        $oldStockMap = $cambioAceite->productos->pluck('pivot.cantidad', 'id')->toArray();
 
+        // Regla de stock: el pendiente nunca descontó inventario, así que la
+        // disponibilidad al confirmar es el stock real (no stock + cantidad
+        // anterior, fórmula residua del diseño viejo que permitía negativos).
         foreach ($request->productos as $item) {
             $producto = Producto::findOrFail($item['producto_id']);
-            $availableStock = $producto->stock + ($oldStockMap[$item['producto_id']] ?? 0);
+            $availableStock = $producto->stock;
             if ($item['cantidad'] > $availableStock) {
                 return back()->withErrors([
                     "productos.{$item['producto_id']}.cantidad" => "La cantidad de \"{$producto->nombre}\" ({$item['cantidad']}) excede el stock disponible ({$availableStock}).",
@@ -621,6 +650,8 @@ class CambioAceiteController extends Controller
             return redirect()->route('cambio-aceite.index')
                 ->with('success', 'Cambio de aceite confirmado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo confirmar el cambio de aceite. Intente nuevamente.');
         }
@@ -628,11 +659,17 @@ class CambioAceiteController extends Controller
 
     /**
      * Actualiza datos del ticket sin confirmar (estado permanece 'pendiente').
-     * Restaura stock anterior, decrementa con nuevas cantidades.
+     * NO toca el stock: un pendiente nunca ha descontado inventario.
      * Redirige a cambio-aceite.confirmar del mismo ticket.
      */
     public function actualizarTicket(Request $request, CambioAceite $cambioAceite): RedirectResponse
     {
+        // Guarda: el panel de confirmación solo edita tickets pendientes.
+        if ($cambioAceite->estado === 'confirmado') {
+            return redirect()->route('cambio-aceite.confirmados')
+                ->with('info', 'Este cambio de aceite ya fue confirmado.');
+        }
+
         $request->validate(array_merge($this->clienteRules(), [
             'trabajadores_ids' => ['required', 'array', 'min:1'],
             'trabajadores_ids.*' => ['integer', 'exists:trabajadores,id'],
@@ -652,11 +689,12 @@ class CambioAceiteController extends Controller
         ]);
 
         $cambioAceite->load('productos');
-        $oldStockMap = $cambioAceite->productos->pluck('pivot.cantidad', 'id')->toArray();
 
+        // Regla de stock: el pendiente no tiene inventario descontado, así que
+        // la disponibilidad es el stock real (no stock + cantidad anterior).
         foreach ($request->productos as $item) {
             $producto = Producto::findOrFail($item['producto_id']);
-            $availableStock = $producto->stock + ($oldStockMap[$item['producto_id']] ?? 0);
+            $availableStock = $producto->stock;
             if ($item['cantidad'] > $availableStock) {
                 return back()->withErrors([
                     "productos.{$item['producto_id']}.cantidad" => "La cantidad de \"{$producto->nombre}\" ({$item['cantidad']}) excede el stock disponible ({$availableStock}).",
@@ -726,6 +764,8 @@ class CambioAceiteController extends Controller
             return redirect()->route('cambio-aceite.confirmar', $cambioAceite)
                 ->with('success', 'Ticket actualizado correctamente.');
         } catch (\Throwable $e) {
+            report($e);
+
             return back()->withInput()
                 ->with('error', 'No se pudo actualizar el ticket. Intente nuevamente.');
         }

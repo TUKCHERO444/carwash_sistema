@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Cliente;
+use App\Models\Producto;
 use App\Models\Trabajador;
 use App\Models\Vehiculo;
 use App\Services\DataNormalizer;
@@ -29,6 +30,7 @@ class DataCleanCommand extends Command
         $this->cleanClientes($normalizer);
         $this->cleanTrabajadores($normalizer);
         $this->cleanVehiculos($normalizer);
+        $this->cleanProductos($normalizer);
 
         $this->info('Limpieza de datos completada.');
 
@@ -135,5 +137,29 @@ class DataCleanCommand extends Command
         });
 
         $this->info("Vehículos normalizados: {$contador}");
+    }
+
+    /**
+     * Recorta a 0 los stock/inventario negativos (residuos de movimientos
+     * legados, p. ej. la edición de tickets de cambio de aceite que
+     * descontaba inventario dos veces). Idempotente y no destructivo.
+     */
+    private function cleanProductos(DataNormalizer $normalizer): void
+    {
+        $contador = 0;
+
+        Producto::all()->each(function (Producto $producto) use ($normalizer, &$contador) {
+            $stock = $normalizer->normalizarStock($producto->stock);
+            $inventario = $normalizer->normalizarStock($producto->inventario);
+
+            if ($stock !== $producto->stock || $inventario !== $producto->inventario) {
+                $producto->stock = $stock;
+                $producto->inventario = $inventario;
+                $producto->save();
+                $contador++;
+            }
+        });
+
+        $this->info("Productos con stock corregido: {$contador}");
     }
 }

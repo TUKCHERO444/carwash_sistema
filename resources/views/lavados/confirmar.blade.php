@@ -56,6 +56,9 @@
                 </div>
             @enderror
 
+            {{-- Errores de validación sin campo propio (p. ej. precio o servicios.1.servicio_id) --}}
+            @include('partials.errores-validacion', ['excluir' => ['servicios', 'tipo_vehiculo_id', 'placa', 'nombre', 'dni', 'telefono', 'fecha', 'foto', 'trabajadores_ids', 'total', 'metodo_pago', 'pagos']])
+
             {{-- ── Vehículo ── --}}
             <div class="mb-5">
                 <label for="tipo_vehiculo_id" class="label-main mb-1">
@@ -231,6 +234,7 @@
                 </div>
 
                                 @include('pagos._form', ['metodosPago' => $metodosPago, 'metodoActual' => old('metodo_pago', $resumenPagos['mixto'] ? 'mixto' : ($resumenPagos['codigo'] ?? 'efectivo')), 'montos' => $resumenPagos['montos']])
+            </div>
 
             {{-- ── Acciones ── --}}
             <div class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-main">

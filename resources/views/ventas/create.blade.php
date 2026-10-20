@@ -176,6 +176,7 @@
                 </div>
 
                 @include('pagos._form', ['metodosPago' => $metodosPago, 'metodoActual' => old('metodo_pago', 'efectivo'), 'montos' => []])
+            </div>
 
             {{-- ── Observation field ── --}}
             <div class="mb-6">

@@ -114,4 +114,14 @@ class DataNormalizer
 
         return (preg_match(self::PLACA_PATTERN, $placa)) ? $placa : null;
     }
+
+    /**
+     * Stock e inventario nunca pueden ser negativos: un valor bajo cero es
+     * residuo de movimientos legados (p. ej. la edición de tickets de cambio
+     * de aceite que descontaba dos veces) y se recorta a 0.
+     */
+    public function normalizarStock(?int $stock): int
+    {
+        return max(0, (int) $stock);
+    }
 }

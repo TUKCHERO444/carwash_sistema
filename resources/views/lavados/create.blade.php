@@ -39,6 +39,9 @@
                 </div>
             @enderror
 
+            {{-- Errores de validación sin campo propio (p. ej. servicios.1.servicio_id) --}}
+            @include('partials.errores-validacion', ['excluir' => ['servicios', 'tipo_vehiculo_id', 'placa', 'nombre', 'dni', 'telefono', 'fecha', 'foto', 'trabajadores_ids']])
+
             {{-- ── Vehículo ── --}}
             <div class="mb-5">
                 <label for="tipo_vehiculo_id" class="label-main mb-1">
