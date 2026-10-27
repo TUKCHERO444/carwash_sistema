@@ -32,6 +32,12 @@
         <form id="form-ajuste" action="{{ route('ajustes.store') }}" method="POST" novalidate>
             @csrf
 
+            @foreach(old('lineas', []) as $i => $linea)
+                <input type="hidden" class="ajuste-hidden" name="lineas[{{ $i }}][producto_id]" value="{{ $linea['producto_id'] ?? '' }}">
+                <input type="hidden" class="ajuste-hidden" name="lineas[{{ $i }}][cantidad]" value="{{ $linea['cantidad'] ?? '' }}">
+                <input type="hidden" class="ajuste-hidden" name="lineas[{{ $i }}][conteo_fisico]" value="{{ $linea['conteo_fisico'] ?? '' }}">
+            @endforeach
+
             {{-- Tipo de ajuste --}}
             <div class="mb-5">
                 <label for="tipo" class="label-main mb-1">
@@ -69,7 +75,7 @@
                     maxlength="500"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('motivo') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="Explique el motivo del ajuste (obligatorio para merma, daño, consumo interno y conteo físico)"></textarea>
+                    placeholder="Explique el motivo del ajuste (obligatorio para merma, daño, consumo interno y conteo físico)">{{ old('motivo') }}</textarea>
                 @error('motivo')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror

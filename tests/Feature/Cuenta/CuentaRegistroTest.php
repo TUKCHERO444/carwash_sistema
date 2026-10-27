@@ -57,6 +57,11 @@ class CuentaRegistroTest extends TestCase
         $this->assertNull($user->email_verified_at);
         $this->assertTrue($user->hasRole('Cliente'));
         $this->assertFalse($user->hasPermissionTo('acceso-ventas'));
+        $this->assertDatabaseHas('registros_auditoria', [
+            'auditable_id' => $user->id,
+            'accion' => 'asignar rol',
+            'modulo' => 'cuenta',
+        ]);
 
         $this->assertDatabaseHas('clientes', ['dni' => '12345678', 'telefono' => '987654321']);
         $this->assertDatabaseHas('customer_user_links', [

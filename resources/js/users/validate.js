@@ -5,6 +5,7 @@
  */
 
 import { Validation } from '../utils/validation.js';
+import { initPasswordPolicy } from './password-policy.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('form-usuario');
@@ -15,4 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    initPasswordPolicy();
 });

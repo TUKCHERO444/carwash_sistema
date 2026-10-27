@@ -13,6 +13,7 @@ carwash_sistema/
 ├── 📄 package.json / package-lock.json
 ├── 📄 phpunit.xml                 # Tests PHPUnit (SQLite en memoria)
 ├── 📄 Dockerfile
+├── 📄 .dockerignore               # Excluye .env, .git, dependencias y datos
 ├── 📄 docker/000-default.conf     # Apache (vhost)
 ├── 📄 start.sh
 ├── 📄 AGENTS.md
@@ -69,7 +70,8 @@ carwash_sistema/
 │   │   │
 │   │   └── 📁 Middleware/
 │   │       ├── 📄 CheckUserActivo.php
-│   │       └── 📄 EnsureCliente.php
+│   │       ├── 📄 EnsureCliente.php
+│   │       └── 📄 SecurityHeaders.php        # CSP, HSTS y cabeceras defensivas
 │   │
 │   ├── 📁 Mail/                                # Correos de la zona cuenta
 │   │   ├── 📄 CuentaGoogleMail.php
@@ -141,8 +143,13 @@ carwash_sistema/
 │   │       ├── 📄 ReporteVehiculoService.php
 │   │       └── 📄 ReporteVentasService.php
 │   │
+│   ├── 📁 Rules/
+│   │   └── 📄 PasswordSegura.php              # Política de contraseñas del panel
+│   │
 │   └── 📁 Support/
-│       └── 📄 helpers.php                     # Funciones globales
+│       ├── 📄 helpers.php                     # Funciones globales
+│       ├── 📄 ProductionSecurityGuard.php     # Falla arranque inseguro en producción
+│       └── 📄 RoleNames.php                   # Nombres de roles del sistema
 │
 ├── 📁 bootstrap/
 │   ├── 📄 app.php                 # App, rutas y middleware (Laravel 12)
@@ -154,6 +161,7 @@ carwash_sistema/
 │   ├── 📄 auth.php / database.php / session.php
 │   ├── 📄 cache.php / queue.php / logging.php / mail.php
 │   ├── 📄 filesystems.php / services.php / permission.php
+│   ├── 📄 seed.php                            # ADMIN_NAME/EMAIL/PASSWORD
 │   └── 📄 carwash.php                         # Parámetros del negocio
 │
 ├── 📁 database/
@@ -173,6 +181,7 @@ carwash_sistema/
 │   │   ├── 📄 2026_*_create_ajustes_inventario / carritos / carrito_items
 │   │   ├── 📄 2026_*_create_customer_user_links / one_time_tokens / social_identities
 │   │   ├── 📄 2026_*_create_devoluciones_venta
+│   │   ├── 📄 2026_10_25_*_add_client_context_to_registros_auditoria
 │   │   └── 📄 (… alteraciones: add_*, rename_ingresos_to_lavados, …)
 │   │
 │   ├── 📁 factories/                          # 14 factories
@@ -185,7 +194,7 @@ carwash_sistema/
 │   │
 │   └── 📁 seeders/                           # 22 seeders
 │       ├── 📄 DatabaseSeeder.php             # Orquestador
-│       ├── 📄 AuthSeeder.php                 # admin@sistema.com / password
+│       ├── 📄 AuthSeeder.php                 # admin demo solo local/testing
 │       ├── 📄 PermissionSeeder.php           # Permisos RBAC en español
 │       ├── 📄 CategoriaSeeder.php / MarcaSeeder.php / ProductoSeeder.php
 │       ├── 📄 ServicioSeeder.php / DetalleServicioSeeder.php
@@ -342,6 +351,7 @@ carwash_sistema/
 │   │   ├── 📁 Lavado/          └── 📄 StoreTest
 │   │   ├── 📁 OrdenAtencion/   └── 📄 OrdenAtencionTest, TiempoAtencionPropertyTest
 │   │   ├── 📁 Reportes/        └── 📄 19 tests (uno por reporte + property)
+│   │   ├── 📁 Seguridad/       └── 📄 XSS, password, sesión, credenciales, rutas
 │   │   └── 📁 UserActivationToggle/ └── 📄 3 tests
 │   │
 │   ├── 📁 Unit/                             # Servicios aislados
@@ -428,6 +438,6 @@ SITIO PÚBLICO ───── PaginaInicioController, ContenidoWebController
 
 - **Frontend:** cada módulo de `resources/js/<modulo>/` debe estar en el `input` de `vite.config.js` **y** cargado con `@vite([...])` en la vista Blade; no hay `<script>` inline salvo datos (`@json`).
 - **Rutas:** las estáticas/AJAX van **antes** que los `Route::resource` en `routes/web.php`.
-- **Auditoría:** modelo nuevo auditable → registrar en `$modelos` de `AuditServiceProvider`.
+- **Auditoría:** modelo nuevo auditable → registrar en `$modelos` de `AuditServiceProvider`; `AuditService` añade IP/user-agent.
 - **Caja:** todo guardado de venta/cambio-aceite pasa por `CajaService` para asignar `caja_id`.
 - **Zona horaria:** única fuente `config/app.php` → `America/Lima`.

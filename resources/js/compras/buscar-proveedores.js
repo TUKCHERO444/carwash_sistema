@@ -2,6 +2,8 @@
 // Module: compras/buscar-proveedores.js
 // Autocomplete de proveedores para el formulario de compra.
 
+import { escapeHtml } from '../utils/escape-html.js';
+
 /**
  * Inicializa la búsqueda dinámica de proveedores.
  * @param {Object} config
@@ -54,24 +56,30 @@ export function initBusquedaProveedores({ inputId, resultadosId, hiddenInputId }
             return;
         }
 
-        resultadosDiv.innerHTML = proveedores.map(p => `
+        resultadosDiv.innerHTML = proveedores.map((p, idx) => `
             <div class="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                 onclick="window.seleccionarProveedor(${p.id}, '${p.razon_social.replace(/'/g, "\\'")}', '${p.ruc}')">
-                <div class="text-sm text-primary font-medium">${p.razon_social}</div>
-                <div class="text-xs text-secondary">RUC: ${p.ruc}</div>
+                 data-proveedor-idx="${idx}">
+                <div class="text-sm text-primary font-medium">${escapeHtml(p.razon_social)}</div>
+                <div class="text-xs text-secondary">RUC: ${escapeHtml(p.ruc)}</div>
             </div>
         `).join('');
+        resultadosDiv._proveedoresCache = proveedores;
+
+        resultadosDiv.querySelectorAll('[data-proveedor-idx]').forEach(el => {
+            el.addEventListener('click', function () {
+                const idx = parseInt(this.dataset.proveedorIdx, 10);
+                const proveedor = resultadosDiv._proveedoresCache[idx];
+                if (!proveedor) return;
+                hiddenInput.value = proveedor.id;
+                inputBuscar.value = `${proveedor.razon_social} (${proveedor.ruc})`;
+                ocultarResultados();
+            });
+        });
+
         resultadosDiv.classList.remove('hidden');
     }
 
     function ocultarResultados() {
         resultadosDiv.classList.add('hidden');
     }
-
-    // Función global para seleccionar un proveedor
-    window.seleccionarProveedor = function (id, razonSocial, ruc) {
-        hiddenInput.value = id;
-        inputBuscar.value = `${razonSocial} (${ruc})`;
-        ocultarResultados();
-    };
 }

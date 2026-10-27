@@ -182,6 +182,21 @@ reversión no está disponible en esta fase, en lugar de un 403 genérico (requi
 entra en `AuditService::EXCLUIDOS`, junto a `MovimientoKardex`: un pivote no genera
 auditoría, porque duplica el ruido de su cabecera sin aportar información.
 
+Las acciones del ciclo de compra se anotan antes del `update` que las dispara y con
+alcance al modelo `Compra` y a su id, para que no las consuma un evento intermedio de
+otro modelo:
+
+| Momento | Acción | Datos |
+|---|---|---|
+| Alta del borrador | `crear borrador` | `datos_despues` con la cabecera creada |
+| Edición del borrador | `actualizar borrador` | diff de cabecera; si solo cambian las líneas, el controlador registra la acción directamente porque Eloquent no emite un evento de `Compra` |
+| Recepción | `recibir compra` | diff de `estado`, `correlativo`, `caja_id`, `egreso_caja_id` y `fecha_recepcion` |
+| Anulación de borrador | `anular compra` | diff de `estado` |
+| Anulación de compra recibida | `anular compra recibida` | diff de `estado` y `fecha_anulacion` |
+
+La etiqueta se consume una sola vez y `AuditServiceProvider` reinicia el contexto al
+terminar la request, de modo que una acción anotada no se filtre a otra petición.
+
 ## 6. Fase 3 — Recepción
 
 ### 6.1 Migración de `fuente`: spike bloqueante

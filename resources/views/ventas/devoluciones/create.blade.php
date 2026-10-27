@@ -71,7 +71,7 @@
                                         class="cantidad-devolver w-24 border rounded px-2 py-1 text-sm input-main"
                                         min="0"
                                         max="{{ $linea['disponible'] }}"
-                                        value="0"
+                                        value="{{ old("lineas.$i.cantidad", 0) }}"
                                         data-precio="{{ $linea['precio_unitario'] }}"
                                         data-disponible="{{ $linea['disponible'] }}"
                                         {{ $linea['disponible'] <= 0 ? 'disabled' : '' }}
@@ -117,10 +117,10 @@
                          class="hidden absolute z-10 w-full mt-1 bg-surface border border-main rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     </div>
                 </div>
-                <div id="sustituto-seleccionado" class="hidden mt-3 max-w-md p-4 border border-main rounded-lg">
+                <div id="sustituto-seleccionado" class="{{ $sustituto ? '' : 'hidden' }} mt-3 max-w-md p-4 border border-main rounded-lg">
                     <input type="hidden" id="producto_nuevo_id" name="producto_nuevo_id" value="{{ old('producto_nuevo_id') }}">
-                    <p class="text-sm text-primary font-medium" id="sustituto-nombre"></p>
-                    <p class="text-xs text-secondary mt-1">Precio: S/ <span id="sustituto-precio">0.00</span> · Stock: <span id="sustituto-stock">0</span></p>
+                    <p class="text-sm text-primary font-medium" id="sustituto-nombre">{{ $sustituto['nombre'] ?? '' }}</p>
+                    <p class="text-xs text-secondary mt-1">Precio: S/ <span id="sustituto-precio">{{ $sustituto ? number_format($sustituto['precio_venta'], 2) : '0.00' }}</span> · Stock: <span id="sustituto-stock">{{ $sustituto['stock'] ?? 0 }}</span></p>
                     <div class="mt-3">
                         <label for="cantidad_nueva" class="label-main mb-1">Cantidad</label>
                         <input type="number" id="cantidad_nueva" name="cantidad_nueva" min="1" value="{{ old('cantidad_nueva', 1) }}"

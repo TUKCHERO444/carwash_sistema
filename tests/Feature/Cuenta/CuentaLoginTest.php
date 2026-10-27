@@ -91,7 +91,13 @@ class CuentaLoginTest extends TestCase
         // para no chocar con el throttle:5,1 de la ráfaga anterior).
         $this->withServerVariables(['REMOTE_ADDR' => '10.10.0.5'])
             ->post(route('cuenta.login'), ['email' => 'cli@example.com', 'password' => 'password'])
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('email')
+            ->assertSessionHas('bloqueo_hasta');
+
+        $this->get(route('cuenta.login'))
+            ->assertOk()
+            ->assertSee('Demasiados intentos fallidos')
+            ->assertSee('Volver al inicio de sesión');
 
         $this->assertGuest();
     }

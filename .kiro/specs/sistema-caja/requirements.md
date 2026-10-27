@@ -44,7 +44,7 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 
 #### Criterios de Aceptación
 
-1. WHEN el usuario accede al Panel de Caja sin una caja activa, THE Sistema_Caja SHALL mostrar el botón "Iniciar Caja" habilitado en la parte superior derecha del panel.
+1. WHERE el usuario tiene el permiso `gestionar-caja`, WHEN accede al Panel de Caja sin una caja activa, THE Sistema_Caja SHALL mostrar el botón "Iniciar Caja" habilitado en la parte superior derecha del panel. Los demás roles SHALL ver un mensaje indicando que un administrador debe aperturar la caja.
 2. WHEN el usuario presiona el botón "Iniciar Caja", THE Sistema_Caja SHALL mostrar un modal solicitando el monto inicial de caja.
 3. THE Sistema_Caja SHALL requerir que el monto inicial sea un valor numérico mayor a cero para confirmar la apertura.
 4. WHEN el usuario confirma el monto inicial en el modal, THE Sistema_Caja SHALL crear un registro de caja con estado "abierta", asociado al usuario autenticado y con la fecha y hora de apertura.
@@ -55,11 +55,11 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 
 ### Requisito 3: Panel de Caja — Resumen de Movimientos
 
-**User Story:** Como usuario, quiero ver un resumen visual de los montos de la caja activa, para conocer el estado financiero del turno en tiempo real.
+**User Story:** Como administrador, quiero ver un resumen visual de los montos de la caja activa, para conocer el estado financiero del turno en tiempo real.
 
 #### Criterios de Aceptación
 
-1. WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar tres tarjetas de resumen: "Monto Inicial", "Total Ingresos" y "Total Egresos".
+1. WHERE el usuario tiene el permiso `ver-resumen-caja`, WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar las tarjetas "Monto Inicial", "Total Ingresos", "Total Egresos" y el balance neto.
 2. THE Sistema_Caja SHALL calcular el "Total Ingresos" como la suma de los campos `total` de todos los registros de Ventas, Cambio_de_Aceite e Ingresos_Vehiculares confirmados asociados a la caja activa.
 3. THE Sistema_Caja SHALL calcular el "Total Egresos" como la suma de todos los egresos manuales registrados durante la caja activa.
 4. WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar el balance neto calculado como: Monto Inicial + Total Ingresos − Total Egresos.
@@ -72,7 +72,7 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 
 #### Criterios de Aceptación
 
-1. WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar un listado de ingresos detallado debajo de las tarjetas de resumen, agrupado por Fuente de Ingreso (Venta, Cambio_de_Aceite, Ingreso_Vehicular).
+1. WHERE el usuario tiene el permiso `ver-resumen-caja`, WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar un listado de ingresos detallado debajo de las tarjetas de resumen, agrupado por Fuente de Ingreso (Venta, Cambio_de_Aceite, Ingreso_Vehicular).
 2. THE Sistema_Caja SHALL mostrar para cada ingreso: la fuente, el monto total, y el modo de pago utilizado.
 3. WHEN el modo de pago de un ingreso es "efectivo", "yape" o "izipay", THE Sistema_Caja SHALL registrar el monto total del ingreso bajo ese modo de pago.
 4. WHEN el modo de pago de un ingreso es "mixto", THE Sistema_Caja SHALL distribuir los montos parciales (`monto_efectivo`, `monto_yape`, `monto_izipay`) a sus respectivos modos de pago en el detalle.
@@ -86,7 +86,7 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 
 #### Criterios de Aceptación
 
-1. WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar un botón "Registrar Egreso" en la parte inferior del Panel de Caja.
+1. WHERE el usuario tiene el permiso `registrar-egresos-caja`, WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar un botón "Registrar Egreso" en el Panel de Caja. El panel operativo de los demás roles SHALL limitarse a estado, total de ingresos, total de egresos y este botón cuando corresponda.
 2. WHEN el usuario presiona el botón "Registrar Egreso", THE Sistema_Caja SHALL mostrar un modal solicitando: monto del egreso, descripción y tipo de pago (yape o efectivo).
 3. THE Sistema_Caja SHALL requerir que el monto del egreso sea un valor numérico mayor a cero.
 4. THE Sistema_Caja SHALL requerir que la descripción del egreso no esté vacía.
@@ -127,7 +127,7 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 
 #### Criterios de Aceptación
 
-1. WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar el botón "Cerrar Caja" habilitado en el Panel de Caja.
+1. WHERE el usuario tiene el permiso `gestionar-caja`, WHILE existe una caja con estado "abierta", THE Sistema_Caja SHALL mostrar el botón "Cerrar Caja" habilitado en el Panel de Caja.
 2. WHEN el usuario presiona el botón "Cerrar Caja", THE Sistema_Caja SHALL mostrar un resumen completo de la sesión antes de confirmar el cierre.
 3. THE Sistema_Caja SHALL incluir en el resumen de cierre: monto inicial, listado de ingresos por fuente y modo de pago, listado de egresos con descripción, total de ingresos, total de egresos y balance final (Monto Inicial + Total Ingresos − Total Egresos).
 4. WHEN el usuario confirma el cierre, THE Sistema_Caja SHALL actualizar el estado de la caja a "cerrada" y registrar la fecha y hora de cierre.
@@ -157,7 +157,7 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 1. THE Sistema_Caja SHALL almacenar todos los registros de caja con estado "cerrada" de forma persistente.
 2. WHEN un administrador accede al historial de cajas, THE Sistema_Caja SHALL mostrar la lista de cajas cerradas ordenadas por fecha de cierre descendente.
 3. THE Sistema_Caja SHALL mostrar para cada caja cerrada: fecha de apertura, fecha de cierre, monto inicial, total de ingresos, total de egresos y balance final.
-4. WHERE el usuario tiene el rol "Administrador", THE Sistema_Caja SHALL permitir acceder al detalle completo de cualquier caja cerrada.
+4. WHERE el usuario tiene el permiso `historial-caja`, THE Sistema_Caja SHALL permitir acceder al historial y al detalle completo de cualquier caja cerrada. Este permiso se asigna únicamente al rol Administrador por defecto.
 
 ---
 
@@ -174,3 +174,37 @@ El Sistema de Caja es un módulo de gestión de flujo de efectivo para la aplica
 5. WHEN el cierre se confirma, THE Sistema_Caja SHALL guardar en la misma transacción: estado `cerrada`, `fecha_cierre`, esperado, contado, diferencia, responsable, fecha de arqueo y observación; el cierre queda auditado con la acción `cerrar caja`.
 6. THE Sistema_Caja SHALL impedir cerrar sin arqueo y modificar el arqueo de una caja cerrada.
 7. WHEN se consulta el historial/detalle, THE Sistema_Caja SHALL mostrar la sección de arqueo (esperado, contado, diferencia, responsable, fecha/hora, observación) o la nota de régimen anterior si la caja se cerró sin arqueo.
+
+---
+
+### Requisito 12: Separación entre caja general y caja chica operativa
+
+**User Story:** Como administrador, quiero que el resumen general, la apertura, el cierre y el historial queden reservados a mi rol, mientras el personal solo consulta el estado y los totales de la caja activa y registra egresos, para proteger la información financiera sin crear una segunda caja.
+
+#### Criterios de Aceptación
+
+1. THE Sistema_Caja SHALL mantener una única sesión de caja activa compartida; "caja general" y "caja chica" son vistas y permisos sobre la misma caja, no cuentas ni saldos independientes.
+2. THE permiso `gestionar-caja` SHALL controlar la apertura y el cierre; se asigna por defecto solo al rol Administrador.
+3. THE permiso `ver-resumen-caja` SHALL controlar el monto inicial, el balance, los ingresos por método de pago, los ingresos por origen y el detalle de movimientos; se asigna por defecto solo al rol Administrador.
+4. THE permiso `registrar-egresos-caja` SHALL permitir registrar egresos manuales; se asigna por defecto al Administrador y al Vendedor.
+5. THE permiso `historial-caja` SHALL controlar el historial y el detalle de cajas cerradas; se asigna por defecto solo al rol Administrador.
+6. WHERE el usuario tiene `acceso-caja` pero no `ver-resumen-caja`, THE Sistema_Caja SHALL mostrar únicamente el estado de la caja, el total de ingresos, el total de egresos y, si corresponde, el botón "Registrar Egreso".
+7. WHERE el usuario no tiene `ver-resumen-caja`, THE Sistema_Caja SHALL omitir monto inicial, balance, métodos de pago, orígenes, detalle de ingresos y detalle de egresos.
+8. WHERE no existe una caja activa y el usuario carece de `gestionar-caja`, THE Sistema_Caja SHALL mostrar un mensaje que indique que un administrador debe aperturar la caja, sin ofrecer el botón "Iniciar Caja".
+9. THE controlador SHALL calcular solo los totales mínimos para el panel operativo y reservar la carga de relaciones y el cálculo del resumen completo para `ver-resumen-caja`.
+
+---
+
+### Requisito 13: Advertencia al cerrar la sesión de trabajo con caja abierta
+
+**User Story:** Como responsable de caja, quiero que el sistema me advierta antes de cerrar la pestaña o el navegador mientras la caja sigue abierta, para evitar dejar el turno sin cierre por un cierre accidental.
+
+#### Criterios de Aceptación
+
+1. WHERE el usuario tiene `acceso-caja` y existe una caja con estado "abierta", THE Sistema_Caja SHALL marcar el layout administrativo con `data-caja-abierta="1"` y `data-caja-url` para activar la guardia de salida y ofrecer el retorno a Caja.
+2. WHERE el usuario no tiene `acceso-caja` o no existe una caja activa, THE Sistema_Caja SHALL marcar `data-caja-abierta="0"` y no activar la guardia.
+3. WHEN el usuario intenta cerrar la pestaña o el navegador, recargar la página o usar atrás/adelante, THE Sistema_Caja SHALL solicitar confirmación mediante `beforeunload`. IF el usuario cancela esa confirmación, THEN THE Sistema_Caja SHALL mostrar un modal no descartable con una única acción "Volver a Caja".
+4. THE guardia SHALL permitir sin advertencia la navegación interna del panel, los envíos normales de formularios y el envío del formulario de "Cerrar Caja".
+5. WHEN el usuario intenta cerrar sesión con una caja abierta, THE Sistema_Caja SHALL bloquear el envío del formulario de logout y mostrar el modal con la única acción "Volver a Caja"; la sesión SHALL permanecer activa.
+6. THE guardia SHALL usar el estado de caja calculado en el servidor al renderizar la página; no se garantiza sincronización inmediata si la caja se abre o cierra en otra pestaña.
+7. IF el usuario confirma "Salir" en el diálogo nativo del navegador, THEN la pestaña puede cerrarse y la web no puede impedirlo. En móviles el diálogo puede no mostrarse. La guardia es una advertencia y un retorno forzado dentro de la aplicación, no un bloqueo absoluto del cierre de la pestaña.

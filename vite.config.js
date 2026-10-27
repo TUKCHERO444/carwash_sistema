@@ -8,6 +8,8 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                // Autenticación
+                'resources/js/auth/retry-countdown.js',
                 // Sitio público
                 'resources/css/publica/publica.css',
                 'resources/js/publica/app.js',
@@ -79,6 +81,7 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: '127.0.0.1',
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

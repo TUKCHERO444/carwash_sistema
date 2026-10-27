@@ -16,6 +16,7 @@ import {
     validarMixto,
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
+import { permitirSalidaCaja } from '../caja/guardia-cierre.js';
 import Swal from 'sweetalert2';
 
 // ── Datos iniciales desde la vista Blade ──
@@ -56,6 +57,7 @@ window.submitActualizar = function submitActualizar() {
         form.appendChild(methodInput);
     }
 
+    permitirSalidaCaja();
     form.submit();
 };
 
@@ -66,7 +68,10 @@ window.submitActualizar = function submitActualizar() {
 window.confirmarEliminacion = function confirmarEliminacion() {
     if (confirm('¿Estás seguro de eliminar este ticket? Esta acción no se puede deshacer.')) {
         const formEliminar = document.getElementById('form-eliminar');
-        if (formEliminar) formEliminar.submit();
+        if (formEliminar) {
+            permitirSalidaCaja();
+            formEliminar.submit();
+        }
     }
 };
 

@@ -334,5 +334,9 @@
 
 </div>
 
+<script>
+    window.oldProductos = @json(old('productos', []));
+    window.catalogoProductos = @json($catalogoProductos ?? []);
+</script>
 @vite('resources/js/cambio-aceite/create.js')
 @endsection

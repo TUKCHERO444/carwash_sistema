@@ -145,6 +145,8 @@ class ConfirmarTest extends TestCase
             ->post("/cambio-aceite/{$this->pendiente->id}/confirmar", $this->confirmPayload());
 
         $response->assertSessionHas('error_caja', true);
+        $response->assertSessionHasInput('placa');
+        $response->assertSessionHasInput('total');
 
         $this->pendiente->refresh();
         $this->assertEquals('pendiente', $this->pendiente->estado);

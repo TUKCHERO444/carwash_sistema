@@ -112,8 +112,13 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[x]` completada
       (requisitos 52 a 54).
 - [x] **2.8** Auditoría: `Compra::class` en `$modelos` del provider,
       `DetalleCompra::class` en `AuditService::EXCLUIDOS`, etiquetas de acción
-      `recibir compra` y `anular compra` en `AccionesAuditoriaController`
-      (requisitos 49 a 51).
+      `crear borrador`, `actualizar borrador`, `recibir compra`, `anular compra` y
+      `anular compra recibida` en `AccionesAuditoriaController` (requisitos 49 a 51).
+      La creación del borrador se anota antes de `Compra::create`; la edición, la
+      recepción y las anulaciones se anotan antes de su `update`, con alcance por
+      modelo e id. Si la edición solo cambia líneas, el controlador registra
+      `actualizar borrador` directamente. Cubierto por
+      `tests/Feature/Auditoria/ComprasTest.php` (3 casos).
 - [x] **2.9** `CompraFactory`, `DetalleCompraFactory` y `CompraSeeder`
       idempotente, registrado en `DatabaseSeeder` tras `ProveedorSeeder` y
       `ProductoSeeder`. Crea 5 compras demo (2 borradores, 2 recibidas, 1 anulada)

@@ -6,6 +6,7 @@
  */
 
 import { initToggleStatus } from '../toggle-status';
+import { escapeHtml as escHtml } from '../utils/escape-html.js';
 
 // ─── Búsqueda dinámica AJAX ────────────────────────────────────────────────────
 
@@ -133,20 +134,6 @@ function buildRow(p) {
                 </form>
             </td>
         </tr>`;
-}
-
-/**
- * Escapa caracteres HTML para evitar XSS al inyectar texto en el DOM.
- * @param {string} str
- * @returns {string}
- */
-function escHtml(str) {
-    return String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
 }
 
 /**

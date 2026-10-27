@@ -3,7 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Rules\PasswordSegura;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Validator;
+use RuntimeException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -12,7 +15,7 @@ class AuthSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * Creates roles and the initial admin user idempotently using firstOrCreate.
+     * Creates roles and, when configured, the initial admin user idempotently.
      */
     public function run(): void
     {
@@ -31,6 +34,7 @@ class AuthSeeder extends Seeder
         $vendedorRole->syncPermissions([
             'acceso-ventas',
             'acceso-caja',
+            'registrar-egresos-caja',
             'acceso-clientes',
             'acceso-tipos-vehiculo',
             'acceso-vehiculos',
@@ -40,17 +44,53 @@ class AuthSeeder extends Seeder
         // Nunca recibe permisos operativos (acceso-ventas, acceso-caja, ...).
         $clienteRole->syncPermissions(['acceso-cuenta']);
 
-        // Create admin user if it doesn't exist (idempotent)
+        $this->crearAdministradorInicial();
+    }
+
+    private function crearAdministradorInicial(): void
+    {
+        $entornoDemo = app()->environment(['local', 'testing']);
+        $nombre = trim((string) config('seed.admin.name', 'Administrador'));
+        $email = strtolower(trim((string) config('seed.admin.email', 'admin@sistema.com')));
+        $password = config('seed.admin.password');
+        $passwordExplicita = is_string($password) && $password !== '';
+
+        if (! $passwordExplicita) {
+            if (! $entornoDemo) {
+                $this->command?->warn('AuthSeeder: no se creó el administrador inicial. Define ADMIN_EMAIL y ADMIN_PASSWORD con una contraseña fuerte.');
+
+                return;
+            }
+
+            $password = 'password';
+        }
+
+        if ($passwordExplicita || ! $entornoDemo) {
+            $validator = Validator::make(
+                ['name' => $nombre, 'email' => $email, 'password' => $password],
+                [
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'string', 'email', 'max:255'],
+                    'password' => ['required', 'string', new PasswordSegura(null, $nombre, $email)],
+                ]
+            );
+
+            if ($validator->fails()) {
+                throw new RuntimeException('Credenciales iniciales inválidas: '.$validator->errors()->first());
+            }
+        }
+
         $admin = User::firstOrCreate(
-            ['email' => 'admin@sistema.com'],
+            ['email' => $email],
             [
-                'name' => 'Administrador',
-                'password' => bcrypt('password'),
+                'name' => $nombre,
+                'password' => $password,
                 'activo' => true,
+                'status' => 'ACTIVE',
+                'email_verified_at' => now(),
             ]
         );
 
-        // Assign the Administrador role (syncRoles is idempotent)
         $admin->syncRoles(['Administrador']);
     }
 }

@@ -71,5 +71,9 @@ class AuditServiceProvider extends ServiceProvider
         foreach ($modelos as $modelo) {
             $modelo::observe(AuditModelObserver::class);
         }
+
+        $this->app->terminating(function () {
+            $this->app->make(AuditService::class)->reiniciarContexto();
+        });
     }
 }

@@ -58,6 +58,20 @@ function eliminarItem(idx) {
 
 // ── Inicialización al cargar el DOM ──
 document.addEventListener('DOMContentLoaded', () => {
+    const catalogoServicios = Array.isArray(window.catalogoServicios) ? window.catalogoServicios : [];
+    items = (Array.isArray(window.oldServicios) ? window.oldServicios : [])
+        .map((item) => {
+            const servicio = catalogoServicios.find((s) => String(s.id) === String(item.servicio_id));
+            if (!servicio) return null;
+
+            return {
+                servicio_id: servicio.id,
+                nombre: servicio.nombre,
+                precio: +parseFloat(servicio.precio).toFixed(2),
+            };
+        })
+        .filter(Boolean);
+
     // Búsqueda de servicios con debounce
     initBusquedaServicios({
         inputId:      'buscar-servicio',

@@ -2,6 +2,8 @@
 // Module: devoluciones/create.js
 // Formulario de devolución/cambio de productos vendidos.
 
+import { escapeHtml } from '../utils/escape-html.js';
+
 // ── Pure calculation functions (exported for testing) ──
 
 /**
@@ -124,11 +126,19 @@ if (typeof document !== 'undefined') {
 
         function mostrarResultados(productos) {
             if (!productos.length) { ocultarResultados(); return; }
-            resultadosDiv.innerHTML = productos.map((p) =>
-                `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" onclick='seleccionarSustituto(${JSON.stringify(p)})'>
-                    ${p.nombre} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${p.stock})
+            resultadosDiv.innerHTML = productos.map((p, idx) =>
+                `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" data-producto-idx="${idx}">
+                    ${escapeHtml(p.nombre)} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${escapeHtml(p.stock)})
                 </div>`
             ).join('');
+            resultadosDiv._productosCache = productos;
+            resultadosDiv.querySelectorAll('[data-producto-idx]').forEach(el => {
+                el.addEventListener('click', function () {
+                    const idx = parseInt(this.dataset.productoIdx, 10);
+                    const producto = resultadosDiv._productosCache[idx];
+                    if (producto) window.seleccionarSustituto(producto);
+                });
+            });
             resultadosDiv.classList.remove('hidden');
         }
 

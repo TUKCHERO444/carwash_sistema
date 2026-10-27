@@ -6,6 +6,7 @@
  */
 
 import Swal from 'sweetalert2';
+import { escapeHtml } from '../utils/escape-html.js';
 
 // ─────────────────────────────────────────────
 // Funciones puras de cálculo (exportadas para PBT)
@@ -79,7 +80,7 @@ function _mostrarResultados(servicios, resultadosDiv, onAgregar) {
     if (!servicios.length) { _ocultarResultados(resultadosDiv); return; }
     resultadosDiv.innerHTML = servicios.map((s, idx) =>
         `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" data-servicio-idx="${idx}">
-            ${s.nombre} — S/ ${parseFloat(s.precio).toFixed(2)}
+            ${escapeHtml(s.nombre)} — S/ ${parseFloat(s.precio).toFixed(2)}
         </div>`
     ).join('');
 
@@ -124,7 +125,7 @@ export function renderTablaServicios(items, tbodyId, onEliminar) {
 
     tbody.innerHTML = items.map((item, idx) => `
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-            <td class="px-4 py-2 text-sm text-primary">${item.nombre}</td>
+            <td class="px-4 py-2 text-sm text-primary">${escapeHtml(item.nombre)}</td>
             <td class="px-4 py-2 text-sm text-secondary">S/ ${item.precio.toFixed(2)}</td>
             <td class="px-4 py-2">
                 <button type="button" data-eliminar-idx="${idx}"

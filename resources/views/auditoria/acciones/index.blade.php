@@ -16,7 +16,9 @@
 
         $accionColor = [
             'crear' => 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+            'crear borrador' => 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400',
             'actualizar' => 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
+            'actualizar borrador' => 'bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-400',
             'eliminar' => 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
             'confirmar' => 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400',
             'inicio de sesión' => 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400',

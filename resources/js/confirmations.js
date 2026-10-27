@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { permitirSalidaCaja } from './caja/guardia-cierre.js';
 
 const isDarkMode = () => document.documentElement.classList.contains('dark');
 
@@ -32,8 +33,10 @@ document.addEventListener('click', (e) => {
         if (!result.isConfirmed) return;
 
         if (form) {
+            permitirSalidaCaja();
             form.submit();
         } else if (el.tagName === 'A') {
+            permitirSalidaCaja();
             window.location.href = el.href;
         }
     });

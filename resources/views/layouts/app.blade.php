@@ -8,7 +8,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-script')
 </head>
-<body class="flex h-screen bg-gray-50 dark:bg-background-dark text-gray-900 dark:text-text-primary-dark overflow-hidden transition-colors duration-300 print:overflow-visible print:h-auto">
+<body data-caja-abierta="{{ $cajaAbiertaGlobal ? '1' : '0' }}" data-caja-url="{{ route('caja.index') }}" class="flex h-screen bg-gray-50 dark:bg-background-dark text-gray-900 dark:text-text-primary-dark overflow-hidden transition-colors duration-300 print:overflow-visible print:h-auto">
 
 @php
     $userManagementActive    = request()->routeIs('users.*', 'roles.*', 'trabajadores.*', 'asistencia.*');
@@ -335,7 +335,7 @@
 
         {{-- Logout button at the bottom of the sidebar --}}
         <div class="px-4 py-4 border-t border-gray-800">
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}" data-caja-guard="always">
                 @csrf
                 <button type="submit"
                         class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-red-900/20 hover:text-red-400 transition-colors">

@@ -69,27 +69,28 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <div>
                     <label for="fecha" class="label-main mb-1">
-                        Fecha <span class="text-red-500">*</span>
+                        Fecha de recepción <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="date"
                         id="fecha"
                         name="fecha"
                         value="{{ old('fecha', $compra->fecha->format('Y-m-d')) }}"
-                        required
-                        class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
-                               {{ $errors->has('fecha') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
+                        readonly
+                        class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none input-main bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed"
+                        {{ $errors->has('fecha') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}>
                     @error('fecha')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
                 <div>
                     <label for="tipo_documento" class="label-main mb-1">
-                        Tipo de Documento
+                        Tipo de Documento <span class="text-red-500">*</span>
                     </label>
                     <select
                         id="tipo_documento"
                         name="tipo_documento"
+                        required
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                                {{ $errors->has('tipo_documento') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}">
                         <option value="">Seleccione...</option>
@@ -109,7 +110,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <div>
                     <label for="numero_documento" class="label-main mb-1">
-                        Nº Documento
+                        Nº Documento <span class="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -118,6 +119,7 @@
                         value="{{ old('numero_documento', $compra->numero_documento) }}"
                         maxlength="50"
                         autocomplete="off"
+                        required
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                                {{ $errors->has('numero_documento') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                         placeholder="F001-000123">
@@ -255,9 +257,10 @@
         </form>
     </div>
 
-    {{-- Data para el JS (productos activos) --}}
+    {{-- Data para el JS (productos activos y detalle antiguo) --}}
     <script>
         window.productos = @json($productos ?? []);
+        window.oldDetalle = @json(old('detalle', []));
     </script>
 </div>
 @vite(['resources/js/compras/edit.js', 'resources/js/compras/buscar-proveedores.js', 'resources/js/compras/buscar-productos.js'])

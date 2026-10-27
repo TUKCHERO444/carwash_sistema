@@ -93,12 +93,12 @@ Controlador principal del módulo. Gestiona el panel, apertura, cierre e histori
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `index()` | `GET /caja` | Panel de caja activa (o estado sin caja) |
-| `abrir()` | `POST /caja/abrir` | Apertura de caja con monto inicial |
-| `cerrar()` | `POST /caja/cerrar` | Cierre de la caja activa |
-| `registrarEgreso()` | `POST /caja/egresos` | Registro de egreso manual |
-| `historial()` | `GET /caja/historial` | Lista de cajas cerradas (solo Administrador) |
-| `detalle()` | `GET /caja/{caja}` | Detalle de una caja cerrada (solo Administrador) |
+| `index()` | `GET /caja` | Caja general con `ver-resumen-caja`; panel operativo para el resto |
+| `abrir()` | `POST /caja/abrir` | Apertura de caja con monto inicial (`gestionar-caja`) |
+| `cerrar()` | `POST /caja/cerrar` | Cierre de la caja activa (`gestionar-caja`) |
+| `registrarEgreso()` | `POST /caja/egresos` | Registro de egreso manual (`registrar-egresos-caja`) |
+| `historial()` | `GET /caja/historial` | Lista de cajas cerradas (`historial-caja`) |
+| `detalle()` | `GET /caja/{caja}` | Detalle de una caja cerrada (`historial-caja`) |
 
 ### EgresoCajaController
 
@@ -116,6 +116,7 @@ class CajaService
     public function cerrarCaja(Caja $caja): Caja;
     public function registrarEgreso(Caja $caja, array $data): EgresoCaja;
     public function asociarTransaccion(string $tipo, int $transaccionId, Caja $caja): void;
+    public function calcularTotales(Caja $caja): array;
     public function calcularResumen(Caja $caja): array;
 }
 ```
@@ -326,11 +327,12 @@ Para cada transacción, los montos se distribuyen así:
 
 | Vista | Ruta | Descripción |
 |-------|------|-------------|
-| `caja/panel.blade.php` | `/caja` | Panel principal con resumen y listados |
+| `caja/panel.blade.php` | `/caja` | Caja General: resumen, métodos, orígenes, detalle y acciones administrativas |
+| `caja/panel-operativo.blade.php` | `/caja` | Caja Chica: estado, total de ingresos, total de egresos y registro de egreso |
 | `caja/historial.blade.php` | `/caja/historial` | Lista de cajas cerradas |
 | `caja/detalle.blade.php` | `/caja/{caja}` | Detalle de una caja cerrada |
 
-Los modales (apertura, egreso, cierre) se implementan como componentes inline en `panel.blade.php`, controlados con Alpine.js o JavaScript vanilla (consistente con el resto del proyecto que usa JS vanilla).
+`CajaController@index` elige la vista según `ver-resumen-caja`. El panel operativo no recibe relaciones ni el resumen completo; solo los totales de `CajaService::calcularTotales()`. Los partials `caja/partials/mensajes.blade.php` y `caja/partials/modal-egreso.blade.php` se comparten entre ambas vistas. Los modales de apertura/cierre quedan en la vista administrativa y se protegen con `@can('gestionar-caja')`.
 
 ### Enlace en el Sidebar
 
@@ -350,21 +352,46 @@ Se añade un enlace directo "Caja" en `layouts/app.blade.php`, visible para todo
 </a>
 ```
 
+### Guardia de cierre con caja abierta
+
+`AppServiceProvider` agrega un view composer sobre `layouts.app` que expone
+`cajaAbiertaGlobal` solo cuando el usuario tiene `acceso-caja` y
+`CajaService::getCajaActiva()` devuelve una caja. El layout lo publica como
+`data-caja-abierta="1|0"` y `data-caja-url` en `<body>`.
+
+`resources/js/caja/guardia-cierre.js` se importa desde `app.js` y, si el
+atributo es `1`, registra `beforeunload` y una ventana temporal de salida
+permitida para navegación interna. Si el usuario cancela el diálogo nativo, un
+`setTimeout` muestra un modal no descartable de SweetAlert2 (import dinámico)
+con la única acción **Volver a Caja**, que navega a `data-caja-url` tras llamar
+a `permitirSalidaCaja()`; `pagehide`/`pageshow` evitan abrir el modal cuando la
+descarga realmente ocurre. Las navegaciones programáticas llaman a
+`permitirSalidaCaja()` antes de `form.submit()`/`location.href`. El formulario
+de logout usa `data-caja-guard="always"`: intercepta el `submit`, cancela el
+envío y muestra el mismo modal, de modo que no se puede cerrar sesión con la
+caja abierta desde la aplicación. El navegador puede cerrar la pestaña si el
+usuario confirma **Salir** en su diálogo nativo.
+
 ---
 
 ## Rutas
 
 ```php
-Route::middleware('auth')->prefix('caja')->name('caja.')->group(function () {
-    Route::get('/',          [CajaController::class, 'index'])->name('index');
-    Route::post('/abrir',    [CajaController::class, 'abrir'])->name('abrir');
-    Route::post('/cerrar',   [CajaController::class, 'cerrar'])->name('cerrar');
-    Route::post('/egresos',  [CajaController::class, 'registrarEgreso'])->name('egresos.store');
+Route::middleware(['auth', 'permission:acceso-caja'])->prefix('caja')->name('caja.')->group(function () {
+    Route::get('/', [CajaController::class, 'index'])->name('index');
 
-    // Solo Administrador
-    Route::middleware('role:Administrador')->group(function () {
-        Route::get('/historial',  [CajaController::class, 'historial'])->name('historial');
-        Route::get('/{caja}',     [CajaController::class, 'detalle'])->name('detalle');
+    Route::middleware('permission:gestionar-caja')->group(function () {
+        Route::post('/abrir',  [CajaController::class, 'abrir'])->name('abrir');
+        Route::post('/cerrar', [CajaController::class, 'cerrar'])->name('cerrar');
+    });
+
+    Route::post('/egresos', [CajaController::class, 'registrarEgreso'])
+        ->middleware('permission:registrar-egresos-caja')
+        ->name('egresos.store');
+
+    Route::middleware('permission:historial-caja')->group(function () {
+        Route::get('/historial', [CajaController::class, 'historial'])->name('historial');
+        Route::get('/{caja}',    [CajaController::class, 'detalle'])->name('detalle');
     });
 });
 ```
@@ -521,7 +548,7 @@ Route::middleware('auth')->prefix('caja')->name('caja.')->group(function () {
 | Egreso con datos inválidos | Validación Laravel, error de formulario |
 | Cierre de caja ya cerrada | Redirección con mensaje informativo |
 | Error de base de datos en apertura/cierre | `DB::transaction` con rollback automático, mensaje de error genérico |
-| Acceso al historial sin rol Administrador | Middleware `role:Administrador` devuelve 403 |
+| Acceso sin el permiso requerido | `UnauthorizedException` redirige al dashboard con mensaje de error (convención global del proyecto) |
 
 ### Concurrencia
 
@@ -551,7 +578,12 @@ Se utilizan pruebas de ejemplo para verificar comportamientos específicos:
 - Enlace "Caja" presente en el sidebar para usuarios autenticados
 - Modal de apertura, egreso y cierre se renderizan correctamente
 - Redirección al panel de caja desde el modal de "caja requerida"
-- Acceso al historial denegado para usuarios sin rol Administrador
+- Acceso al historial denegado para usuarios sin `historial-caja`
+- Panel operativo sin monto inicial, balance, métodos, orígenes ni detalle
+- Panel general visible solo con `ver-resumen-caja`
+- `data-caja-abierta` y `data-caja-url` activos solo con `acceso-caja` y caja abierta
+- Reglas puras de la guardia de cierre: advertencia y navegación interna
+- Logout con `data-caja-guard="always"` bloqueado cuando la caja está abierta
 
 ### Pruebas de propiedades (PBT con Pest + `edalzell/pest-plugin-arch` o similar)
 
@@ -596,5 +628,9 @@ Se usan pruebas de feature de Laravel para verificar los endpoints completos:
 - `POST /caja/egresos` con datos válidos → egreso guardado
 - `POST /ventas` sin caja activa → error, venta no guardada
 - `POST /ventas` con caja activa → venta guardada con `caja_id` correcto
-- `GET /caja/historial` como Administrador → 200
-- `GET /caja/historial` como usuario sin rol → 403
+- `GET /caja/historial` con `historial-caja` → 200
+- `GET /caja/historial` sin `historial-caja` → redirección al dashboard con error
+- `GET /caja` con `ver-resumen-caja` → Caja General
+- `GET /caja` sin `ver-resumen-caja` → Caja Chica sin datos restringidos
+- `POST /caja/abrir` y `/cerrar` sin `gestionar-caja` → redirección al dashboard con error
+- `POST /caja/egresos` con `registrar-egresos-caja` → egreso guardado

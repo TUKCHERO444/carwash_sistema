@@ -2,6 +2,8 @@
 // Module: compras/buscar-productos.js
 // Autocomplete de productos para el formulario de compra.
 
+import { escapeHtml } from '../utils/escape-html.js';
+
 /**
  * Inicializa la búsqueda dinámica de productos en una línea del detalle.
  * @param {Object} config
@@ -16,11 +18,6 @@ export function initBusquedaProductos({ inputId, resultadosId, hiddenInputId, on
     const hiddenInput = document.getElementById(hiddenInputId);
 
     if (!inputBuscar || !resultadosDiv || !hiddenInput) return;
-
-    // Nombre de la función global saneado: hiddenInputId puede contener guiones
-    // (p.ej. "producto-id-0"), que son inválidos en notación de punto y se
-    // interpretarían como resta en el onclick inline.
-    const fnName = `seleccionarProducto_${hiddenInputId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
 
     let debounceTimer;
 
@@ -60,25 +57,31 @@ export function initBusquedaProductos({ inputId, resultadosId, hiddenInputId, on
             return;
         }
 
-        resultadosDiv.innerHTML = productos.map(p => `
+        resultadosDiv.innerHTML = productos.map((p, idx) => `
             <div class="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                 onclick="window['${fnName}'](${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio_compra}, ${p.stock})">
-                <div class="text-sm text-primary font-medium">${p.nombre}</div>
-                <div class="text-xs text-secondary">Stock: ${p.stock} | Costo: S/ ${parseFloat(p.precio_compra).toFixed(2)}</div>
+                 data-producto-idx="${idx}">
+                <div class="text-sm text-primary font-medium">${escapeHtml(p.nombre)}</div>
+                <div class="text-xs text-secondary">Stock: ${escapeHtml(p.stock)} | Costo: S/ ${parseFloat(p.precio_compra).toFixed(2)}</div>
             </div>
         `).join('');
+        resultadosDiv._productosCache = productos;
+
+        resultadosDiv.querySelectorAll('[data-producto-idx]').forEach(el => {
+            el.addEventListener('click', function () {
+                const idx = parseInt(this.dataset.productoIdx, 10);
+                const producto = resultadosDiv._productosCache[idx];
+                if (!producto) return;
+                hiddenInput.value = producto.id;
+                inputBuscar.value = producto.nombre;
+                ocultarResultados();
+                if (onSelect) onSelect(producto.id, producto.nombre, producto.precio_compra, producto.stock);
+            });
+        });
+
         resultadosDiv.classList.remove('hidden');
     }
 
     function ocultarResultados() {
         resultadosDiv.classList.add('hidden');
     }
-
-    // Función global para seleccionar un producto
-    window[fnName] = function (id, nombre, precioCompra, stock) {
-        hiddenInput.value = id;
-        inputBuscar.value = nombre;
-        ocultarResultados();
-        if (onSelect) onSelect(id, nombre, precioCompra, stock);
-    };
 }

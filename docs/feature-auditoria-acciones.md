@@ -97,7 +97,7 @@ caja      → Caja, EgresoCaja
 | RF-02 | Cada registro guarda: `modulo`, `accion`, `auditable_type`, `auditable_id`, `datos_antes`, `datos_despues`, `usuario_id`, `fecha_movimiento`. |
 | RF-03 | Registrar **automáticamente** `crear` / `actualizar` / `eliminar` para todos los modelos auditables (observers de Eloquent). |
 | RF-04 | Guardar `datos_antes`/`datos_despues` en JSON con los **campos que cambiaron** en la operación. |
-| RF-05 | Etiquetar acciones de negocio con nombres propios: `confirmar`, `toggle estado`, `toggle activo`, `abrir caja`, `cerrar caja`, `registrar egreso`, `actualizar ticket`, `anular venta`, `ajustar stock`. |
+| RF-05 | Etiquetar acciones de negocio con nombres propios: `confirmar`, `toggle estado`, `toggle activo`, `abrir caja`, `cerrar caja`, `registrar egreso`, `actualizar ticket`, `anular venta`, `ajustar stock`, `crear borrador`, `actualizar borrador`, `recibir compra`, `anular compra` y `anular compra recibida`. |
 | RF-06 | Registrar el **inicio de sesión** (`login`) y el **cierre de sesión** (`logout`) bajo el módulo `sesiones`. |
 | RF-07 | **No implementar borrado automático** de la tabla (limpieza manual por el desarrollador). |
 | RF-08 | Proveer listado paginado con **filtros**: módulo, acción, usuario, rango de fechas y búsqueda por id de registro. |
@@ -151,6 +151,7 @@ caja      → Caja, EgresoCaja
 | `actualizar ticket` | `CambioAceite::actualizarTicket` |
 | `anular venta` | `Venta::destroy` |
 | `abrir caja` / `cerrar caja` / `registrar egreso` | `CajaController` |
+| `crear borrador` / `actualizar borrador` / `recibir compra` / `anular compra` / `anular compra recibida` | `CompraController` |
 | `inicio de sesión` / `cierre de sesión` | `LoginController` |
 
 #### 1.2 Mapeo modelo → módulo
@@ -171,6 +172,7 @@ CambioAceite    → 'cambio_aceite'
 Lavado          → 'lavados'
 Caja            → 'caja'
 EgresoCaja      → 'caja'
+Compra          → 'compras'
 (sesión)        → 'sesiones'
 ```
 
@@ -212,8 +214,9 @@ Singleton por request que centraliza la escritura y el **contexto de acción**:
 ```php
 class AuditService
 {
-    // Acción de negocio pendiente para el próximo evento Eloquent
-    public function anotarAccion(string $accion): void;
+    // Acción de negocio pendiente para el próximo evento Eloquent.
+    // El modelo/id opcional limita la etiqueta para que no se pierda en eventos intermedios.
+    public function anotarAccion(string $accion, ?string $modelo = null, int|string|null $modeloId = null): void;
 
     // Registro directo (usado por sesiones y por puntos explícitos)
     public function registrar(
@@ -412,7 +415,7 @@ Siguiendo el patrón Blade + Tailwind + dark mode del Kardex:
 - **Rastreo de sesión y cuenta inactiva**: el login de una cuenta inactiva **no** genera registro (no hay sesión). Si se desea auditar **intentos fallidos**, se puede añadir un registro opcional de `intento de login fallido` (decisión abierta).
 - **`datos_antes/datos_despues` y volumen**: guardar diffs añade peso a la BD; se aceptó por decisión del usuario. La depuración es **manual** en el despliegue.
 - **Roles de Spatie**: `Role` es un modelo externo; el observer lo captura igual vía morphs.
-- **Anotación de contexto y múltiples saves por request**: si un método realiza varios `save()` tras `anotarAccion`, solo el **primer** evento consume la etiqueta; el resto cae en `actualizar`. Se recomienda anotar justo antes del guard relevante y (si un método dispara varios saves de negocio) revisar caso por caso.
+- **Anotación de contexto y eventos intermedios**: la etiqueta se consume una sola vez. Para flujos donde el guard relevante ocurre después de otros `save()` (por ejemplo, una compra que actualiza productos antes de marcarse como recibida), `anotarAccion()` acepta el modelo y el id al que pertenece; así un evento intermedio de otro modelo no la consume. El provider reinicia el contexto al terminar la request. Si una edición no cambia atributos de la cabecera pero sí sus líneas, el controlador debe registrar la acción explícitamente porque no habrá evento `updated`.
 
 ---
 

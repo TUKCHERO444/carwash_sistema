@@ -18,6 +18,8 @@
                 <p role="status" class="mt-4 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm text-sky-700">{{ session('info') }}</p>
             @endif
 
+            @include('partials.bloqueo-intentos', ['rutaLoginBloqueo' => route('cuenta.login')])
+
             <form action="{{ route('cuenta.login') }}" method="POST" novalidate class="mt-6">
                 @csrf
 
@@ -36,9 +38,11 @@
                         class="input-main w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none
                             {{ $errors->has('email') ? 'border-red-500' : '' }}"
                     >
-                    @error('email')
-                        <p id="email-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    @if (! session('bloqueo_hasta'))
+                        @error('email')
+                            <p id="email-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    @endif
                 </div>
 
                 {{-- Campo: Contraseña --}}
@@ -87,4 +91,6 @@
             @endif
         </div>
     </div>
+
+    @vite('resources/js/auth/retry-countdown.js')
 @endsection

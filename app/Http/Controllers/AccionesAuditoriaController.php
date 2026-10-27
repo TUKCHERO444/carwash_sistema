@@ -36,7 +36,9 @@ class AccionesAuditoriaController extends Controller
      */
     protected array $acciones = [
         'crear',
+        'crear borrador',
         'actualizar',
+        'actualizar borrador',
         'eliminar',
         'confirmar',
         'toggle estado',
@@ -48,6 +50,7 @@ class AccionesAuditoriaController extends Controller
         'registrar cambio',
         'recibir compra',
         'anular compra',
+        'anular compra recibida',
         'abrir caja',
         'cerrar caja',
         'registrar egreso',

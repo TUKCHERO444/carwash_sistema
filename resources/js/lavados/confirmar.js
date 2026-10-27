@@ -16,6 +16,7 @@ import {
     recalcularTotales,
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
+import { permitirSalidaCaja } from '../caja/guardia-cierre.js';
 
 // ── Datos iniciales desde la vista Blade ──
 const serviciosConfirmar  = window.serviciosConfirmar  ?? [];
@@ -50,6 +51,7 @@ window.submitActualizar = function submitActualizar() {
         form.appendChild(methodInput);
     }
 
+    permitirSalidaCaja();
     form.submit();
 };
 
@@ -60,7 +62,10 @@ window.submitActualizar = function submitActualizar() {
 window.confirmarEliminacion = function confirmarEliminacion() {
     if (confirm('¿Estás seguro de eliminar este lavado? Esta acción no se puede deshacer.')) {
         const formEliminar = document.getElementById('form-eliminar');
-        if (formEliminar) formEliminar.submit();
+        if (formEliminar) {
+            permitirSalidaCaja();
+            formEliminar.submit();
+        }
     }
 };
 

@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $hayOld = session()->hasOldInput();
+@endphp
 <div class="p-6">
 
     {{-- Flash messages --}}
@@ -45,7 +48,7 @@
                         type="checkbox"
                         name="{{ $clave }}"
                         value="1"
-                        @checked($contenido->boolValue($clave))
+                        @checked($hayOld ? (bool) old($clave) : $contenido->boolValue($clave))
                         class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     >
                     <span class="text-sm text-primary">{{ $etiqueta }}</span>
@@ -65,7 +68,7 @@
                         type="checkbox"
                         name="productos_mostrar_mosaico"
                         value="1"
-                        @checked($contenido->boolValue('productos_mostrar_mosaico'))
+                        @checked($hayOld ? (bool) old('productos_mostrar_mosaico') : $contenido->boolValue('productos_mostrar_mosaico'))
                         class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     >
                     <span class="text-sm text-primary">Mostrar mosaico de categorías</span>
@@ -79,7 +82,7 @@
                         type="text"
                         id="productos_titulo"
                         name="productos_titulo"
-                        value="{{ $contenido->textValue('productos_titulo') }}"
+                        value="{{ old('productos_titulo', $contenido->textValue('productos_titulo')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -96,7 +99,7 @@
                         type="text"
                         id="productos_intro"
                         name="productos_intro"
-                        value="{{ $contenido->textValue('productos_intro') }}"
+                        value="{{ old('productos_intro', $contenido->textValue('productos_intro')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -122,7 +125,7 @@
                         type="text"
                         id="servicios_titulo"
                         name="servicios_titulo"
-                        value="{{ $contenido->textValue('servicios_titulo') }}"
+                        value="{{ old('servicios_titulo', $contenido->textValue('servicios_titulo')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -139,7 +142,7 @@
                         type="text"
                         id="servicios_intro"
                         name="servicios_intro"
-                        value="{{ $contenido->textValue('servicios_intro') }}"
+                        value="{{ old('servicios_intro', $contenido->textValue('servicios_intro')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -165,7 +168,7 @@
                         type="text"
                         id="marcas_titulo"
                         name="marcas_titulo"
-                        value="{{ $contenido->textValue('marcas_titulo') }}"
+                        value="{{ old('marcas_titulo', $contenido->textValue('marcas_titulo')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -182,7 +185,7 @@
                         type="text"
                         id="marcas_intro"
                         name="marcas_intro"
-                        value="{{ $contenido->textValue('marcas_intro') }}"
+                        value="{{ old('marcas_intro', $contenido->textValue('marcas_intro')) }}"
                         maxlength="120"
                         autocomplete="off"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
@@ -198,8 +201,13 @@
             {{-- Curaduría de marcas --}}
             @php
                 $estado = $contenido->estadoMarcasWeb();
-                $marcasPanel = $marcas->sortBy(function ($marca) use ($estado) {
-                    return $estado[$marca->id] ?? PHP_INT_MAX;
+                $ordenOld = (array) old('marcas_orden', []);
+                $marcasPanel = $marcas->sortBy(function ($marca) use ($hayOld, $estado, $ordenOld) {
+                    if ($hayOld && isset($ordenOld[$marca->id]) && $ordenOld[$marca->id] !== '') {
+                        return (int) $ordenOld[$marca->id];
+                    }
+
+                    return $hayOld ? PHP_INT_MAX : ($estado[$marca->id] ?? PHP_INT_MAX);
                 })->values();
             @endphp
 
@@ -212,14 +220,14 @@
                                 type="checkbox"
                                 name="marcas_web[]"
                                 value="{{ $marca->id }}"
-                                @checked(array_key_exists($marca->id, $estado))
+                                @checked($hayOld ? in_array($marca->id, array_map('intval', (array) old('marcas_web', []))) : array_key_exists($marca->id, $estado))
                                 class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             >
                             <span class="flex-1 text-sm text-primary truncate">{{ $marca->nombre }}</span>
                             <input
                                 type="number"
                                 name="marcas_orden[{{ $marca->id }}]"
-                                value="{{ $estado[$marca->id] ?? '' }}"
+                                value="{{ old("marcas_orden.{$marca->id}", $estado[$marca->id] ?? '') }}"
                                 min="0"
                                 step="1"
                                 aria-label="Orden de {{ $marca->nombre }}"

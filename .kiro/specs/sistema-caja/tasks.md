@@ -199,6 +199,22 @@ El stack es PHP 8.2 + Laravel 12, Blade + Tailwind CSS, PHPUnit/Pest para prueba
   - Tests `tests/Feature/EgresoClasificadoTest.php` (5 tests)
   - _Requisitos: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
+- [x] 14. Separar caja general y caja chica operativa (Requisito 12)
+  - `PermissionSeeder`: `gestionar-caja`, `ver-resumen-caja` y `registrar-egresos-caja`; `AuthSeeder` asigna solo los dos primeros al Administrador y `registrar-egresos-caja` también al Vendedor
+  - Rutas: apertura/cierre con `gestionar-caja`, egresos con `registrar-egresos-caja`; historial/detalle permanecen con `historial-caja`; `acceso-caja` sigue como acceso base
+  - `CajaService::calcularTotales()` (solo ingresos/egresos, sin métodos ni relaciones); `CajaController@index` separa panel general (`ver-resumen-caja`) y panel operativo (resto), sin cargar datos restringidos
+  - Vistas `caja/panel.blade.php` (Caja General) y `caja/panel-operativo.blade.php` (Caja Chica); partials `mensajes` y `modal-egreso`; botones y modales protegidos con `@can`
+  - Tests `tests/Feature/CajaPermisosTest.php` (8 tests) + actualización de `CajaArqueoTest`, `EgresoClasificadoTest` y auditoría de apertura
+  - _Requisitos: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9_
+
+- [x] 15. Advertencia global al cerrar con caja abierta (Requisito 13)
+  - `AppServiceProvider`: view composer de `layouts.app` expone `cajaAbiertaGlobal` solo con `acceso-caja` y caja activa
+  - `layouts/app.blade.php`: `data-caja-abierta` y `data-caja-url` en `<body>` y `data-caja-guard="always"` en el formulario de logout
+  - `resources/js/caja/guardia-cierre.js`: `beforeunload`, permiso temporal de salida, navegación interna y modal no descartable de SweetAlert2 con única acción "Volver a Caja"; logout bloqueado con el mismo modal; importado desde `app.js`
+  - `confirmations.js`, `cambio-aceite/confirmar.js` y `lavados/confirmar.js` llaman a `permitirSalidaCaja()` antes de sus envíos programáticos
+  - Tests `tests/Feature/CajaGuardiaCierreTest.php` (4 tests) y `tests/js/caja/guardia-cierre.test.js` (4 tests)
+  - _Requisitos: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7_
+
 ---
 
 ## Notas

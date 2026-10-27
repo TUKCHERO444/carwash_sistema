@@ -36,7 +36,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserToggleController;
 use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\VentaController;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -44,14 +43,6 @@ Route::get('/ping', function () {
         'status' => 'ok',
         'timestamp' => now()->toIso8601String(),
     ]);
-});
-
-Route::get('/test-cloudinary', function () {
-    $result = Cloudinary::uploadApi()->upload(
-        public_path('test.jpg')
-    );
-
-    return $result['secure_url'];
 });
 
 // Página pública de inicio
@@ -99,7 +90,8 @@ Route::get('/quienes-somos', [PaginaInicioController::class, 'quienesSomos'])->n
 // el POST conserva guest para no reintentar login con sesión activa.
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::middleware('guest')->group(function () {
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])
+        ->middleware('throttle:5,1,login');
 });
 
 // Logout (requires auth)
@@ -372,14 +364,20 @@ Route::middleware(['auth', 'permission:acceso-ventas'])->group(function () {
         ->name('cambio-aceite.ticket');
 });
 
-// Caja (Protected by 'acceso-caja' for operations, 'historial-caja' for history)
+// Caja: acceso operativo, gestión administrativa y consulta histórica separados por permiso.
 Route::middleware(['auth', 'permission:acceso-caja'])->prefix('caja')->name('caja.')->group(function () {
     Route::get('/', [CajaController::class, 'index'])->name('index');
-    Route::post('/abrir', [CajaController::class, 'abrir'])->name('abrir');
-    Route::post('/cerrar', [CajaController::class, 'cerrar'])->name('cerrar');
-    Route::post('/egresos', [CajaController::class, 'registrarEgreso'])->name('egresos.store');
 
-    // Solo con historial-caja
+    Route::middleware('permission:gestionar-caja')->group(function () {
+        Route::post('/abrir', [CajaController::class, 'abrir'])->name('abrir');
+        Route::post('/cerrar', [CajaController::class, 'cerrar'])->name('cerrar');
+    });
+
+    Route::post('/egresos', [CajaController::class, 'registrarEgreso'])
+        ->middleware('permission:registrar-egresos-caja')
+        ->name('egresos.store');
+
+    // Solo con historial-caja: resumen histórico y detalle quedan reservados al Administrador.
     Route::middleware('permission:historial-caja')->group(function () {
         Route::get('/historial', [CajaController::class, 'historial'])->name('historial');
         Route::get('/{caja}', [CajaController::class, 'detalle'])->name('detalle');

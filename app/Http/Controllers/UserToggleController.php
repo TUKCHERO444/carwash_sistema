@@ -3,11 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AdministratorProtectionService;
 use App\Services\AuditService;
+use App\Support\RoleNames;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class UserToggleController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+        private AdministratorProtectionService $administratorProtection,
+    ) {}
+
     /**
      * Toggle the activation status of the given user.
      *
@@ -25,13 +33,22 @@ class UserToggleController extends Controller
         }
 
         // 2. Solo administradores pueden inactivar a otros administradores
-        if ($user->hasRole('Administrador') && ! auth()->user()->hasRole('Administrador')) {
+        if ($user->hasRole(RoleNames::ADMINISTRADOR) && ! auth()->user()->hasRole(RoleNames::ADMINISTRADOR)) {
             return response()->json([
                 'message' => 'No tienes permisos suficientes para cambiar el estado de un Administrador.',
             ], 403);
         }
 
-        app(AuditService::class)->anotarAccion('toggle activo');
+        Gate::authorize('toggle', $user);
+
+        // 3. Evitar dejar el sistema sin administradores utilizables
+        if ($user->activo && $this->administratorProtection->esAdministradorCritico($user)) {
+            return response()->json([
+                'message' => 'No puedes desactivar al último Administrador.',
+            ], 403);
+        }
+
+        $this->auditService->anotarAccion('toggle activo');
 
         $user->activo = ! $user->activo;
         $user->save();

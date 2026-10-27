@@ -3,16 +3,22 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\AuditService;
+use App\Services\LoginLockoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    private const MENSAJE_GENERICO = 'Las credenciales proporcionadas no coinciden con nuestros registros.';
+
     public function __construct(
         private AuditService $auditService,
+        private LoginLockoutService $lockout,
     ) {}
 
     /**
@@ -44,30 +50,61 @@ class LoginController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            if (! Auth::user()->activo) {
-                Auth::logout();
+        $user = User::where('email', $credentials['email'])->first();
 
-                return back()->withErrors([
-                    'email' => 'Tu cuenta estǭ inactiva. Contacta al administrador.',
-                ])->withInput($request->except('password'));
-            }
-
-            $this->auditService->registrarSesion(Auth::user(), 'inicio de sesión');
-
-            $request->session()->regenerate();
-
-            return redirect('/dashboard');
+        if ($user === null) {
+            return back()->withErrors(['email' => self::MENSAJE_GENERICO])
+                ->withInput($request->except('password'));
         }
 
-        return back()->withErrors([
-            'email' => 'Las credenciales proporcionadas no coinciden con nuestros registros.',
-        ])->withInput($request->except('password'));
+        if ($this->lockout->estaBloqueado($user)) {
+            $this->auditService->registrarSesion($user, 'intento con cuenta bloqueada', $user->id);
+
+            return $this->respuestaIntentoFallido($request, $user);
+        }
+
+        if (! Hash::check($credentials['password'], $user->password)) {
+            $this->lockout->registrarFallo($user, 'intento fallido panel');
+
+            return $this->respuestaIntentoFallido($request, $user);
+        }
+
+        if (! $user->activo || ($user->status !== null && $user->status !== 'ACTIVE')) {
+            $this->lockout->registrarFallo($user, 'intento fallido panel');
+
+            return $this->respuestaIntentoFallido($request, $user);
+        }
+
+        $this->lockout->registrarExito($user);
+
+        Auth::login($user);
+        $this->auditService->registrarSesion($user, 'inicio de sesión');
+
+        $request->session()->regenerate();
+
+        return redirect('/dashboard');
+    }
+
+    /**
+     * Devuelve el formulario con el aviso de bloqueo cuando corresponde.
+     */
+    private function respuestaIntentoFallido(Request $request, User $user): RedirectResponse
+    {
+        if ($this->lockout->estaBloqueado($user)) {
+            $request->session()->flash('bloqueo_hasta', $user->locked_until->toIso8601String());
+        }
+
+        return back()->withErrors(['email' => self::MENSAJE_GENERICO])
+            ->withInput($request->except('password'));
     }
 
     /**

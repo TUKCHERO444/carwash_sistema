@@ -108,6 +108,7 @@ class RegistroController extends Controller
         ));
 
         $this->auditService->registrar($user, 'registro', null, null, 'cuenta', $user->id);
+        $this->auditService->registrar($user, 'asignar rol', null, ['rol' => 'Cliente'], 'cuenta', $user->id);
 
         return redirect()->route('cuenta.login')
             ->with('success', 'Cuenta creada. Revisa tu correo para verificarla antes de ingresar.');

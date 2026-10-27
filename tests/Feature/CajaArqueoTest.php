@@ -22,12 +22,12 @@ class CajaArqueoTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['acceso-caja', 'historial-caja'] as $perm) {
+        foreach (['acceso-caja', 'gestionar-caja', 'ver-resumen-caja', 'historial-caja'] as $perm) {
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
         $this->user = User::factory()->create();
-        $this->user->givePermissionTo(['acceso-caja', 'historial-caja']);
+        $this->user->givePermissionTo(['acceso-caja', 'gestionar-caja', 'ver-resumen-caja', 'historial-caja']);
         $this->actingAs($this->user);
     }
 

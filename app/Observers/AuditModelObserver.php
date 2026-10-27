@@ -30,7 +30,7 @@ class AuditModelObserver
             return;
         }
 
-        $accion = $service->consumirAccionAnotada() ?? 'crear';
+        $accion = $service->consumirAccionAnotada($modelo) ?? 'crear';
         $despues = array_diff_key($modelo->getAttributes(), array_flip(self::IGNORADAS));
 
         $service->registrar($modelo, $accion, null, $despues);
@@ -51,7 +51,7 @@ class AuditModelObserver
             return;
         }
 
-        $accion = $service->consumirAccionAnotada() ?? 'actualizar';
+        $accion = $service->consumirAccionAnotada($modelo) ?? 'actualizar';
 
         $antes = [];
         $despues = [];
@@ -86,7 +86,7 @@ class AuditModelObserver
             return;
         }
 
-        $accion = $service->consumirAccionAnotada() ?? 'eliminar';
+        $accion = $service->consumirAccionAnotada($modelo) ?? 'eliminar';
 
         $antes = array_diff_key($modelo->getAttributes(), array_flip(self::IGNORADAS));
 

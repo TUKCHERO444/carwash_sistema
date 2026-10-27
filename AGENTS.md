@@ -8,7 +8,7 @@ Laravel 12 (PHP 8.2) car-wash POS/ERP ("sistema de lavado") for the Peruvian mar
 - `composer run test` — `config:clear` then `php artisan test` (PHPUnit 11, in-memory SQLite per `phpunit.xml`; no DB setup required).
 - `npm run test` — Vitest for property tests under `tests/js/**` (Node env, no DOM); run these too when editing `resources/js/`.
 - `vendor/bin/pint` — code formatter (Laravel default preset).
-- `php artisan migrate:fresh --seed` — reset + demo data. Default login from `AuthSeeder`: `admin@sistema.com` / `password`.
+- `php artisan migrate:fresh --seed` — reset + demo data. Local/testing default login from `AuthSeeder`: `admin@sistema.com` / `password`; production requires `ADMIN_EMAIL` + strong `ADMIN_PASSWORD`.
 - `php artisan data:clean` — idempotent, non-destructive normalizer for legacy rows (see `app/Console/Commands/DataCleanCommand.php`, uses `app/Services/DataNormalizer.php`). Run after schema changes that add normalization.
 - Health check route: `GET /ping`.
 - No CI, no linter beyond Pint; PHPUnit gives broad coverage.
@@ -27,9 +27,10 @@ Static/AJAX routes MUST be declared BEFORE resource routes, or Laravel binds the
 
 ## Backend architecture
 
-- **RBAC (spatie/laravel-permission).** Routes are guarded by `permission:` with Spanish names (`acceso-ventas`, `acceso-caja`, `historial-caja`, `acceso-auditoria`, ...). New permissions must be added to `database/seeders/PermissionSeeder.php`. `AppServiceProvider` gives the `Administrador` role `Gate::before` bypass of everything.
-- **Audit.** `AuditServiceProvider` + `AuditModelObserver` write to `registros_auditoria` (via `AuditService`) for every model registered in the provider's `$modelos` list. New auditable model → add it to that list or it silently won't be audited.
-- **Caja coupling.** `VentaController`/`CambioAceiteController` etc. refuse to save when no caja is active: they flash `error_caja` and the views show a "caja requerida" modal pointing to the caja panel. Keep `CajaService` as the single entrypoint for `caja_id` assignment (`app/Services/CajaService.php`).
+- **RBAC (spatie/laravel-permission).** Routes are guarded by `permission:` with Spanish names (`acceso-ventas`, `acceso-caja`, `gestionar-caja`, `ver-resumen-caja`, `registrar-egresos-caja`, `historial-caja`, `acceso-auditoria`, ...). New permissions must be added to `database/seeders/PermissionSeeder.php`. `AppServiceProvider` gives the `Administrador` role `Gate::before` bypass of everything.
+- **Audit.** `AuditServiceProvider` + `AuditModelObserver` write to `registros_auditoria` (via `AuditService`) for every model registered in the provider's `$modelos` list. New auditable model → add it to that list or it silently won't be audited. Auth/role events also record `ip_address` and `user_agent`.
+- **Production config.** `ProductionSecurityGuard` aborts boot when `APP_ENV=production` with `APP_DEBUG=true`, insecure session cookies, `SESSION_HTTP_ONLY=false`, or `SESSION_SAME_SITE` outside `lax`/`strict`.
+- **Caja coupling.** `VentaController`/`CambioAceiteController` etc. refuse to save when no caja is active: they flash `error_caja` and the views show a "caja requerida" modal pointing to the caja panel. Keep `CajaService` as the single entrypoint for `caja_id` assignment (`app/Services/CajaService.php`). The caja module has two views over the same session: Caja General (`ver-resumen-caja`) and Caja Chica (`acceso-caja` + `registrar-egresos-caja`); only `gestionar-caja` opens/closes and `historial-caja` sees history/detail.
 - **External APIs.** `DniApiService` (DNI lookup) and `AutomotorApiService` (placa lookup) hit `api.json.pe` and share `VEHICLE_API_TOKEN` (`config/services.php`). They are resilient by design — return `[]`/null on any failure and never block forms — so do not make forms depend on them.
 - **Cloudinary** for image uploads (productos, lavados, cambio-aceite). Needs `CLOUDINARY_URL` in `.env` (not in `.env.example`).
 - **Input normalization** is centralized in `app/Services/DataNormalizer.php` (DNI, phone, plate, names, alphanumerics). Reuse it in controllers instead of duplicating regex.

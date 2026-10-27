@@ -27,7 +27,21 @@ class ProductoController extends Controller
         'nullable',
         'string',
         'max:100',
-        'regex:/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]+$/u',
+        'regex:/^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ%+\-.,()\/& ]+$/u',
+    ];
+
+    /**
+     * Nombre visible del producto.
+     *
+     * Se permite cualquier carácter imprimible salvo los metacaracteres que
+     * permiten inyectar HTML/JS (`<`, `>`, comillas y backtick) y los
+     * caracteres de control. El escape en el frontend sigue siendo la defensa
+     * principal; esta regla evita que un payload XSS llegue a almacenarse.
+     */
+    private const NOMBRE_RULE = 'regex:/^[^<>"\'`\x00-\x1F\x7F]+$/u';
+
+    private const MENSAJES = [
+        'nombre.regex' => 'El nombre del producto contiene caracteres no permitidos.',
     ];
 
     /**
@@ -130,7 +144,7 @@ class ProductoController extends Controller
     {
         $validated = $request->validate(
             array_merge([
-                'nombre' => ['required', 'string', 'max:150'],
+                'nombre' => ['required', 'string', 'max:150', self::NOMBRE_RULE],
                 'descripcion' => self::DESCRIPCION_RULES,
                 'activo' => ['nullable', 'boolean'],
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
@@ -138,7 +152,7 @@ class ProductoController extends Controller
                 'marca_id' => ['required', 'integer', 'exists:marcas,id'],
                 'destino' => ['nullable', 'string', 'in:comercial,consumo_interno'],
             ], $this->reglasPrecio($request->all())),
-            [
+            self::MENSAJES + [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
             ]
         );
@@ -193,7 +207,7 @@ class ProductoController extends Controller
     {
         $validated = $request->validate(
             array_merge([
-                'nombre' => ['required', 'string', 'max:150'],
+                'nombre' => ['required', 'string', 'max:150', self::NOMBRE_RULE],
                 'descripcion' => self::DESCRIPCION_RULES,
                 'activo' => ['nullable', 'boolean'],
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
@@ -201,7 +215,7 @@ class ProductoController extends Controller
                 'marca_id' => ['required', 'integer', 'exists:marcas,id'],
                 'destino' => ['nullable', 'string', 'in:comercial,consumo_interno'],
             ], $this->reglasPrecio($request->all())),
-            [
+            self::MENSAJES + [
                 'precio_venta.gte' => 'El precio de venta no puede ser inferior al precio de compra.',
             ]
         );

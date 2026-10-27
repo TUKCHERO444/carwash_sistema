@@ -77,7 +77,21 @@ class DevolucionVentaController extends Controller
             ];
         });
 
-        return view('ventas.devoluciones.create', compact('venta', 'lineas'));
+        $sustituto = null;
+        $productoNuevoId = old('producto_nuevo_id');
+        if ($productoNuevoId) {
+            $producto = Producto::find($productoNuevoId);
+            if ($producto) {
+                $sustituto = [
+                    'id' => $producto->id,
+                    'nombre' => $producto->nombre,
+                    'precio_venta' => (float) $producto->precio_venta,
+                    'stock' => (int) $producto->stock,
+                ];
+            }
+        }
+
+        return view('ventas.devoluciones.create', compact('venta', 'lineas', 'sustituto'));
     }
 
     /**

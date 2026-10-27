@@ -85,7 +85,23 @@ class CambioAceiteController extends Controller
     {
         $trabajadores = Trabajador::where('estado', true)->get();
 
-        return view('cambio-aceite.create', compact('trabajadores'));
+        $idsOld = collect(old('productos', []))
+            ->pluck('producto_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $catalogoProductos = Producto::whereIn('id', $idsOld)
+            ->get(['id', 'nombre', 'precio_venta', 'stock'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'nombre' => $p->nombre,
+                'precio_venta' => (float) $p->precio_venta,
+                'stock' => (int) $p->stock,
+            ])
+            ->values();
+
+        return view('cambio-aceite.create', compact('trabajadores', 'catalogoProductos'));
     }
 
     /**
@@ -520,7 +536,7 @@ class CambioAceiteController extends Controller
 
         $caja = $this->cajaService->getCajaActiva();
         if (! $caja) {
-            return back()->with('error_caja', true);
+            return back()->with('error_caja', true)->withInput();
         }
 
         $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [

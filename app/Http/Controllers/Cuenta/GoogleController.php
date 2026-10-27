@@ -143,6 +143,7 @@ class GoogleController extends Controller
         });
 
         $this->auditService->registrar($user, 'google_registro', null, null, 'cuenta', $user->id);
+        $this->auditService->registrar($user, 'asignar rol', null, ['rol' => 'Cliente'], 'cuenta', $user->id);
 
         Mail::to($user->email)->send(new CuentaGoogleMail(
             $user->name,

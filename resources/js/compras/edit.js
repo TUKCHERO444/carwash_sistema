@@ -4,6 +4,7 @@
 
 import { initBusquedaProveedores } from './buscar-proveedores.js';
 import { initBusquedaProductos } from './buscar-productos.js';
+import { escapeHtml } from '../utils/escape-html.js';
 
 // ── Pure calculation functions (exported for testing) ──
 
@@ -51,15 +52,15 @@ export function renderTablaHTML(items, productos) {
                         class="w-full border border-main rounded px-2 py-1 text-sm input-main"
                         placeholder="Buscar producto..."
                         autocomplete="off"
-                        value="${nombreProducto}">
-                    <input type="hidden" id="producto-id-${idx}" name="detalle[${idx}][producto_id]" value="${item.producto_id || ''}">
+                        value="${escapeHtml(nombreProducto)}">
+                    <input type="hidden" id="producto-id-${idx}" name="detalle[${idx}][producto_id]" value="${escapeHtml(item.producto_id || '')}">
                     <div id="resultados-producto-${idx}"
                          class="hidden absolute z-10 w-full mt-1 bg-surface border border-main rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     </div>
                 </div>
             </td>
             <td class="px-4 py-6">
-                <input type="number" min="1" step="1" value="${item.cantidad}"
+                <input type="number" min="1" step="1" value="${escapeHtml(item.cantidad)}"
                     class="w-24 border border-main rounded px-2 py-1 text-sm input-main"
                     oninput="actualizarCantidadRealTime(${idx}, this.value)"
                     required>
@@ -67,7 +68,7 @@ export function renderTablaHTML(items, productos) {
             <td class="px-4 py-6">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-sm text-secondary">S/</span>
-                    <input type="number" min="0" step="0.01" value="${item.costo_unitario > 0 ? item.costo_unitario.toFixed(2) : ''}"
+                    <input type="number" min="0" step="0.01" value="${escapeHtml(item.costo_unitario > 0 ? item.costo_unitario.toFixed(2) : '')}"
                         class="w-28 pl-6 pr-2 py-1 border border-main rounded text-sm input-main"
                         oninput="actualizarCostoRealTime(${idx}, this.value)"
                         required
@@ -290,26 +291,47 @@ if (typeof document !== 'undefined') {
             return valido;
         }
 
-        // Initial sync for edit view (when old data is present)
-        const initHiddens = form.querySelectorAll('input[name^="detalle["]');
-        if (initHiddens.length) {
-            const tempItems = [];
-            initHiddens.forEach(h => {
-                const match = h.name.match(/detalle\[(\d+)\]\[(\w+)\]/);
-                if (match) {
-                    const [, idx, field] = match;
-                    if (!tempItems[idx]) tempItems[idx] = {};
-                    tempItems[idx][field] = h.value;
+        // Initial sync (when old input data is present after validation errors)
+        const oldDetalle = window.oldDetalle || [];
+        if (Array.isArray(oldDetalle) && oldDetalle.length) {
+            items = oldDetalle
+                .filter(item => item && (item.producto_id || item.cantidad || item.costo_unitario))
+                .map(item => {
+                    const productoId = item.producto_id || '';
+                    return {
+                        producto_id: productoId,
+                        nombre: productoId ? (productos.find(p => p.id == productoId)?.nombre || '') : '',
+                        cantidad: parseInt(item.cantidad, 10) || 1,
+                        costo_unitario: parseFloat(item.costo_unitario) || 0,
+                        subtotal: parseFloat(item.subtotal) || parseFloat((parseInt(item.cantidad, 10) || 1) * (parseFloat(item.costo_unitario) || 0)).toFixed(2),
+                    };
+                });
+            if (items.length) {
+                refrescarTabla();
+            }
+        } else {
+            const initHiddens = form.querySelectorAll('input[name^="detalle["]');
+            if (initHiddens.length) {
+                const tempItems = [];
+                initHiddens.forEach(h => {
+                    const match = h.name.match(/detalle\[(\d+)\]\[(\w+)\]/);
+                    if (match) {
+                        const [, idx, field] = match;
+                        if (!tempItems[idx]) tempItems[idx] = {};
+                        tempItems[idx][field] = h.value;
+                    }
+                });
+                items = tempItems.map(item => ({
+                    producto_id: item.producto_id || '',
+                    nombre: item.producto_id ? (productos.find(p => p.id == item.producto_id)?.nombre || '') : '',
+                    cantidad: parseInt(item.cantidad, 10) || 1,
+                    costo_unitario: parseFloat(item.costo_unitario) || 0,
+                    subtotal: parseFloat(item.subtotal) || 0,
+                }));
+                if (items.some(i => i.producto_id || i.cantidad > 1 || i.costo_unitario > 0)) {
+                    refrescarTabla();
                 }
-            });
-            items = tempItems.map(item => ({
-                producto_id: item.producto_id || '',
-                nombre: item.producto_id ? (productos.find(p => p.id == item.producto_id)?.nombre || '') : '',
-                cantidad: parseInt(item.cantidad, 10) || 1,
-                costo_unitario: parseFloat(item.costo_unitario) || 0,
-                subtotal: parseFloat(item.subtotal) || 0,
-            }));
-            refrescarTabla();
+            }
         }
     });
 }

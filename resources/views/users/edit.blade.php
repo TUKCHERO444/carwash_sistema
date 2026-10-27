@@ -81,7 +81,7 @@
             </div>
 
             {{-- Contraseña --}}
-            <div class="mb-5">
+            <div class="mb-5" data-password-policy>
                 <label for="password" class="label-main mb-1">
                     Contraseña
                 </label>
@@ -90,11 +90,26 @@
                     id="password"
                     name="password"
                     autocomplete="new-password"
+                    minlength="12"
+                    maxlength="64"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('password') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo"
                 >
                 <p class="mt-1 text-xs text-gray-500">Dejar en blanco para conservar la contraseña actual</p>
+                <ul class="mt-2 grid grid-cols-1 gap-1 text-xs text-secondary sm:grid-cols-2">
+                    <li data-password-requisito="length">Mínimo 12 caracteres</li>
+                    <li data-password-requisito="uppercase">Una mayúscula</li>
+                    <li data-password-requisito="lowercase">Una minúscula</li>
+                    <li data-password-requisito="number">Un número</li>
+                    <li data-password-requisito="symbol">Un símbolo (!@#$%...)</li>
+                </ul>
+                <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div data-password-fuerza-barra class="h-full rounded-full transition-all bg-slate-400" style="width: 0%"></div>
+                </div>
+                <p data-password-fuerza-texto class="mt-1 text-xs text-secondary" aria-live="polite">
+                    Ingresa una contraseña para evaluar su fortaleza.
+                </p>
                 @error('password')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -110,6 +125,8 @@
                     id="password_confirmation"
                     name="password_confirmation"
                     autocomplete="new-password"
+                    minlength="12"
+                    maxlength="64"
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
                            {{ $errors->has('password_confirmation') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                     placeholder="Repite la contraseña"
@@ -120,6 +137,10 @@
             </div>
 
             {{-- Rol --}}
+            @php
+                $esPropio = $user->is(auth()->user());
+                $currentRole = old('role', $user->getRoleNames()->first());
+            @endphp
             <div class="mb-6">
                 <label for="role" class="label-main mb-1">
                     Rol <span class="text-red-500">*</span>
@@ -128,19 +149,21 @@
                     id="role"
                     name="role"
                     required
-                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main
+                    @disabled($esPropio)
+                    class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main disabled:opacity-60 disabled:cursor-not-allowed
                            {{ $errors->has('role') ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : '' }}"
                 >
                     <option value="">Selecciona un rol</option>
                     @foreach($roles as $role)
-                        @php
-                            $currentRole = old('role', $user->getRoleNames()->first());
-                        @endphp
                         <option value="{{ $role->name }}" {{ $currentRole === $role->name ? 'selected' : '' }}>
                             {{ $role->name }}
                         </option>
                     @endforeach
                 </select>
+                @if($esPropio)
+                    <input type="hidden" name="role" value="{{ $currentRole }}">
+                    <p class="mt-1 text-xs text-secondary">No puedes cambiar tu propio rol.</p>
+                @endif
                 @error('role')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror

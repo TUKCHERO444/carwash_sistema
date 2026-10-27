@@ -31,6 +31,7 @@
     <div class="bg-surface rounded-lg border border-main p-6">
         <form id="form-venta" action="{{ route('ventas.store') }}" method="POST" novalidate>
             @csrf
+            <input type="hidden" name="facturacion" id="facturacion" value="{{ old('facturacion', '0') }}">
 
             {{-- Validation error for productos --}}
             @error('productos')
@@ -119,6 +120,9 @@
                         <input
                             type="checkbox"
                             id="toggle-descuento"
+                            name="descuento_porcentaje"
+                            value="1"
+                            @checked(old('descuento_porcentaje'))
                             class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800"
                         >
                         <span class="text-sm text-secondary">Aplicar descuento por porcentaje</span>
@@ -133,10 +137,12 @@
                     <input
                         type="number"
                         id="porcentaje"
+                        name="porcentaje"
                         min="0"
                         max="100"
                         step="0.01"
                         placeholder="0.00"
+                        value="{{ old('porcentaje') }}"
                         class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors input-main"
                     >
                     <p id="error-porcentaje" class="hidden mt-1 text-xs text-red-600">El porcentaje no puede superar 100.</p>
@@ -146,6 +152,9 @@
                 <div>
                     <label class="inline-flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="toggle-descuento-manual"
+                               name="descuento_manual"
+                               value="1"
+                               @checked(old('descuento_manual'))
                                class="w-4 h-4 text-blue-600 border-main rounded focus:ring-blue-500 dark:bg-slate-800">
                         <span class="text-sm text-secondary">Aplicar descuento manual</span>
                     </label>
@@ -231,6 +240,11 @@
 
 </div>
 
+<script>
+    window.oldProductos = @json(old('productos', []));
+    window.oldTotal = @json(old('total'));
+    window.catalogoProductos = @json($catalogoProductos ?? []);
+</script>
 @vite('resources/js/ventas/create.js')
 @if(session('error_caja'))
 <x-modal id="modal-caja-cerrada" title="Caja Cerrada" open>

@@ -96,6 +96,16 @@ class AuditService
     protected ?string $accionAnotada = null;
 
     /**
+     * Modelo al que se limita la etiqueta pendiente (opcional).
+     */
+    protected ?string $modeloAnotado = null;
+
+    /**
+     * Id del modelo al que se limita la etiqueta pendiente (opcional).
+     */
+    protected int|string|null $modeloAnotadoId = null;
+
+    /**
      * Mapeo clase -> nombre legible de módulo.
      */
     protected array $modulos = [
@@ -126,19 +136,39 @@ class AuditService
 
     /**
      * Define la etiqueta de negocio para la próxima acción Eloquent (una sola vez).
+     *
+     * Si se indica un modelo, la etiqueta solo se consume cuando el evento
+     * corresponde a ese modelo (y opcionalmente a ese id). Así una anotación
+     * no puede perderse en un evento intermedio de otro modelo.
      */
-    public function anotarAccion(string $accion): void
+    public function anotarAccion(string $accion, ?string $modelo = null, int|string|null $modeloId = null): void
     {
         $this->accionAnotada = $accion;
+        $this->modeloAnotado = $modelo;
+        $this->modeloAnotadoId = $modeloId;
     }
 
     /**
      * Consume (y limpia) la etiqueta de negocio pendiente.
      */
-    public function consumirAccionAnotada(): ?string
+    public function consumirAccionAnotada(?Model $modelo = null): ?string
     {
+        if ($this->accionAnotada === null) {
+            return null;
+        }
+
+        if ($this->modeloAnotado !== null) {
+            if ($modelo === null || get_class($modelo) !== $this->modeloAnotado) {
+                return null;
+            }
+
+            if ($this->modeloAnotadoId !== null && (string) $modelo->getKey() !== (string) $this->modeloAnotadoId) {
+                return null;
+            }
+        }
+
         $accion = $this->accionAnotada;
-        $this->accionAnotada = null;
+        $this->reiniciarContexto();
 
         return $accion;
     }
@@ -149,6 +179,8 @@ class AuditService
     public function reiniciarContexto(): void
     {
         $this->accionAnotada = null;
+        $this->modeloAnotado = null;
+        $this->modeloAnotadoId = null;
     }
 
     /**
@@ -207,6 +239,8 @@ class AuditService
             return;
         }
 
+        $contexto = $this->contextoCliente();
+
         DB::table('registros_auditoria')->insert([
             'modulo' => $this->moduloDe($modelo, $modulo),
             'accion' => $accion,
@@ -215,10 +249,31 @@ class AuditService
             'datos_antes' => $antes === null ? null : json_encode($this->filtrarAtributos($antes)),
             'datos_despues' => $despues === null ? null : json_encode($this->filtrarAtributos($despues)),
             'usuario_id' => $actorId ?? auth()->id(),
+            'ip_address' => $contexto['ip_address'],
+            'user_agent' => $contexto['user_agent'],
             'fecha_movimiento' => now(),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Contexto de red de la petición actual, si existe.
+     *
+     * @return array{ip_address: string|null, user_agent: string|null}
+     */
+    private function contextoCliente(): array
+    {
+        if (! app()->bound('request')) {
+            return ['ip_address' => null, 'user_agent' => null];
+        }
+
+        $request = request();
+
+        return [
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ];
     }
 
     /**

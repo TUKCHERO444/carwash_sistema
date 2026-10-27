@@ -117,7 +117,7 @@ class LavadoController extends Controller
 
         $caja = $this->cajaService->getCajaActiva();
         if (! $caja) {
-            return back()->with('error_caja', true);
+            return back()->with('error_caja', true)->withInput();
         }
 
         $request->validate(array_merge($this->clienteRules(), $this->pagoService->reglas(), [
@@ -209,7 +209,22 @@ class LavadoController extends Controller
         $tiposVehiculo = TipoVehiculo::all();
         $trabajadores = Trabajador::where('estado', true)->get();
 
-        return view('lavados.create', compact('tiposVehiculo', 'trabajadores'));
+        $idsOld = collect(old('servicios', []))
+            ->pluck('servicio_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $catalogoServicios = Servicio::whereIn('id', $idsOld)
+            ->get(['id', 'nombre', 'precio'])
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'nombre' => $s->nombre,
+                'precio' => (float) $s->precio,
+            ])
+            ->values();
+
+        return view('lavados.create', compact('tiposVehiculo', 'trabajadores', 'catalogoServicios'));
     }
 
     public function buscarServicios(Request $request): JsonResponse

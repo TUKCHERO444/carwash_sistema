@@ -42,7 +42,24 @@ class VentaController extends Controller
     {
         $metodosPago = $this->pagoService->metodosActivos();
 
-        return view('ventas.create', compact('metodosPago'));
+        $idsOld = collect(old('productos', []))
+            ->pluck('producto_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $catalogoProductos = Producto::whereIn('id', $idsOld)
+            ->get(['id', 'nombre', 'precio_venta', 'stock', 'inventario'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'nombre' => $p->nombre,
+                'precio_venta' => (float) $p->precio_venta,
+                'stock' => (int) $p->stock,
+                'stock_bajo' => $p->esta_en_alerta,
+            ])
+            ->values();
+
+        return view('ventas.create', compact('metodosPago', 'catalogoProductos'));
     }
 
     /**
@@ -79,7 +96,7 @@ class VentaController extends Controller
     {
         $caja = $this->cajaService->getCajaActiva();
         if (! $caja) {
-            return back()->with('error_caja', true);
+            return back()->with('error_caja', true)->withInput();
         }
 
         $request->validate(array_merge([

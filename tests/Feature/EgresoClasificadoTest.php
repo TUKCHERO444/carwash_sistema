@@ -25,9 +25,12 @@ class EgresoClasificadoTest extends TestCase
     {
         parent::setUp();
 
-        Permission::firstOrCreate(['name' => 'acceso-caja', 'guard_name' => 'web']);
+        foreach (['acceso-caja', 'ver-resumen-caja', 'registrar-egresos-caja'] as $perm) {
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+        }
+
         $this->user = User::factory()->create();
-        $this->user->givePermissionTo('acceso-caja');
+        $this->user->givePermissionTo(['acceso-caja', 'ver-resumen-caja', 'registrar-egresos-caja']);
         $this->actingAs($this->user);
     }
 

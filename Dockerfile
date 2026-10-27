@@ -39,13 +39,14 @@ COPY composer.json composer.lock* package.json package-lock.json* ./
 
 # 9. Instalar dependencias de PHP y Node (Sin dev packages en PHP)
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-RUN npm install
+RUN npm ci
 
 # 10. Copiar todo el código de la aplicación
 COPY . .
 
-# 11. Generar Autoload de Composer
-RUN composer dump-autoload --optimize
+# 11. Crear directorios persistentes y generar autoload de Composer
+RUN mkdir -p storage/app/public storage/app/private storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache \
+    && composer dump-autoload --optimize
 
 # 12. Compilar los assets del frontend (Vite / Tailwind)
 RUN npm run build

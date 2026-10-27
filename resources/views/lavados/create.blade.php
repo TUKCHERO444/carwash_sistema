@@ -328,5 +328,9 @@
 
 </div>
 
+<script>
+    window.oldServicios = @json(old('servicios', []));
+    window.catalogoServicios = @json($catalogoServicios ?? []);
+</script>
 @vite('resources/js/lavados/create.js')
 @endsection

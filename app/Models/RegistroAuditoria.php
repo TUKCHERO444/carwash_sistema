@@ -18,6 +18,8 @@ class RegistroAuditoria extends Model
         'datos_antes',
         'datos_despues',
         'usuario_id',
+        'ip_address',
+        'user_agent',
         'fecha_movimiento',
     ];
 

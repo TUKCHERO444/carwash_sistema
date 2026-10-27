@@ -4,6 +4,8 @@
     <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-gray-200 dark:border-border-dark p-8 transition-colors duration-300">
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-text-primary-dark mb-6 text-center">Iniciar sesión</h1>
 
+        @include('partials.bloqueo-intentos')
+
         <form action="{{ route('login') }}" method="POST" novalidate>
             @csrf
 
@@ -22,9 +24,11 @@
                     class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-text-primary-dark
                         {{ $errors->has('email') ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-border-dark' }}"
                 >
-                @error('email')
-                    <p id="email-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+                @if (! session('bloqueo_hasta'))
+                    @error('email')
+                        <p id="email-error" role="alert" class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                @endif
             </div>
 
             {{-- Campo: Contraseña --}}
@@ -55,4 +59,6 @@
             </button>
         </form>
     </div>
+
+    @vite('resources/js/auth/retry-countdown.js')
 @endsection

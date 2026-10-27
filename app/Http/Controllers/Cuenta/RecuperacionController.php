@@ -97,6 +97,7 @@ class RecuperacionController extends Controller
 
         $user = $registro->user;
         $nuevaClave = $validados['password'];
+        $estabaBloqueada = $user->locked_until !== null;
 
         DB::transaction(function () use ($user, $nuevaClave) {
             $user->update([
@@ -111,6 +112,10 @@ class RecuperacionController extends Controller
 
         $this->auditService->registrar($user, 'cambio_clave_recuperacion', null, null, 'cuenta', $user->id);
         $this->auditService->registrar($user, 'revocacion_global', null, null, 'cuenta', $user->id);
+
+        if ($estabaBloqueada) {
+            $this->auditService->registrarSesion($user, 'cuenta desbloqueada', $user->id);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();

@@ -18,6 +18,7 @@ export function calcularTotal(items, porcentaje) {
 
 import Swal from 'sweetalert2';
 import { Validation } from '../utils/validation.js';
+import { escapeHtml } from '../utils/escape-html.js';
 
 /**
  * Renders the HTML for the detail table body.
@@ -30,13 +31,13 @@ export function renderTablaHTML(items) {
     }
     return items.map((item, idx) => `
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-            <td class="px-4 py-6 text-sm text-primary">${item.nombre}</td>
+            <td class="px-4 py-6 text-sm text-primary">${escapeHtml(item.nombre)}</td>
             <td class="px-4 py-6">
                 <div class="flex items-center gap-2">
                     ${item.stock_bajo
                         ? '<span data-stock-badge class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Stock bajo</span>'
                         : ''}
-                    <input type="number" min="1" max="${item.stock}" value="${item.cantidad}"
+                    <input type="number" min="1" max="${escapeHtml(item.stock)}" value="${escapeHtml(item.cantidad)}"
                         class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                         onchange="actualizarCantidad(${idx}, this.value)">
                 </div>
@@ -78,7 +79,26 @@ export function sincronizarHiddens(items, form, className, fields) {
 // ejercitar las funciones puras): en el navegador siempre está definido.
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
-    let items = [];
+    const catalogoProductos = Array.isArray(window.catalogoProductos) ? window.catalogoProductos : [];
+    let items = (Array.isArray(window.oldProductos) ? window.oldProductos : [])
+        .map((item) => {
+            const producto = catalogoProductos.find((p) => String(p.id) === String(item.producto_id));
+            if (!producto) return null;
+
+            const cantidad = parseInt(item.cantidad, 10) || 1;
+            const precioUnitario = parseFloat(item.precio_unitario) || parseFloat(producto.precio_venta) || 0;
+
+            return {
+                producto_id: producto.id,
+                nombre: producto.nombre,
+                cantidad,
+                precio_unitario: +precioUnitario.toFixed(2),
+                subtotal: +(cantidad * precioUnitario).toFixed(2),
+                stock: parseInt(producto.stock, 10) || 0,
+                stock_bajo: Boolean(producto.stock_bajo),
+            };
+        })
+        .filter(Boolean);
 
     // DOM references
     const inputBuscar    = document.getElementById('buscar-producto');
@@ -115,11 +135,19 @@ if (typeof document !== 'undefined') {
 
     function mostrarResultados(productos) {
         if (!productos.length) { ocultarResultados(); return; }
-        resultadosDiv.innerHTML = productos.map(p =>
-            `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" onclick='agregarProducto(${JSON.stringify(p)})'>
-                ${p.nombre} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${p.stock})
+        resultadosDiv.innerHTML = productos.map((p, idx) =>
+            `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" data-producto-idx="${idx}">
+                ${escapeHtml(p.nombre)} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${escapeHtml(p.stock)})
             </div>`
         ).join('');
+        resultadosDiv._productosCache = productos;
+        resultadosDiv.querySelectorAll('[data-producto-idx]').forEach(el => {
+            el.addEventListener('click', function () {
+                const idx = parseInt(this.dataset.productoIdx, 10);
+                const producto = resultadosDiv._productosCache[idx];
+                if (producto) window.agregarProducto(producto);
+            });
+        });
         resultadosDiv.classList.remove('hidden');
     }
 
@@ -147,7 +175,7 @@ if (typeof document !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Stock insuficiente',
-                    html: `No hay suficiente stock de <strong>${existente.nombre}</strong>.<br>Stock disponible: <strong>${existente.stock}</strong>`,
+                    html: `No hay suficiente stock de <strong>${escapeHtml(existente.nombre)}</strong>.<br>Stock disponible: <strong>${escapeHtml(existente.stock)}</strong>`,
                     confirmButtonColor: '#3085d6',
                     confirmButtonText: 'Entendido',
                 });
@@ -180,7 +208,7 @@ if (typeof document !== 'undefined') {
             Swal.fire({
                 icon: 'warning',
                 title: 'Stock insuficiente',
-                html: `La cantidad ingresada (<strong>${cantidadIngresada}</strong>) excede el stock disponible de <strong>${items[idx].nombre}</strong>.<br>Stock disponible: <strong>${stock}</strong>`,
+                html: `La cantidad ingresada (<strong>${escapeHtml(cantidadIngresada)}</strong>) excede el stock disponible de <strong>${escapeHtml(items[idx].nombre)}</strong>.<br>Stock disponible: <strong>${escapeHtml(stock)}</strong>`,
                 confirmButtonColor: '#3085d6',
                 confirmButtonText: 'Entendido',
             }).then(() => {
@@ -307,7 +335,8 @@ if (typeof document !== 'undefined') {
             // Solo restaurar al ancla si no hay ningún descuento activo;
             // si hay descuento aplicado, preservar el total ya calculado
             const hayDescuento = toggleDesc.checked || toggleDescManual.checked;
-            if (!hayDescuento && inputAncla) {
+            const hayFacturacion = Boolean(document.querySelector('[data-facturacion="on"]'));
+            if (!hayDescuento && !hayFacturacion && inputAncla) {
                 inputTotal.value = parseFloat(inputAncla.value || 0).toFixed(2);
             }
             validarMixto();
@@ -403,12 +432,42 @@ if (typeof document !== 'undefined') {
             if (txt) txt.textContent = 'Añadir Facturación';
         }
 
+        const hiddenFacturacion = document.getElementById('facturacion');
+        if (hiddenFacturacion) {
+            hiddenFacturacion.value = btn.dataset.facturacion === 'on' ? '1' : '0';
+        }
+
         totalInput.dispatchEvent(new Event('input', { bubbles: true }));
     };
 
     // ── Initialise ──
+    if (toggleDesc.checked) {
+        campoPorcentaje.classList.remove('hidden');
+        inputTotal.readOnly = false;
+        inputTotal.classList.remove('bg-gray-50');
+    }
+    if (toggleDescManual.checked) {
+        inputTotal.readOnly = false;
+        inputTotal.classList.remove('bg-gray-50');
+    }
+
+    const facturacionInput = document.getElementById('facturacion');
+    if (facturacionInput?.value === '1') {
+        const btnFact = document.querySelector('[data-facturacion]');
+        if (btnFact) {
+            btnFact.dataset.facturacion = 'on';
+            btnFact.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btnFact.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            const txt = btnFact.querySelector('.facturacion-texto');
+            if (txt) txt.textContent = 'Remover Facturación';
+        }
+    }
+
     renderTabla();
     recalcularTotales();
+    if (toggleDescManual.checked && window.oldTotal !== null && window.oldTotal !== undefined && window.oldTotal !== '') {
+        inputTotal.value = (parseFloat(window.oldTotal) || 0).toFixed(2);
+    }
     actualizarUIMetodoPago();
 
     // Validación del formulario

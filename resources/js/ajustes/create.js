@@ -2,6 +2,8 @@
 // Module: ajustes/create.js
 // Dynamic lines for inventory adjustments.
 
+import { escapeHtml } from '../utils/escape-html.js';
+
 // ── Pure calculation functions (exported for testing) ──
 
 /**
@@ -12,15 +14,16 @@
  * @returns {string} HTML string
  */
 export function renderTablaHTML(items, productos, tipoAjuste) {
-    const opcionesProducto = productos.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
-
     if (!items.length) {
         return '<tr><td colspan="5" class="px-6 py-8 text-center text-sm text-secondary">No hay productos agregados. Haga clic en "Agregar línea".</td></tr>';
     }
 
     const esConteo = tipoAjuste === 'conteo_fisico';
 
-    return items.map((item, idx) => `
+    return items.map((item, idx) => {
+        const opcionesProducto = productos.map(p => `<option value="${escapeHtml(p.id)}" ${String(item.producto_id) === String(p.id) ? 'selected' : ''}>${escapeHtml(p.nombre)} (Stock: ${escapeHtml(p.stock)})</option>`).join('');
+
+        return `
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
             <td class="px-4 py-6">
                 <select name="lineas[${idx}][producto_id]"
@@ -38,17 +41,17 @@ export function renderTablaHTML(items, productos, tipoAjuste) {
                 </span>
             </td>
             <td class="px-4 py-6 text-sm text-secondary font-mono">
-                ${item.stock}
+                ${escapeHtml(item.stock)}
             </td>
             <td class="px-4 py-6">
                 ${!esConteo
-                    ? `<input type="number" min="-9999" max="9999" step="1" value="${item.cantidad}"
+                    ? `<input type="number" min="-9999" max="9999" step="1" value="${escapeHtml(item.cantidad)}"
                         class="w-24 border border-main rounded px-2 py-1 text-sm input-main"
                         onchange="actualizarCantidad(${idx}, this.value)"
                         ${Math.abs(item.cantidad) > 0 ? '' : 'required'}>`
                     : `<div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-sm text-secondary">Cnt:</span>
-                        <input type="number" min="0" max="99999" step="1" value="${item.cantidad + Math.abs(item.stock)}"
+                        <input type="number" min="0" max="99999" step="1" value="${escapeHtml(item.conteo_fisico ?? (item.cantidad + Math.abs(item.stock)))}"
                             class="w-28 pl-8 pr-2 py-1 border border-main rounded text-sm input-main"
                             onchange="actualizarConteoFisico(${idx}, this.value)">
                        </div>`
@@ -59,7 +62,8 @@ export function renderTablaHTML(items, productos, tipoAjuste) {
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-medium">Eliminar</button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 /**
@@ -76,7 +80,7 @@ export function sincronizarHiddens(items, form, className, fields) {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = `lineas[${idx}][${field}]`;
-            input.value = item[field];
+            input.value = item[field] ?? '';
             input.className = className;
             form.appendChild(input);
         });
@@ -143,6 +147,7 @@ if (typeof document !== 'undefined') {
             const conteo = parseInt(value, 10) || 0;
             const stockActual = items[idx].stock || 0;
             items[idx].cantidad = conteo - stockActual;
+            items[idx].conteo_fisico = conteo;
             sincronizarHiddens(items, form, 'ajuste-hidden', ['producto_id', 'cantidad', 'conteo_fisico']);
         }
 
@@ -178,7 +183,7 @@ if (typeof document !== 'undefined') {
                 nombre: item.producto_id ? (productos.find(p => p.id == item.producto_id)?.nombre || '') : '',
                 stock: item.producto_id ? (productos.find(p => p.id == item.producto_id)?.stock || 0) : 0,
                 cantidad: parseInt(item.cantidad, 10) || 0,
-                conteo_fisico: item.conteo_fisico ? parseInt(item.conteo_fisico, 10) : null,
+                conteo_fisico: item.conteo_fisico !== undefined && item.conteo_fisico !== '' ? parseInt(item.conteo_fisico, 10) : null,
             }));
             refrescarTabla();
         }

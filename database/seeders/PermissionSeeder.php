@@ -42,6 +42,9 @@ class PermissionSeeder extends Seeder
 
             // Caja
             'acceso-caja',
+            'gestionar-caja',
+            'ver-resumen-caja',
+            'registrar-egresos-caja',
             'historial-caja',
 
             // Zona pública de clientes (/cuenta/*): puerta de acceso,

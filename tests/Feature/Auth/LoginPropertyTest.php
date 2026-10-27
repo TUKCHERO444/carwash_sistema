@@ -111,7 +111,8 @@ class LoginPropertyTest extends TestCase
                 ];
             }
 
-            $response = $this->post('/login', $credentials);
+            $response = $this->withServerVariables(['REMOTE_ADDR' => "10.70.{$i}.1"])
+                ->post('/login', $credentials);
 
             $response->assertSessionHasErrors([
                 'email' => $expectedError,
@@ -184,7 +185,8 @@ class LoginPropertyTest extends TestCase
                     break;
             }
 
-            $response = $this->post('/login', $payload);
+            $response = $this->withServerVariables(['REMOTE_ADDR' => "10.71.{$i}.1"])
+                ->post('/login', $payload);
 
             $response->assertSessionHasErrors($expectedField);
 

@@ -3,12 +3,18 @@
 namespace App\Providers;
 
 use App\Models\Categoria;
+use App\Models\User;
+use App\Policies\RolePolicy;
+use App\Policies\UserPolicy;
+use App\Services\CajaService;
 use App\Services\CarritoService;
 use App\Services\ContenidoWebService;
+use App\Support\ProductionSecurityGuard;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,9 +31,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (env('APP_ENV') === 'production') {
+        ProductionSecurityGuard::assertSafeConfiguration();
+
+        if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
+
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
 
         Gate::before(function ($user, $ability) {
             return $user->hasRole('Administrador') ? true : null;
@@ -36,6 +47,14 @@ class AppServiceProvider extends ServiceProvider
         View::composer('publica.partials.header', function ($view) {
             $view->with('categoriasMenu', $this->categoriasPublicas());
             $view->with('carritoConteo', app(CarritoService::class)->conteoParaHeader(auth()->user()));
+        });
+
+        View::composer('layouts.app', function ($view) {
+            $usuario = auth()->user();
+            $cajaAbierta = $usuario?->can('acceso-caja')
+                && app(CajaService::class)->getCajaActiva() !== null;
+
+            $view->with('cajaAbiertaGlobal', $cajaAbierta);
         });
     }
 

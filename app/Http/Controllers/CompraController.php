@@ -39,7 +39,9 @@ class CompraController extends Controller
         'proveedor_id.exists' => 'El proveedor seleccionado no existe.',
         'fecha.required' => 'La fecha de la compra es obligatoria.',
         'fecha.date' => 'La fecha de la compra no es válida.',
+        'tipo_documento.required' => 'Debe seleccionar el tipo de documento.',
         'tipo_documento.in' => 'El tipo de documento no es válido.',
+        'numero_documento.required' => 'El número de documento es obligatorio.',
         'numero_documento.max' => 'El número de documento es demasiado largo.',
         'observaciones.max' => 'Las observaciones son demasiado largas.',
         'detalle.required' => 'Debe agregar al menos un producto a la compra.',
@@ -63,8 +65,8 @@ class CompraController extends Controller
         return [
             'proveedor_id' => ['required', 'integer', 'exists:proveedores,id'],
             'fecha' => ['required', 'date'],
-            'tipo_documento' => ['nullable', 'string', 'max:20', 'in:'.implode(',', self::TIPOS_DOCUMENTO)],
-            'numero_documento' => ['nullable', 'string', 'max:50'],
+            'tipo_documento' => ['required', 'string', 'max:20', 'in:'.implode(',', self::TIPOS_DOCUMENTO)],
+            'numero_documento' => ['required', 'string', 'max:50'],
             'observaciones' => ['nullable', 'string', 'max:500'],
             'detalle' => ['required', 'array', 'min:1'],
             'detalle.*.producto_id' => ['required', 'integer', 'exists:productos,id', 'distinct'],
@@ -143,12 +145,14 @@ class CompraController extends Controller
         $compra = DB::transaction(function () use ($validated, $request) {
             [$lineas, $subtotal] = $this->prepararLineas($validated['detalle']);
 
+            app(AuditService::class)->anotarAccion('crear borrador', Compra::class);
+
             $compra = Compra::create([
                 'correlativo' => null,
                 'proveedor_id' => $validated['proveedor_id'],
                 'fecha' => $validated['fecha'],
-                'tipo_documento' => $validated['tipo_documento'] ?? null,
-                'numero_documento' => $validated['numero_documento'] ?? null,
+                'tipo_documento' => $validated['tipo_documento'],
+                'numero_documento' => $validated['numero_documento'],
                 'estado' => 'borrador',
                 'subtotal' => $subtotal,
                 'total' => $subtotal,
@@ -196,11 +200,13 @@ class CompraController extends Controller
         DB::transaction(function () use ($compra, $validated) {
             [$lineas, $subtotal] = $this->prepararLineas($validated['detalle']);
 
+            app(AuditService::class)->anotarAccion('actualizar borrador', Compra::class, $compra->getKey());
+
             $compra->update([
                 'proveedor_id' => $validated['proveedor_id'],
                 'fecha' => $validated['fecha'],
-                'tipo_documento' => $validated['tipo_documento'] ?? null,
-                'numero_documento' => $validated['numero_documento'] ?? null,
+                'tipo_documento' => $validated['tipo_documento'],
+                'numero_documento' => $validated['numero_documento'],
                 'subtotal' => $subtotal,
                 'total' => $subtotal,
                 'observaciones' => $validated['observaciones'] ?? null,
@@ -208,6 +214,8 @@ class CompraController extends Controller
 
             $compra->detalles()->delete();
             $this->guardarLineas($compra, $lineas);
+
+            $this->registrarEdicionSinCambiosDeCabecera($compra);
         });
 
         return redirect()->route('compras.show', $compra)
@@ -240,7 +248,7 @@ class CompraController extends Controller
             return $this->errorTransicion($compra, 'anular');
         }
 
-        app(AuditService::class)->anotarAccion('anular compra');
+        app(AuditService::class)->anotarAccion('anular compra', Compra::class, $compra->getKey());
         $compra->update(['estado' => 'anulada']);
 
         return redirect()->route('compras.show', $compra)
@@ -320,13 +328,11 @@ class CompraController extends Controller
                 ]);
 
                 // Marcar como anulada
+                app(AuditService::class)->anotarAccion('anular compra recibida', Compra::class, $compra->getKey());
                 $compra->update([
                     'estado' => 'anulada',
                     'fecha_anulacion' => now(),
                 ]);
-
-                // Auditoría
-                app(AuditService::class)->anotarAccion('anular compra recibida');
 
                 return [
                     'compra' => $compra,
@@ -461,6 +467,7 @@ class CompraController extends Controller
                 ]);
 
                 // 5. Marcar compra como recibida (requisito 38)
+                app(AuditService::class)->anotarAccion('recibir compra', Compra::class, $compra->getKey());
                 $compra->update([
                     'correlativo' => $correlativo,
                     'estado' => 'recibida',
@@ -468,8 +475,6 @@ class CompraController extends Controller
                     'egreso_caja_id' => $egreso->id,
                     'fecha_recepcion' => now(),
                 ]);
-                // Auditoría
-                app(AuditService::class)->anotarAccion('recibir compra');
 
                 $compra->refresh();
 
@@ -496,6 +501,24 @@ class CompraController extends Controller
             return redirect()->route('compras.show', $compra)
                 ->with('error', 'Error al recibir la compra: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Registra la edición cuando solo cambiaron las líneas y no la cabecera.
+     *
+     * El observer de Compra solo se dispara si cambia un atributo de la cabecera;
+     * si el usuario editó únicamente cantidades o costos, el detalle no genera
+     * evento y la acción `actualizar borrador` quedaría sin registrar.
+     */
+    private function registrarEdicionSinCambiosDeCabecera(Compra $compra): void
+    {
+        if ($compra->wasChanged()) {
+            return;
+        }
+
+        $auditoria = app(AuditService::class);
+        $auditoria->consumirAccionAnotada($compra);
+        $auditoria->registrar($compra, 'actualizar borrador');
     }
 
     /**

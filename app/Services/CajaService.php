@@ -176,6 +176,40 @@ class CajaService
     }
 
     /**
+     * Calcula los totales mínimos de una caja.
+     *
+     * Es la variante segura para el panel operativo: no carga relaciones ni
+     * distribuye ingresos por método de pago.
+     *
+     * @return array{
+     *   total_ingresos: float,
+     *   total_egresos: float,
+     *   total_ventas: float,
+     *   total_cambios: float,
+     *   total_ingresos_vehiculares: float,
+     * }
+     */
+    public function calcularTotales(Caja $caja): array
+    {
+        $cajaId = $caja->id;
+
+        $totalVentas = (float) Venta::where('caja_id', $cajaId)->sum('total');
+        $totalCambios = (float) CambioAceite::where('caja_id', $cajaId)->sum('total');
+        $totalIngresosVehiculares = (float) Lavado::where('caja_id', $cajaId)
+            ->where('estado', 'confirmado')
+            ->sum('total');
+        $totalEgresos = (float) EgresoCaja::where('caja_id', $cajaId)->sum('monto');
+
+        return [
+            'total_ingresos' => $totalVentas + $totalCambios + $totalIngresosVehiculares,
+            'total_egresos' => $totalEgresos,
+            'total_ventas' => $totalVentas,
+            'total_cambios' => $totalCambios,
+            'total_ingresos_vehiculares' => $totalIngresosVehiculares,
+        ];
+    }
+
+    /**
      * Calcula el resumen financiero de la caja.
      *
      * Fórmula:
@@ -197,21 +231,14 @@ class CajaService
      */
     public function calcularResumen(Caja $caja): array
     {
+        $totales = $this->calcularTotales($caja);
         $cajaId = $caja->id;
 
-        // Totales de ingresos por fuente
-        $totalVentas = Venta::where('caja_id', $cajaId)->sum('total');
-        $totalCambios = CambioAceite::where('caja_id', $cajaId)->sum('total');
-        $totalIngresos = Lavado::where('caja_id', $cajaId)
-            ->where('estado', 'confirmado')
-            ->sum('total');
-
-        $totalIngresosCaja = (float) $totalVentas
-                           + (float) $totalCambios
-                           + (float) $totalIngresos;
-
-        // Total de egresos
-        $totalEgresos = (float) EgresoCaja::where('caja_id', $cajaId)->sum('monto');
+        $totalVentas = $totales['total_ventas'];
+        $totalCambios = $totales['total_cambios'];
+        $totalIngresos = $totales['total_ingresos_vehiculares'];
+        $totalIngresosCaja = $totales['total_ingresos'];
+        $totalEgresos = $totales['total_egresos'];
 
         // Balance final
         $balanceFinal = (float) $caja->monto_inicial + $totalIngresosCaja - $totalEgresos;

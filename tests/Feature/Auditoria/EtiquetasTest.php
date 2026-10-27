@@ -20,12 +20,12 @@ class EtiquetasTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['acceso-ventas', 'acceso-inventario', 'acceso-caja'] as $perm) {
+        foreach (['acceso-ventas', 'acceso-inventario', 'acceso-caja', 'gestionar-caja'] as $perm) {
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
         $this->user = User::factory()->create();
-        $this->user->givePermissionTo(['acceso-ventas', 'acceso-inventario', 'acceso-caja']);
+        $this->user->givePermissionTo(['acceso-ventas', 'acceso-inventario', 'acceso-caja', 'gestionar-caja']);
         $this->actingAs($this->user);
     }
 

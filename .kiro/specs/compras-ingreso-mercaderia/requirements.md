@@ -108,7 +108,7 @@ demostración se consumirían sobre mercadería que nunca se recibió.
 
 49. THE AuditServiceProvider SHALL auditar el modelo `Compra` en su lista de modelos.
 50. THE AuditService SHALL excluir el modelo `DetalleCompra` de la auditoría, por ser un pivote y no una entidad de negocio, junto a `MovimientoKardex`.
-51. THE AccionesAuditoriaController SHALL etiquetar las acciones `recibir compra` y `anular compra` para su filtro.
+51. THE AccionesAuditoriaController SHALL etiquetar las acciones `crear borrador`, `actualizar borrador`, `recibir compra`, `anular compra` y `anular compra recibida` para su filtro. El observer SHALL usar `crear borrador` al crear un borrador, `actualizar borrador` al editarlo (aunque solo cambien sus líneas) y `recibir compra` al recibirlo, sin caer en las acciones genéricas `crear` o `actualizar`.
 
 ## Permisos y navegación
 

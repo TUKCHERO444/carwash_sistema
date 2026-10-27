@@ -14,6 +14,7 @@ import {
 } from './shared.js';
 import { initBuscadorPlaca } from '../buscador-placa.js';
 import { Validation } from '../utils/validation.js';
+import { escapeHtml } from '../utils/escape-html.js';
 import Swal from 'sweetalert2';
 
 // ── Estado local ──
@@ -28,7 +29,7 @@ function actualizarCantidad(idx, val) {
         Swal.fire({
             icon: 'warning',
             title: 'Stock insuficiente',
-            html: `La cantidad ingresada (<strong>${cantidadIngresada}</strong>) excede el stock disponible de <strong>${items[idx].nombre}</strong>.<br>Stock disponible: <strong>${stock}</strong>`,
+            html: `La cantidad ingresada (<strong>${escapeHtml(cantidadIngresada)}</strong>) excede el stock disponible de <strong>${escapeHtml(items[idx].nombre)}</strong>.<br>Stock disponible: <strong>${escapeHtml(stock)}</strong>`,
             confirmButtonColor: '#3085d6',
             confirmButtonText: 'Entendido',
         }).then(() => {
@@ -66,7 +67,7 @@ function onAgregarProducto(producto) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Stock insuficiente',
-                html: `No hay suficiente stock de <strong>${existente.nombre}</strong>.<br>Stock disponible: <strong>${existente.stock}</strong>`,
+                html: `No hay suficiente stock de <strong>${escapeHtml(existente.nombre)}</strong>.<br>Stock disponible: <strong>${escapeHtml(existente.stock)}</strong>`,
                 confirmButtonColor: '#3085d6',
                 confirmButtonText: 'Entendido',
             });
@@ -94,6 +95,26 @@ function onAgregarProducto(producto) {
 
 // ── Inicialización al cargar el DOM ──
 document.addEventListener('DOMContentLoaded', () => {
+    const catalogoProductos = Array.isArray(window.catalogoProductos) ? window.catalogoProductos : [];
+    items = (Array.isArray(window.oldProductos) ? window.oldProductos : [])
+        .map((item) => {
+            const producto = catalogoProductos.find((p) => String(p.id) === String(item.producto_id));
+            if (!producto) return null;
+
+            const cantidad = parseInt(item.cantidad, 10) || 1;
+            const precio = parseFloat(item.precio) || parseFloat(producto.precio_venta) || 0;
+
+            return {
+                producto_id: producto.id,
+                nombre: producto.nombre,
+                cantidad,
+                precio: +precio.toFixed(2),
+                total: +(cantidad * precio).toFixed(2),
+                stock: parseInt(producto.stock, 10) || 0,
+            };
+        })
+        .filter(Boolean);
+
     // Búsqueda de productos con debounce
     initBusquedaProductos({
         inputId:      'buscar-producto',
@@ -136,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderizar estado inicial
     renderTablaProductos(items, 'tbody-detalle', actualizarCantidad, eliminarItem);
     recalcularTotales(items, 'precio', 'total', 'toggle-descuento', 'porcentaje');
+    sincronizarHiddens(items, 'form-cambio-aceite', 'hidden-producto');
 
     // Validación del formulario
     const form = document.getElementById('form-cambio-aceite');

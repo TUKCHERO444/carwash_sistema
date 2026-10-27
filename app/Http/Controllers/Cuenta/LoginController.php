@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Cuenta;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\LoginLockoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,10 +22,9 @@ class LoginController extends Controller
 {
     private const MENSAJE_GENERICO = 'Las credenciales no son válidas o la cuenta no está activa.';
 
-    private const MAX_INTENTOS = 5;
-
     public function __construct(
         private AuditService $auditService,
+        private LoginLockoutService $lockout,
     ) {}
 
     /**
@@ -55,25 +55,30 @@ class LoginController extends Controller
 
         $user = User::where('email', $credenciales['email'])->first();
 
-        if ($user === null || ! Hash::check($credenciales['password'], $user->password)) {
-            $this->registrarFallo($user);
-
+        if ($user === null) {
             return back()->withErrors(['email' => self::MENSAJE_GENERICO])
                 ->withInput($request->except('password'));
+        }
+
+        if ($this->lockout->estaBloqueado($user)) {
+            $this->auditService->registrarSesion($user, 'intento con cuenta bloqueada', $user->id);
+
+            return $this->respuestaIntentoFallido($request, $user);
+        }
+
+        if (! Hash::check($credenciales['password'], $user->password)) {
+            $this->lockout->registrarFallo($user, 'intento fallido cuenta');
+
+            return $this->respuestaIntentoFallido($request, $user);
         }
 
         if (! $user->hasRole('Cliente') || ! $user->puedeAccederCuenta()) {
-            $this->registrarFallo($user);
+            $this->lockout->registrarFallo($user, 'intento fallido cuenta');
 
-            return back()->withErrors(['email' => self::MENSAJE_GENERICO])
-                ->withInput($request->except('password'));
+            return $this->respuestaIntentoFallido($request, $user);
         }
 
-        $user->update([
-            'failed_attempts' => 0,
-            'locked_until' => null,
-            'last_login_at' => now(),
-        ]);
+        $this->lockout->registrarExito($user);
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -81,6 +86,19 @@ class LoginController extends Controller
         $this->auditService->registrarSesion($user, 'inicio de sesión (cuenta)');
 
         return redirect()->route('cuenta.panel');
+    }
+
+    /**
+     * Devuelve el formulario con el aviso de bloqueo cuando corresponde.
+     */
+    private function respuestaIntentoFallido(Request $request, User $user): RedirectResponse
+    {
+        if ($this->lockout->estaBloqueado($user)) {
+            $request->session()->flash('bloqueo_hasta', $user->locked_until->toIso8601String());
+        }
+
+        return back()->withErrors(['email' => self::MENSAJE_GENERICO])
+            ->withInput($request->except('password'));
     }
 
     /**
@@ -96,24 +114,5 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('inicio');
-    }
-
-    /**
-     * Suma un intento fallido y bloquea 15 min al llegar al máximo.
-     */
-    private function registrarFallo(?User $user): void
-    {
-        if ($user === null) {
-            return;
-        }
-
-        $intentos = $user->failed_attempts + 1;
-
-        $user->update([
-            'failed_attempts' => $intentos,
-            'locked_until' => $intentos >= self::MAX_INTENTOS ? now()->addMinutes(15) : $user->locked_until,
-        ]);
-
-        $this->auditService->registrarSesion($user, 'intento fallido cuenta', $user->id);
     }
 }

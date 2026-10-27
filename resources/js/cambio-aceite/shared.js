@@ -6,6 +6,7 @@
  */
 
 import Swal from 'sweetalert2';
+import { escapeHtml } from '../utils/escape-html.js';
 
 // ─────────────────────────────────────────────
 // Funciones puras de cálculo (exportadas para PBT)
@@ -39,9 +40,9 @@ export function renderTablaHTML(items, onActualizarCantidad, onEliminar) {
     }
     return items.map((item, idx) => `
         <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-            <td class="px-4 py-2 text-sm text-primary">${item.nombre}</td>
+            <td class="px-4 py-2 text-sm text-primary">${escapeHtml(item.nombre)}</td>
             <td class="px-4 py-2">
-                <input type="number" min="1" max="${item.stock ?? ''}" value="${item.cantidad}"
+                <input type="number" min="1" max="${escapeHtml(item.stock ?? '')}" value="${escapeHtml(item.cantidad)}"
                     class="w-20 border border-main rounded px-2 py-1 text-sm input-main"
                     data-cantidad-idx="${idx}">
             </td>
@@ -102,7 +103,7 @@ function _mostrarResultados(productos, resultadosDiv, onAgregar) {
     if (!productos.length) { _ocultarResultados(resultadosDiv); return; }
     resultadosDiv.innerHTML = productos.map((p, idx) =>
         `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-primary" data-producto-idx="${idx}">
-            ${p.nombre} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${p.stock})
+            ${escapeHtml(p.nombre)} — S/ ${parseFloat(p.precio_venta).toFixed(2)} (Stock: ${escapeHtml(p.stock)})
         </div>`
     ).join('');
 

@@ -19,28 +19,55 @@ class CajaController extends Controller
     ) {}
 
     /**
-     * Muestra el panel de caja con la caja activa y su resumen.
+     * Muestra la caja general al Administrador o el panel operativo al resto.
+     *
+     * El resumen completo solo se calcula y se carga con `ver-resumen-caja`.
+     * Los demás roles reciben únicamente estado y totales, sin detalles de
+     * ingresos, métodos de pago, balance ni arqueo.
      */
     public function index(): View
     {
         $caja = $this->cajaService->getCajaActiva();
+        $categoriasGasto = EgresoCaja::categoriasManuales();
+        $puedeRegistrarEgreso = auth()->user()->can('registrar-egresos-caja');
+        $trabajadores = ($caja && $puedeRegistrarEgreso)
+            ? Trabajador::orderBy('nombre')->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno'])
+            : collect();
 
-        if ($caja) {
-            $caja->load([
-                'ventas.pagos.metodoPago',
-                'cambioAceites.pagos.metodoPago',
-                'lavados' => fn ($q) => $q->where('estado', 'confirmado')->with('pagos.metodoPago'),
-                'egresos',
-            ]);
+        if (auth()->user()->can('ver-resumen-caja')) {
+            if ($caja) {
+                $caja->load([
+                    'ventas.pagos.metodoPago',
+                    'cambioAceites.pagos.metodoPago',
+                    'lavados' => fn ($q) => $q->where('estado', 'confirmado')->with('pagos.metodoPago'),
+                    'egresos',
+                ]);
+            }
+
+            $resumen = $caja ? $this->cajaService->calcularResumen($caja) : null;
+            $efectivoEsperado = $caja ? $this->cajaService->calcularEfectivoEsperado($caja) : null;
+            $nombresMetodos = MetodoPago::pluck('nombre', 'codigo')->all();
+
+            return view('caja.panel', compact(
+                'caja',
+                'resumen',
+                'efectivoEsperado',
+                'categoriasGasto',
+                'trabajadores',
+                'nombresMetodos',
+                'puedeRegistrarEgreso'
+            ));
         }
 
-        $resumen = $caja ? $this->cajaService->calcularResumen($caja) : null;
-        $efectivoEsperado = $caja ? $this->cajaService->calcularEfectivoEsperado($caja) : null;
-        $nombresMetodos = MetodoPago::pluck('nombre', 'codigo')->all();
-        $categoriasGasto = EgresoCaja::categoriasManuales();
-        $trabajadores = $caja ? Trabajador::orderBy('nombre')->get(['id', 'nombre', 'apellido_paterno', 'apellido_materno']) : collect();
+        $resumen = $caja ? $this->cajaService->calcularTotales($caja) : null;
 
-        return view('caja.panel', compact('caja', 'resumen', 'efectivoEsperado', 'categoriasGasto', 'trabajadores', 'nombresMetodos'));
+        return view('caja.panel-operativo', compact(
+            'caja',
+            'resumen',
+            'categoriasGasto',
+            'trabajadores',
+            'puedeRegistrarEgreso'
+        ));
     }
 
     /**
@@ -54,7 +81,7 @@ class CajaController extends Controller
 
         // Verificar si ya existe una caja abierta antes de intentar abrir
         if ($this->cajaService->getCajaActiva()) {
-            return back()->with('error', 'Ya existe una caja abierta.');
+            return back()->with('error', 'Ya existe una caja abierta.')->withInput();
         }
 
         try {
@@ -68,7 +95,7 @@ class CajaController extends Controller
             return redirect()->route('caja.index')
                 ->with('success', 'Caja abierta correctamente.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 
@@ -121,7 +148,7 @@ class CajaController extends Controller
 
             return redirect()->route('caja.index')->with('success', $mensaje);
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 
@@ -164,7 +191,7 @@ class CajaController extends Controller
             return redirect()->route('caja.index')
                 ->with('success', 'Egreso registrado correctamente.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 
